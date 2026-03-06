@@ -8,7 +8,7 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
       rel="stylesheet" />
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-   <?!= includeFile('style'); ?>
+   <!-- En Vercel no existe includeFile; style/js se inyectan abajo -->
 </head>
 
 <body>
@@ -711,13 +711,52 @@
       </div>
    </div>
 
-   <?!= includeFile('js-config'); ?>
-   <?!= includeFile('js-auth-nav'); ?>
-   <?!= includeFile('js-vistas'); ?>
-   <?!= includeFile('js-app'); ?>
-   <?!= includeFile('js-caja'); ?>
-   <?!= includeFile('js-ventas'); ?>
-   <?!= includeFile('js-stock'); ?>
+   <script src="/js-runtime-bridge.js"></script>
+   <script>
+      async function loadPartialStyles() {
+         const res = await fetch('/style.html', { cache: 'no-store' });
+         const text = await res.text();
+         const match = text.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+         const css = match ? match[1] : text;
+         const styleEl = document.createElement('style');
+         styleEl.setAttribute('data-source', 'style.html');
+         styleEl.textContent = css;
+         document.head.appendChild(styleEl);
+      }
+
+      async function loadPartialScript(path) {
+         const res = await fetch(path, { cache: 'no-store' });
+         const text = await res.text();
+         const match = text.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+         const js = match ? match[1] : text;
+         const scriptEl = document.createElement('script');
+         scriptEl.setAttribute('data-source', path);
+         scriptEl.text = js;
+         document.body.appendChild(scriptEl);
+      }
+
+      async function bootVercelPartials() {
+         try {
+            await loadPartialStyles();
+            const scripts = [
+               '/js-config.html',
+               '/js-auth-nav.html',
+               '/js-vistas.html',
+               '/js-app.html',
+               '/js-caja.html',
+               '/js-ventas.html',
+               '/js-stock.html'
+            ];
+            for (const path of scripts) {
+               await loadPartialScript(path);
+            }
+         } catch (e) {
+            console.error('Error cargando parciales para Vercel:', e);
+         }
+      }
+
+      bootVercelPartials();
+   </script>
 </body>
 
 </html>
