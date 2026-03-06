@@ -30,12 +30,43 @@ Despues de guardarlas, hacer `Redeploy`.
   - Lista usuarios de la tabla `usuario`.
   - Usa `limit` entre 1 y 200.
 
+- `GET /api/caja/balance?pais=ARGENTINA&mes=0&anio=2026`
+  - Calcula balance de caja en formato compatible con GAS.
+  - `mes=0` devuelve anual.
+
+- `GET /api/caja/historial?pais=ARGENTINA&mes=0&anio=2026`
+  - Devuelve historial de `cajaMovimiento` con campos compatibles con `js-caja.html`.
+
+- `POST /api/caja/movimiento`
+  - Crea movimientos de caja (uno por cada item en `pagos[]`).
+  - Si enviás `id` (o `filaIndex`), actualiza un movimiento existente.
+
 ## 4) Prueba rapida
 
 Con la URL de Vercel, por ejemplo `https://tu-app.vercel.app`:
 
 1. Abrir `https://tu-app.vercel.app/api/health`.
 2. Si responde `ok: true`, abrir `https://tu-app.vercel.app/api/usuarios/list`.
+3. Probar balance: `https://tu-app.vercel.app/api/caja/balance?pais=ARGENTINA&mes=0&anio=2026`.
+4. Probar historial: `https://tu-app.vercel.app/api/caja/historial?pais=ARGENTINA&mes=0&anio=2026`.
+
+Ejemplo de `POST /api/caja/movimiento`:
+
+```json
+{
+  "fecha": "2026-03-06",
+  "tipo": "EGRESO",
+  "concepto": "SERVICIOS",
+  "descripcion": "INTERNET",
+  "estado": "PAGADO",
+  "vencimiento": "",
+  "observaciones": "Alta inicial",
+  "pais": "ARGENTINA",
+  "pagos": [
+    { "forma": "Transferencia", "monto": 15000 }
+  ]
+}
+```
 
 Si falla:
 
