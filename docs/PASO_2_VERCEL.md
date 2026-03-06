@@ -20,37 +20,55 @@ En `Project Settings` -> `Environment Variables`, agregar:
 
 Despues de guardarlas, hacer `Redeploy`.
 
-## 3) Endpoints creados
+## 3) Endpoints creados (version unificada para Hobby)
 
 - `GET /api/health`
   - Verifica que el backend puede conectarse a Supabase.
   - Respuesta esperada: `{ ok: true, provider: "supabase", ... }`.
 
-- `GET /api/usuarios/list?limit=50`
+- `GET /api/usuarios?action=list&limit=50`
   - Lista usuarios de la tabla `usuario`.
   - Usa `limit` entre 1 y 200.
 
-- `GET /api/caja/balance?pais=ARGENTINA&mes=0&anio=2026`
+- `GET /api/usuarios?action=vendedores`
+  - Lista vendedores activos/inactivos.
+
+- `GET /api/caja?action=balance&pais=ARGENTINA&mes=0&anio=2026`
   - Calcula balance de caja en formato compatible con GAS.
   - `mes=0` devuelve anual.
 
-- `GET /api/caja/historial?pais=ARGENTINA&mes=0&anio=2026`
+- `GET /api/caja?action=historial&pais=ARGENTINA&mes=0&anio=2026`
   - Devuelve historial de `cajaMovimiento` con campos compatibles con `js-caja.html`.
 
-- `POST /api/caja/movimiento`
+- `GET /api/caja?action=medios&pais=ARGENTINA&mes=0&anio=2026`
+  - Devuelve ingresos/egresos/saldo por medio de pago.
+
+- `GET /api/caja?action=datos-completo&pais=ARGENTINA&mes=0&anio=2026`
+  - Devuelve `balance + mediosPago + historial` en una llamada.
+
+- `POST /api/caja?action=movimiento`
   - Crea movimientos de caja (uno por cada item en `pagos[]`).
   - Si enviás `id` (o `filaIndex`), actualiza un movimiento existente.
+
+- `POST /api/caja?action=movimiento-estado`
+  - Cambia estado de un movimiento (`PAGADO` / `PENDIENTE`).
+
+- `POST /api/caja?action=movimiento-delete`
+  - Elimina un movimiento por id.
+
+- `GET /api/config?action=caja|cotizaciones|conceptos|descripciones|medios`
+  - Endpoints de configuración en un solo archivo.
 
 ## 4) Prueba rapida
 
 Con la URL de Vercel, por ejemplo `https://tu-app.vercel.app`:
 
 1. Abrir `https://tu-app.vercel.app/api/health`.
-2. Si responde `ok: true`, abrir `https://tu-app.vercel.app/api/usuarios/list`.
-3. Probar balance: `https://tu-app.vercel.app/api/caja/balance?pais=ARGENTINA&mes=0&anio=2026`.
-4. Probar historial: `https://tu-app.vercel.app/api/caja/historial?pais=ARGENTINA&mes=0&anio=2026`.
+2. Si responde `ok: true`, abrir `https://tu-app.vercel.app/api/usuarios?action=list`.
+3. Probar balance: `https://tu-app.vercel.app/api/caja?action=balance&pais=ARGENTINA&mes=0&anio=2026`.
+4. Probar historial: `https://tu-app.vercel.app/api/caja?action=historial&pais=ARGENTINA&mes=0&anio=2026`.
 
-Ejemplo de `POST /api/caja/movimiento`:
+Ejemplo de `POST /api/caja?action=movimiento`:
 
 ```json
 {
@@ -74,13 +92,7 @@ Si falla:
 - Revisar que la tabla `usuario` exista en Supabase.
 - Volver a desplegar en Vercel luego de cambiar variables.
 
-## 5) Siguiente paso recomendado
+## 5) Nota sobre limites de Vercel Hobby
 
-Implementar endpoints del modulo de caja:
-
-- `GET /api/caja/balance`
-- `GET /api/caja/historial`
-- `POST /api/caja/movimiento`
-
-asi empezamos a reemplazar `Caja.js` de GAS por API nueva.
+La API se unifico para mantener pocas Functions y evitar el error de limite del plan Hobby.
 

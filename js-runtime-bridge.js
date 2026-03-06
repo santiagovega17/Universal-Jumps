@@ -30,37 +30,38 @@
   function endpointCall(methodName, args) {
     const routes = {
       obtenerPerfilUsuario: () => requestJson('/api/auth/perfil'),
-      obtenerListaVendedores: () => requestJson('/api/usuarios/vendedores'),
-      obtenerCotizacionesBackend: () => requestJson('/api/config/cotizaciones'),
-      obtenerConfiguracion: () => requestJson('/api/config/caja'),
-      obtenerConceptosPorPais: (pais) => requestJson(`/api/config/conceptos?${buildQuery({ pais })}`),
+      obtenerListaVendedores: () => requestJson('/api/usuarios?action=vendedores'),
+      obtenerCotizacionesBackend: () => requestJson('/api/config?action=cotizaciones'),
+      obtenerConfiguracion: () => requestJson('/api/config?action=caja'),
+      obtenerConceptosPorPais: (pais) => requestJson(`/api/config?${buildQuery({ action: 'conceptos', pais })}`),
       obtenerDescripcionesPorPaisConcepto: (pais, concepto) =>
-        requestJson(`/api/config/descripciones?${buildQuery({ pais, concepto })}`),
-      obtenerMediosPorPais: (pais) => requestJson(`/api/config/medios?${buildQuery({ pais })}`),
+        requestJson(`/api/config?${buildQuery({ action: 'descripciones', pais, concepto })}`),
+      obtenerMediosPorPais: (pais) => requestJson(`/api/config?${buildQuery({ action: 'medios', pais })}`),
 
       obtenerBalanceCaja: (pais, mes, anio) =>
-        requestJson(`/api/caja/balance?${buildQuery({ pais, mes, anio })}`),
+        requestJson(`/api/caja?${buildQuery({ action: 'balance', pais, mes, anio })}`),
       obtenerBalanceCajaMediosPago: (pais, mes, anio) =>
-        requestJson(`/api/caja/medios?${buildQuery({ pais, mes, anio })}`),
+        requestJson(`/api/caja?${buildQuery({ action: 'medios', pais, mes, anio })}`),
       obtenerHistorialCaja: (pais, mes, anio) =>
-        requestJson(`/api/caja/historial?${buildQuery({ pais, mes, anio })}`),
+        requestJson(`/api/caja?${buildQuery({ action: 'historial', pais, mes, anio })}`),
       obtenerDatosCajaCompleto: (pais, mes, anio) =>
-        requestJson(`/api/caja/datos-completo?${buildQuery({ pais, mes, anio })}`),
-      obtenerMovimientoCaja: (id) => requestJson(`/api/caja/movimiento-item?${buildQuery({ id })}`),
+        requestJson(`/api/caja?${buildQuery({ action: 'datos-completo', pais, mes, anio })}`),
+      obtenerMovimientoCaja: (id) =>
+        requestJson(`/api/caja?${buildQuery({ action: 'movimiento-item', id })}`),
       actualizarEstadoMovimientoCaja: (id, nuevoEstado) =>
-        requestJson('/api/caja/movimiento-estado', {
+        requestJson('/api/caja?action=movimiento-estado', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, nuevoEstado }),
         }),
       borrarMovimientoCajaBackend: (id) =>
-        requestJson('/api/caja/movimiento-delete', {
+        requestJson('/api/caja?action=movimiento-delete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id }),
         }),
       procesarMovimientoCaja: (payload) =>
-        requestJson('/api/caja/movimiento', {
+        requestJson('/api/caja?action=movimiento', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload || {}),
