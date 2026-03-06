@@ -1,0 +1,1588 @@
+<script>
+    /**
+     * Balance de Caja – lógica de la vista CAJA.
+     * Renderizado, historial, medios de pago, modal crear/editar movimiento, configuración por país.
+     */
+    // --- FUNCIONES DE BALANCE DE CAJA ---
+ 
+    function renderBalanceCaja() {
+       let hoy = new Date();
+       let mesActual = hoy.getMonth() + 1;
+       let anioActual = hoy.getFullYear();
+ 
+       // Países con sus colores típicos (solo los 5 solicitados)
+       const paisesCaja = [
+          { key: 'ARGENTINA', nombre: '🇦🇷 ARGENTINA', colorHeader: '#75AADB', colorBorder: '#6C8EBF' },
+          { key: 'CHILE', nombre: '🇨🇱 CHILE', colorHeader: '#0039A6', colorBorder: '#002E83' },
+          { key: 'MEXICO', nombre: '🇲🇽 MEXICO', colorHeader: '#006847', colorBorder: '#005638' },
+          { key: 'ESPANA', nombre: '🇪🇸 ESPAÑA', colorHeader: '#AA151B', colorBorder: '#8B1116' },
+          { key: 'EEUU', nombre: '🇺🇸 EEUU', colorHeader: '#B22234', colorBorder: '#9B1C2C' }
+       ];
+ 
+       let html = `
+          <div class="back-nav" onclick="navegar(null, 'MENU_ADMIN')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
+          <div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">
+             <div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">
+          `;
+ 
+       // Selector de países con colores
+       paisesCaja.forEach(pais => {
+          let isActive = PAIS_CAJA_ACTUAL === pais.key ? 'active-view' : '';
+          let estiloActivo = isActive ? `background: ${pais.colorHeader} !important; border-color: ${pais.colorBorder} !important; color: white !important; font-weight: 800;` : '';
+          html += `<div class="view-option ${isActive}" onclick="switchPaisCaja('${pais.key}')" 
+                      style="${estiloActivo}"
+                      data-pais="${pais.key}">${pais.nombre}</div>`;
+       });
+ 
+       html += `</div></div>`;
+ 
+       // Contenedor para el contenido del balance
+       html += `<div id="pending-payments-container" style="max-width: 900px; margin: 0 auto 20px auto;"></div>`;
+       html += `<div id="balance-content"></div>`;
+ 
+       document.getElementById('app').innerHTML = html;
+ 
+       // Cargar balance, medios de pago e historial en paralelo (una sola llamada a historial)
+       cargarDatosCajaCompleto();
+    }
+ 
+    function switchPaisCaja(pais) {
+       if (typeof APP_STATE !== 'undefined') APP_STATE.set('paisCaja', pais); else PAIS_CAJA_ACTUAL = pais;
+ 
+       // Definir colores de países (solo los 5 solicitados)
+       const paisesCaja = [
+          { key: 'ARGENTINA', colorHeader: '#75AADB', colorBorder: '#6C8EBF' },
+          { key: 'CHILE', colorHeader: '#0039A6', colorBorder: '#002E83' },
+          { key: 'MEXICO', colorHeader: '#006847', colorBorder: '#005638' },
+          { key: 'ESPANA', colorHeader: '#AA151B', colorBorder: '#8B1116' },
+          { key: 'EEUU', colorHeader: '#B22234', colorBorder: '#9B1C2C' }
+       ];
+ 
+       // Actualizar visualmente las pestañas
+       document.querySelectorAll('[data-pais]').forEach(el => {
+          el.classList.remove('active-view');
+          if (el.getAttribute('data-pais') === pais) {
+             el.classList.add('active-view');
+             let paisData = paisesCaja.find(p => p.key === pais);
+             if (paisData) {
+                el.style.background = paisData.colorHeader;
+                el.style.borderColor = paisData.colorBorder;
+                el.style.color = 'white';
+             }
+          } else {
+             // Resetear estilos para pestañas no activas
+             el.style.background = '';
+             el.style.borderColor = '';
+             el.style.color = '';
+          }
+       });
+ 
+       // Recargar todos los datos del nuevo país en paralelo
+       cargarDatosCajaCompleto();
+    }
+ 
+    // Caché cliente: evita pedir al backend si los mismos filtros se cargaron hace menos de 30 s
+    var CAJA_CACHE = { key: '', data: null, ts: 0 };
+    var CAJA_CACHE_TTL_MS = 30000;
+
+    // Paginación historial caja: mostrar de a 25 y botón "Cargar más"
+    var TAMANO_PAGINA_HISTORIAL_CAJA = 25;
+    var HISTORIAL_CAJA_VISIBLE = 25;
+ 
+    /**
+     * Carga balance, medios de pago e historial. Intenta primero un solo endpoint (obtenerDatosCajaCompleto);
+     * si falla, usa las 3 llamadas en paralelo. Aplica caché de 30 s; forceRefresh=true la ignora.
+     */
+    function cargarDatosCajaCompleto(forceRefresh) {
+       let container = document.getElementById('balance-content');
+       if (!container) return;
+ 
+       let selMes = document.getElementById('selMesBalance');
+       let mes = selMes ? parseInt(selMes.value) : 0;
+       let anio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
+       let cacheKey = PAIS_CAJA_ACTUAL + '_' + mes + '_' + anio;
+ 
+       if (!forceRefresh && CAJA_CACHE.key === cacheKey && CAJA_CACHE.data && (Date.now() - CAJA_CACHE.ts) < CAJA_CACHE_TTL_MS) {
+          let d = CAJA_CACHE.data;
+          HISTORIAL_CAJA_COMPLETO = Array.isArray(d.historial) ? d.historial : [];
+          renderBalanceData(d.balance, d.mediosPago, d.historial);
+          if (typeof debugLog === 'function') debugLog('CAJA', 'Desde caché', { segundos: Math.round((Date.now() - CAJA_CACHE.ts) / 1000), key: cacheKey });
+          return;
+       }
+ 
+       container.innerHTML = `
+          <div class="skeleton-caja" style="margin-top:30px;">
+             <div style="display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin-bottom:40px;">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+             </div>
+             <div style="margin-bottom:16px;">
+                <div class="skeleton-line" style="width:280px; height:18px; margin-bottom:16px;"></div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+                   <div class="skeleton-card" style="height:140px;"></div>
+                   <div class="skeleton-card" style="height:140px;"></div>
+                   <div class="skeleton-card" style="height:140px;"></div>
+                </div>
+             </div>
+             <div style="margin-top:40px;">
+                <div class="skeleton-line" style="width:220px; height:18px; margin-bottom:16px;"></div>
+                <div class="skeleton-table">
+                   <div class="skeleton-row"></div>
+                   <div class="skeleton-row"></div>
+                   <div class="skeleton-row"></div>
+                   <div class="skeleton-row"></div>
+                   <div class="skeleton-row"></div>
+                </div>
+             </div>
+          </div>`;
+       let t0 = performance.now();
+ 
+       function aplicarDatos(balanceData, mediosData, historialData, fromCache) {
+          if (typeof HOJA_ACTUAL !== 'undefined' && HOJA_ACTUAL !== 'CAJA') return;
+          if (balanceData && !balanceData.error && (balanceData.data || balanceData)) {
+             let balance = balanceData.data || balanceData;
+             let medios = mediosData || {};
+             let historial = historialData && Array.isArray(historialData) ? historialData : [];
+             HISTORIAL_CAJA_COMPLETO = historial;
+             if (!fromCache) {
+                CAJA_CACHE.key = cacheKey;
+                CAJA_CACHE.data = { balance: balance, mediosPago: medios, historial: historial };
+                CAJA_CACHE.ts = Date.now();
+             }
+             renderBalanceData(balance, medios, historial);
+             let totalMs = Math.round(performance.now() - t0);
+             if (typeof debugLog === 'function') debugLog('CAJA', 'Carga completada', { ms: totalMs });
+          } else {
+             if (typeof getHtmlErrorRedConReintentar === 'function') {
+                window._reintentarCarga = function () { cargarDatosCajaCompleto(true); };
+                container.innerHTML = getHtmlErrorRedConReintentar((balanceData && balanceData.mensaje) || 'Error al cargar datos.');
+             } else {
+                container.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + ((balanceData && balanceData.mensaje) || 'Error al cargar datos') + '</div>';
+             }
+          }
+       }
+ 
+       // Intentar endpoint único primero (menos latencia, una sola ejecución GAS)
+       google.script.run
+          .withSuccessHandler(function (res) {
+             if (typeof HOJA_ACTUAL !== 'undefined' && HOJA_ACTUAL !== 'CAJA') return;
+             if (res && res.error) {
+                cargarDatosCajaCompletoTresLlamadas(t0, cacheKey, aplicarDatos, container);
+                return;
+             }
+             let d = res.data;
+             if (!d || !d.balance) {
+                cargarDatosCajaCompletoTresLlamadas(t0, cacheKey, aplicarDatos, container);
+                return;
+             }
+             aplicarDatos({ data: d.balance }, d.mediosPago || {}, d.historial || [], false);
+          })
+          .withFailureHandler(function () {
+             cargarDatosCajaCompletoTresLlamadas(t0, cacheKey, aplicarDatos, container);
+          })
+          .obtenerDatosCajaCompleto(PAIS_CAJA_ACTUAL, mes, anio);
+    }
+ 
+    /** Fallback: 3 llamadas en paralelo cuando el backend no tiene obtenerDatosCajaCompleto. */
+    function cargarDatosCajaCompletoTresLlamadas(t0, cacheKey, aplicarDatos, container) {
+       let balanceData = null, mediosData = null, historialData = null;
+       let doneBalance = false, doneMedios = false, doneHistorial = false;
+ 
+       function tryFinish() {
+          if (!doneBalance || !doneMedios || !doneHistorial) return;
+          if (balanceData && !balanceData.error && balanceData.data) {
+             aplicarDatos(balanceData, mediosData, historialData, false);
+             CAJA_CACHE.key = cacheKey;
+             CAJA_CACHE.data = { balance: balanceData.data, mediosPago: mediosData || {}, historial: historialData || [] };
+             CAJA_CACHE.ts = Date.now();
+          } else {
+             if (typeof getHtmlErrorRedConReintentar === 'function') {
+                window._reintentarCarga = function () { cargarDatosCajaCompleto(true); };
+                container.innerHTML = getHtmlErrorRedConReintentar((balanceData && balanceData.mensaje) || 'Error al cargar datos.');
+             } else {
+                container.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + ((balanceData && balanceData.mensaje) || 'Error al cargar datos') + '</div>';
+             }
+          }
+          if (typeof debugLog === 'function') debugLog('CAJA', 'Carga (3 llamadas)', { ms: Math.round(performance.now() - t0) });
+       }
+ 
+       var anioCaja = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
+       var mesCaja = document.getElementById('selMesBalance') ? parseInt(document.getElementById('selMesBalance').value) : 0;
+       google.script.run.withSuccessHandler(function (res) { doneBalance = true; balanceData = res; tryFinish(); }).withFailureHandler(function (err) { doneBalance = true; balanceData = { error: true, mensaje: err && (err.message || err.toString()) || 'Error' }; tryFinish(); }).obtenerBalanceCaja(PAIS_CAJA_ACTUAL, mesCaja, anioCaja);
+       google.script.run.withSuccessHandler(function (res) { doneMedios = true; mediosData = res && !res.error && res.data ? res.data : {}; tryFinish(); }).withFailureHandler(function () { doneMedios = true; mediosData = {}; tryFinish(); }).obtenerBalanceCajaMediosPago(PAIS_CAJA_ACTUAL, mesCaja, anioCaja);
+       google.script.run.withSuccessHandler(function (res) { doneHistorial = true; historialData = res && !res.error && res.data ? res.data : []; if (!Array.isArray(historialData)) historialData = []; tryFinish(); }).withFailureHandler(function () { doneHistorial = true; historialData = []; tryFinish(); }).obtenerHistorialCaja(PAIS_CAJA_ACTUAL, mesCaja, anioCaja);
+    }
+ 
+    function cargarDatosBalance() {
+       let container = document.getElementById('balance-content');
+       if (!container) return;
+ 
+       container.innerHTML = '<div style="padding:40px; text-align:center; color:#94a3b8;">Cargando datos...</div>';
+ 
+       let selMes = document.getElementById('selMesBalance');
+       let mes = selMes ? parseInt(selMes.value) : 0;
+       let anio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
+ 
+       // Llamar al backend
+       google.script.run.withSuccessHandler((res) => {
+          if (res.error) {
+             container.innerHTML = `<div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
+             return;
+          }
+ 
+          renderBalanceData(res.data);
+       }).withFailureHandler((err) => {
+          if (typeof getHtmlErrorRedConReintentar === 'function') {
+             window._reintentarCarga = function () { cargarDatosBalance(); };
+             container.innerHTML = getHtmlErrorRedConReintentar(err && err.message ? err.message : 'Error al cargar datos.');
+          } else {
+             container.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Error al cargar datos: ' + (err && err.message ? err.message : '') + '</div>';
+          }
+       }).obtenerBalanceCaja(PAIS_CAJA_ACTUAL, mes, anio);
+    }
+ 
+    function renderBalanceData(data, mediosData, historialData) {
+       let container = document.getElementById('balance-content');
+       if (!container) return;
+ 
+       let html = `
+          <!-- SECCIÓN 1: TOTALES PRINCIPALES -->
+          <div style="margin-top: 30px;">
+             <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 40px;">
+                <!-- INGRESOS -->
+                <div style="min-width: 0;">
+                   <div style="font-weight: 700; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                      <span class="material-symbols-outlined" style="font-size: 16px;">arrow_upward</span>
+                      INGRESOS
+                   </div>
+                   <div class="card" style="background: var(--sidebar); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 10px;">
+                      <div style="font-size: 22px; font-weight: 800; color: #10b981; text-align: center; overflow: hidden; text-overflow: ellipsis;">
+                         ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.ingresosOriginal !== undefined
+                            ? formatearMonedaPais(data.ingresosOriginal || 0, PAIS_CAJA_ACTUAL)
+                            : formatNumberAr(data.ingresos || 0)}
+                      </div>
+                      ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.ingresosOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.ingresos || 0)})</div>` : ''}
+                   </div>
+                </div>
+                
+                <!-- EGRESOS -->
+                <div style="min-width: 0;">
+                   <div style="font-weight: 700; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                      <span class="material-symbols-outlined" style="font-size: 16px;">arrow_downward</span>
+                      EGRESOS
+                   </div>
+                   <div class="card" style="background: var(--sidebar); border: 1px solid rgba(239, 68, 68, 0.2); padding: 12px; border-radius: 10px;">
+                      <div style="font-size: 22px; font-weight: 800; color: #ef4444; text-align: center; overflow: hidden; text-overflow: ellipsis;">
+                         ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.egresosOriginal !== undefined
+                            ? formatearMonedaPais(data.egresosOriginal || 0, PAIS_CAJA_ACTUAL)
+                            : formatNumberAr(data.egresos || 0)}
+                      </div>
+                      ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.egresosOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.egresos || 0)})</div>` : ''}
+                   </div>
+                </div>
+                
+                <!-- PENDIENTE -->
+                <div style="min-width: 0;">
+                   <div style="font-weight: 700; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                      <span class="material-symbols-outlined" style="font-size: 16px;">schedule</span>
+                      PENDIENTE
+                   </div>
+                   <div class="card" style="background: var(--sidebar); border: 1px solid rgba(245, 158, 11, 0.2); padding: 12px; border-radius: 10px;">
+                      <div style="font-size: 22px; font-weight: 800; color: #f59e0b; text-align: center; overflow: hidden; text-overflow: ellipsis;">
+                         ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.pendientesOriginal !== undefined
+                            ? formatearMonedaPais(data.pendientesOriginal || 0, PAIS_CAJA_ACTUAL)
+                            : formatNumberAr(data.pendientes || 0)}
+                      </div>
+                      ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.pendientesOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.pendientes || 0)})</div>` : ''}
+                   </div>
+                </div>
+                
+                <!-- SALDO -->
+                <div style="min-width: 0;">
+                   <div style="font-weight: 700; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                      <span class="material-symbols-outlined" style="font-size: 16px;">account_balance</span>
+                      SALDO
+                   </div>
+                   <div class="card" style="background: var(--sidebar); border: 1px solid rgba(59, 130, 246, 0.2); padding: 12px; border-radius: 10px;">
+                      <div style="font-size: 22px; font-weight: 800; color: #3b82f6; text-align: center; overflow: hidden; text-overflow: ellipsis;">
+                         ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.saldoOriginal !== undefined
+                            ? formatearMonedaPais(data.saldoOriginal || 0, PAIS_CAJA_ACTUAL)
+                            : formatNumberAr(data.saldo || 0)}
+                      </div>
+                      ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.saldoOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.saldo || 0)})</div>` : ''}
+                   </div>
+                </div>
+             </div>
+             
+             <!-- SECCIÓN 2: CONSOLIDADO POR MEDIOS DE PAGO -->
+             <div style="margin-top: 40px;">
+                <div style="font-weight: 700; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                   <span class="material-symbols-outlined" style="font-size: 18px;">payment</span>
+                   CONSOLIDADO POR MEDIOS DE PAGO
+                </div>
+                <div id="medios-pago-content" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                   <div style="padding: 20px; text-align: center; color: #94a3b8;">Cargando...</div>
+                </div>
+             </div>
+             
+             <!-- SECCIÓN 3: HISTORIAL DE MOVIMIENTOS -->
+             <div style="margin-top: 40px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                   <div style="display: flex; align-items: center; gap: 16px;">
+                      <div style="font-weight: 700; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+                         <span class="material-symbols-outlined" style="font-size: 18px;">history</span>
+                         HISTORIAL DE MOVIMIENTOS
+                      </div>
+                      <div class="type-toggle" style="width: auto; margin: 0;">
+                         <div class="view-option active-view" id="filtro-egresos" onclick="filtrarHistorialPorTipo('EGRESO')" style="background: #ef4444; color: white; font-weight: 700;">EGRESOS</div>
+                         <div class="view-option" id="filtro-ingresos" onclick="filtrarHistorialPorTipo('INGRESO')" style="background: transparent; color: #94a3b8;">INGRESOS</div>
+                      </div>
+                   </div>
+                   <button class="btn-submit" onclick="cargarDatosCajaCompleto(true)" style="padding: 8px 16px; font-size: 13px; width: auto; flex-shrink: 0; margin-right: 10px; background: var(--border-color); color: var(--accent);">
+                      <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">refresh</span>
+                      Actualizar
+                   </button>
+                   <button class="btn-submit" onclick="abrirModalCaja('crear')" style="padding: 8px 16px; font-size: 13px; width: auto; flex-shrink: 0;">
+                      <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">add</span>
+                      Agregar Movimiento
+                   </button>
+                </div>
+                <div id="historial-content" style="background: var(--sidebar); border: 1px solid var(--border-color); border-radius: 10px; overflow-x: auto;">
+                   <div style="padding: 20px; text-align: center; color: #94a3b8;">Cargando historial...</div>
+                </div>
+             </div>
+          </div>`;
+ 
+       container.innerHTML = html;
+ 
+       if (mediosData !== undefined && historialData !== undefined) {
+          // Datos ya cargados en paralelo: pintar sin nuevas llamadas
+          renderMediosPago(mediosData);
+          HISTORIAL_CAJA_COMPLETO = Array.isArray(historialData) ? historialData : [];
+          HISTORIAL_CAJA_VISIBLE = TAMANO_PAGINA_HISTORIAL_CAJA;
+          renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);
+          renderPendingWidgetFromHistorial(HISTORIAL_CAJA_COMPLETO);
+          if (document.getElementById('filtro-egresos')) filtrarHistorialPorTipo('EGRESO');
+       } else {
+          cargarMediosPago();
+          cargarHistorialMovimientos();
+          setTimeout(() => {
+             if (document.getElementById('filtro-egresos')) filtrarHistorialPorTipo('EGRESO');
+          }, 500);
+       }
+    }
+ 
+    /**
+     * Pinta el widget de pagos pendientes a partir del historial en memoria (sin llamada al backend).
+     */
+    function renderPendingWidgetFromHistorial(historialData) {
+       let container = document.getElementById('pending-payments-container');
+       if (!container || !historialData || !Array.isArray(historialData)) return;
+ 
+       let pendientes = historialData.filter(m => {
+          let estado = (m.estado || '').toString().toUpperCase().trim();
+          let tipo = (m.tipo || '').toString().toUpperCase().trim();
+          let vencimiento = (m.vencimiento || '').toString().trim();
+          return estado === 'PENDIENTE' && tipo === 'EGRESO' && vencimiento !== '';
+       });
+       pendientes.sort((a, b) => {
+          let fechaA = parseFecha(a.vencimiento);
+          let fechaB = parseFecha(b.vencimiento);
+          return fechaA - fechaB;
+       });
+ 
+       if (pendientes.length === 0) {
+          container.style.display = 'none';
+          container.innerHTML = '';
+          return;
+       }
+ 
+       let html = `
+          <div class="pending-payments-widget">
+             <div class="pending-header">
+                <span class="material-symbols-outlined">warning</span>
+                PAGOS PENDIENTES - ${PAIS_CAJA_ACTUAL} (${pendientes.length})
+             </div>
+             <div class="pending-list">`;
+       pendientes.forEach(p => {
+          let esVencido = esFechaVencida(p.vencimiento);
+          let vencInfo = 'Vence: ' + (p.vencimiento || '');
+          html += `
+             <div class="pending-item">
+                <div class="pending-info">
+                   <div class="pending-title">${p.concepto || ''} - ${p.descripcion || ''}</div>
+                   <div class="pending-meta">
+                      <span style="color:var(--accent); font-weight:700;">${formatNumberAr(p.monto || 0)}</span>
+                      <span>|</span>
+                      <span style="${esVencido ? 'color:#ef4444; font-weight:bold;' : ''}">${vencInfo}</span>
+                   </div>
+                </div>
+                <button class="btn-pay-now" onclick="cambiarEstadoMovimientoCaja(${p.filaIndex}, 'PAGADO')">
+                   MARCAR PAGADO
+                </button>
+             </div>`;
+       });
+       html += `</div></div>`;
+       container.innerHTML = html;
+       container.style.display = 'block';
+    }
+ 
+    function cargarHistorialMovimientos() {
+       let container = document.getElementById('historial-content');
+       if (!container) return;
+ 
+       container.innerHTML = '<div style="padding:30px; text-align:center;"><div class="spinner" style="width:28px; height:28px; border-width:3px;"></div><div style="color:#94a3b8; margin-top:10px; font-size:13px;">Cargando historial...</div></div>';
+ 
+       let selMes = document.getElementById('selMesBalance');
+       let mes = selMes ? parseInt(selMes.value) : 0;
+       let anio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
+ 
+       google.script.run.withSuccessHandler((res) => {
+          if (res.error) {
+             container.innerHTML = `<div style="padding:20px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
+             return;
+          }
+ 
+          HISTORIAL_CAJA_COMPLETO = res.data || [];
+          HISTORIAL_CAJA_VISIBLE = TAMANO_PAGINA_HISTORIAL_CAJA;
+          renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);
+          renderPendingWidgetFromHistorial(HISTORIAL_CAJA_COMPLETO);
+       }).withFailureHandler((err) => {
+          if (typeof getHtmlErrorRedConReintentar === 'function') {
+             window._reintentarCarga = function () { cargarHistorialMovimientos(); };
+             container.innerHTML = getHtmlErrorRedConReintentar(err && err.message ? err.message : 'Error al cargar el historial.');
+          } else {
+             container.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444;">Error: ' + (err && err.message ? err.message : '') + '</div>';
+          }
+       }).obtenerHistorialCaja(PAIS_CAJA_ACTUAL, mes, anio);
+    }
+ 
+    function renderHistorialMovimientos(data) {
+       let container = document.getElementById('historial-content');
+       if (!container) return;
+ 
+       // Filtrar por tipo según el filtro activo
+       let dataFiltrada = data.filter(mov => mov.tipo === FILTRO_TIPO_HISTORIAL);
+ 
+       if (!dataFiltrada || dataFiltrada.length === 0) {
+          container.innerHTML = `<div style="padding:30px; text-align:center; color:#94a3b8;">No hay ${FILTRO_TIPO_HISTORIAL.toLowerCase()} registrados</div>`;
+          return;
+       }
+ 
+       // Ordenar: fecha (más reciente primero), luego concepto alfabético, luego descripción alfabética
+       dataFiltrada.sort((a, b) => {
+          // Ordenar por fecha (más reciente primero)
+          let fechaA = parseFecha(a.fecha || '01/01/1900');
+          let fechaB = parseFecha(b.fecha || '01/01/1900');
+          if (fechaB.getTime() !== fechaA.getTime()) {
+             return fechaB.getTime() - fechaA.getTime();
+          }
+          
+          // Si la fecha es igual, ordenar por concepto alfabético
+          let conceptoA = (a.concepto || '').toLowerCase();
+          let conceptoB = (b.concepto || '').toLowerCase();
+          if (conceptoA !== conceptoB) {
+             return conceptoA.localeCompare(conceptoB);
+          }
+          
+          // Si concepto es igual, ordenar por descripción alfabética
+          let descA = (a.descripcion || '').toLowerCase();
+          let descB = (b.descripcion || '').toLowerCase();
+          return descA.localeCompare(descB);
+       });
+
+       var dataVisibles = dataFiltrada.slice(0, HISTORIAL_CAJA_VISIBLE);
+       var restantesCaja = Math.max(0, dataFiltrada.length - HISTORIAL_CAJA_VISIBLE);
+ 
+       let html = '<table style="width:100%; border-collapse: collapse;"><thead><tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color);">';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FECHA</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">TIPO</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">DESCRIPCIÓN</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FORMA DE PAGO</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">MONTO</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">OBSERVACION</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ESTADO</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">VENCIMIENTO</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">PAIS</th>';
+       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ACCIONES</th>';
+       html += '</tr></thead><tbody>';
+ 
+       dataVisibles.forEach(mov => {
+          let tipoColor = mov.tipo === 'INGRESO' ? '#10b981' : '#ef4444';
+          let estadoColor = mov.estado === 'PAGADO' ? '#10b981' : '#facc15';
+ 
+          let obs = mov.observaciones || '';
+          let obsHtml = obs;
+          if (obs.length > 20) {
+             obsHtml = `<div class="obs-container">
+                <span class="obs-text">${obs}</span>
+                <span class="view-more-btn">Ver más...</span>
+                <div class="obs-full">${obs}</div>
+             </div>`;
+          }
+ 
+          // Para EGRESOS, hacer campos editables solo si está en modo edición
+          let estaEnEdicion = FILAS_EN_EDICION[mov.filaIndex] === true;
+          let paisMov = mov.pais || PAIS_CAJA_ACTUAL;
+          let mediosPais = (GLOBAL_CONFIG[paisMov] && GLOBAL_CONFIG[paisMov].medios) || [];
+ 
+          let formaPagoHtml = '';
+          if (mov.tipo === 'EGRESO' && estaEnEdicion) {
+             // Si hay cambios pendientes para formaPago, usar ese valor
+             let valorFormaPago = mov.formaPago || '';
+             if (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].formaPago !== undefined) {
+                valorFormaPago = CAMBIOS_PENDIENTES[mov.filaIndex].formaPago;
+             }
+             // Select con medios de pago del país
+             let opcionesMedios = '';
+             if (mediosPais.length > 0) {
+                opcionesMedios = mediosPais.map(medio => 
+                   `<option value="${medio}" ${medio === valorFormaPago ? 'selected' : ''}>${medio}</option>`
+                ).join('');
+             } else {
+                opcionesMedios = `<option value="${valorFormaPago || ''}">${valorFormaPago || 'Sin opciones'}</option>`;
+             }
+             formaPagoHtml = `<select class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" 
+                       onchange="editarCampoMovimiento(${mov.filaIndex}, 'formaPago', this.value)"
+                       data-fila="${mov.filaIndex}">
+                       ${opcionesMedios}
+                    </select>`;
+          } else if (mov.tipo === 'EGRESO') {
+             formaPagoHtml = `<span style="color:white; font-size:13px;">${mov.formaPago || ''}</span>`;
+          } else {
+             formaPagoHtml = mov.formaPago || '';
+          }
+ 
+          let montoHtml = '';
+          if (mov.tipo === 'EGRESO' && estaEnEdicion) {
+             // Si hay cambios pendientes para monto, usar ese valor
+             let valorMonto = mov.monto || 0;
+             if (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].monto !== undefined) {
+                valorMonto = CAMBIOS_PENDIENTES[mov.filaIndex].monto;
+             }
+             montoHtml = `<input type="text" class="form-input" style="width: 100px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block; text-align: center;" 
+                       value="${formatNumberAr(valorMonto).replace('ARS', '').trim()}" 
+                       onblur="editarCampoMovimiento(${mov.filaIndex}, 'monto', this.value)"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}"
+                       data-fila="${mov.filaIndex}"
+                       autocomplete="off">`;
+          } else if (mov.tipo === 'EGRESO') {
+             montoHtml = `<span style="color:${tipoColor}; font-weight:600; font-size:13px;">${formatNumberAr(mov.monto || 0)}</span>`;
+          } else {
+             montoHtml = `<span style="color:${tipoColor}; font-weight:600; font-size:13px;">${formatNumberAr(mov.monto || 0)}</span>`;
+          }
+ 
+          let obsHtmlEdit = '';
+          if (mov.tipo === 'EGRESO' && estaEnEdicion) {
+             // Si hay cambios pendientes para observaciones, usar ese valor
+             let valorObs = obs;
+             if (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].observaciones !== undefined) {
+                valorObs = CAMBIOS_PENDIENTES[mov.filaIndex].observaciones;
+             }
+             obsHtmlEdit = `<input type="text" class="form-input" style="width: 150px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" 
+                       value="${valorObs.replace(/"/g, '&quot;')}" 
+                       onblur="editarCampoMovimiento(${mov.filaIndex}, 'observaciones', this.value)"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}"
+                       data-fila="${mov.filaIndex}"
+                       autocomplete="off">`;
+          } else if (mov.tipo === 'EGRESO') {
+             obsHtmlEdit = obsHtml;
+          } else {
+             obsHtmlEdit = obsHtml;
+          }
+ 
+          let vencHtml = '';
+          if (mov.tipo === 'EGRESO' && estaEnEdicion) {
+             // Si hay cambios pendientes para vencimiento, usar ese valor (ya está en formato YYYY-MM-DD)
+             // Si no, convertir el valor actual de DD/MM/YYYY a YYYY-MM-DD
+             let valorVencimiento = '';
+             if (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento !== undefined) {
+                valorVencimiento = CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento;
+             } else if (mov.vencimiento) {
+                valorVencimiento = convertirFechaDDMMYYYYaYYYYMMDD(mov.vencimiento);
+             }
+             vencHtml = `<input type="date" class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" 
+                       value="${valorVencimiento}" 
+                       onblur="editarCampoMovimiento(${mov.filaIndex}, 'vencimiento', this.value)"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}"
+                       data-fila="${mov.filaIndex}"
+                       autocomplete="off"
+                       id="vencimiento-input-${mov.filaIndex}">`;
+          } else if (mov.tipo === 'EGRESO') {
+             vencHtml = `<span style="color:#94a3b8; font-size:13px;">${mov.vencimiento || ''}</span>`;
+          } else {
+             vencHtml = mov.vencimiento || '';
+          }
+ 
+          html += `<tr style="border-bottom: 1px solid var(--border-color);">`;
+          html += `<td style="padding:12px; color:white; font-size:13px; text-align:center;">${mov.fecha || ''}</td>`;
+          html += `<td style="padding:12px; text-align:center;"><span style="color:${tipoColor}; font-weight:600; font-size:13px;">${mov.tipo || ''}</span></td>`;
+          html += `<td style="padding:12px; color:white; font-size:13px; text-align:center;">${mov.concepto || ''}</td>`;
+          html += `<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">${mov.descripcion || ''}</td>`;
+          html += `<td style="padding:12px; color:white; font-size:13px; text-align:center;">${formaPagoHtml}</td>`;
+          html += `<td style="padding:12px; text-align:center;">${montoHtml}</td>`;
+          html += `<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">${obsHtmlEdit}</td>`;
+          html += `<td style="padding:12px; text-align:center;"><span style="color:${estadoColor}; font-weight:600; font-size:13px;">${mov.estado || ''}</span></td>`;
+          html += `<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">${vencHtml}</td>`;
+          html += `<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">${mov.pais || ''}</td>`;
+          html += `<td style="padding:12px; text-align:center;">
+                ${mov.tipo === 'EGRESO' ? `
+                <button class="action-btn btn-edit" onclick="toggleEdicionMovimiento(${mov.filaIndex || 0})" title="${estaEnEdicion ? 'Desactivar edición' : 'Editar'}" style="margin-right: 8px;">
+                   <span class="material-symbols-outlined">${estaEnEdicion ? 'close' : 'edit'}</span>
+                </button>
+                ` : ''}
+                ${mov.estado === 'PENDIENTE' ? `
+                <button class="action-btn" style="background: #10b981; color: white; margin-right: 8px;" onclick="cambiarEstadoMovimientoCaja(${mov.filaIndex || 0}, 'PAGADO')" title="Marcar como Pagado">
+                   <span class="material-symbols-outlined">check_circle</span>
+                </button>
+                ` : ''}
+                <button class="action-btn btn-del" onclick="borrarMovimientoCaja(${mov.filaIndex || 0})" title="Eliminar">
+                   <span class="material-symbols-outlined">delete</span>
+                </button>
+             </td>`;
+          html += `</tr>`;
+       });
+ 
+       html += '</tbody></table>';
+       if (restantesCaja > 0) {
+          html += '<div class="cargar-mas-wrap"><button type="button" class="btn-submit btn-cargar-mas" onclick="HISTORIAL_CAJA_VISIBLE += TAMANO_PAGINA_HISTORIAL_CAJA; renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);">Cargar más (' + restantesCaja + ' restantes)</button></div>';
+       }
+       container.innerHTML = html;
+ 
+       // Prevenir submits accidentales en la tabla - solo para inputs de edición
+       let tabla = container.querySelector('table');
+       if (tabla) {
+          // Prevenir submit en toda la tabla
+          tabla.addEventListener('submit', function(e) {
+             e.preventDefault();
+             e.stopPropagation();
+             return false;
+          }, true);
+          
+          // Prevenir Enter en inputs de edición (que tienen data-fila)
+          tabla.addEventListener('keydown', function(e) {
+             if (e.key === 'Enter' && e.target.hasAttribute('data-fila')) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.target.tagName === 'INPUT' && e.target.type !== 'date') {
+                   e.target.blur();
+                }
+                return false;
+             }
+          }, true);
+          
+          // Prevenir que el input de fecha pierda el foco mientras se escribe
+          tabla.addEventListener('focusout', function(e) {
+             // Si es un input de fecha y está en modo edición, no hacer nada especial
+             // Solo dejar que el onblur maneje el guardado
+          }, true);
+          
+          // Prevenir eventos que puedan causar que el input de fecha pierda el foco
+          tabla.addEventListener('click', function(e) {
+             // Si se hace clic en un input de fecha, no hacer nada que interfiera
+             if (e.target.type === 'date' && e.target.hasAttribute('data-fila')) {
+                e.stopPropagation();
+             }
+          }, true);
+       }
+    }
+ 
+    function filtrarHistorialPorTipo(tipo) {
+       FILTRO_TIPO_HISTORIAL = tipo;
+       HISTORIAL_CAJA_VISIBLE = TAMANO_PAGINA_HISTORIAL_CAJA;
+       
+       // Actualizar estilos de los botones
+       document.getElementById('filtro-egresos').classList.remove('active-view');
+       document.getElementById('filtro-ingresos').classList.remove('active-view');
+       
+       if (tipo === 'EGRESO') {
+          document.getElementById('filtro-egresos').classList.add('active-view');
+          document.getElementById('filtro-egresos').style.background = '#ef4444';
+          document.getElementById('filtro-egresos').style.color = 'white';
+          document.getElementById('filtro-ingresos').style.background = 'transparent';
+          document.getElementById('filtro-ingresos').style.color = '#94a3b8';
+       } else {
+          document.getElementById('filtro-ingresos').classList.add('active-view');
+          document.getElementById('filtro-ingresos').style.background = '#10b981';
+          document.getElementById('filtro-ingresos').style.color = 'white';
+          document.getElementById('filtro-egresos').style.background = 'transparent';
+          document.getElementById('filtro-egresos').style.color = '#94a3b8';
+       }
+       
+       // Re-renderizar con el filtro
+       renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);
+    }
+ 
+    function convertirFechaDDMMYYYYaYYYYMMDD(fechaStr) {
+       if (!fechaStr) return '';
+       let partes = fechaStr.split('/');
+       if (partes.length === 3) {
+          return `${partes[2]}-${partes[1]}-${partes[0]}`;
+       }
+       return '';
+    }
+ 
+    function convertirFechaYYYYMMDDaDDMMYYYY(fechaStr) {
+       if (!fechaStr) return '';
+       let partes = fechaStr.split('-');
+       if (partes.length === 3) {
+          return `${partes[2]}/${partes[1]}/${partes[0]}`;
+       }
+       return fechaStr;
+    }
+ 
+    function toggleEdicionMovimiento(filaIndex) {
+       // Verificar si estaba en modo edición (se está desactivando)
+       let estabaEnEdicion = FILAS_EN_EDICION[filaIndex] === true;
+       
+       // Alternar estado de edición
+       FILAS_EN_EDICION[filaIndex] = !FILAS_EN_EDICION[filaIndex];
+       
+       // Si se está desactivando el modo edición, guardar cambios pendientes
+       if (estabaEnEdicion && CAMBIOS_PENDIENTES[filaIndex]) {
+          // Hay cambios pendientes, guardarlos
+          guardarCambiosPendientes(filaIndex);
+       } else if (!estabaEnEdicion) {
+          // Se está activando el modo edición, limpiar cambios pendientes
+          CAMBIOS_PENDIENTES[filaIndex] = {};
+          renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);
+       } else {
+          // Se está desactivando pero no hay cambios, solo desactivar modo edición
+          FILAS_EN_EDICION[filaIndex] = false;
+          renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);
+       }
+    }
+ 
+    function guardarCambiosPendientes(filaIndex) {
+       let cambios = CAMBIOS_PENDIENTES[filaIndex];
+       if (!cambios || Object.keys(cambios).length === 0) {
+          // No hay cambios, solo desactivar modo edición y recargar datos
+          FILAS_EN_EDICION[filaIndex] = false;
+          cargarDatosCajaCompleto();
+          return;
+       }
+ 
+       // Obtener el movimiento completo primero
+       google.script.run.withSuccessHandler(mov => {
+          if (mov.error) {
+             mostrarAlerta('Error al obtener movimiento: ' + mov.mensaje);
+             // Desactivar modo edición y recargar datos
+             FILAS_EN_EDICION[filaIndex] = false;
+             cargarHistorialMovimientos();
+             return;
+          }
+ 
+          // Aplicar todos los cambios pendientes
+          // El vencimiento ya está en formato YYYY-MM-DD en CAMBIOS_PENDIENTES
+          let vencimientoFinal = cambios.vencimiento !== undefined ? cambios.vencimiento : (mov.data.vencimiento || '');
+ 
+          let datosActualizados = {
+             fecha: mov.data.fecha,
+             tipo: mov.data.tipo,
+             concepto: mov.data.concepto,
+             descripcion: mov.data.descripcion,
+             formaPago: cambios.formaPago !== undefined ? cambios.formaPago : mov.data.formaPago,
+             monto: cambios.monto !== undefined ? cambios.monto : mov.data.monto,
+             observaciones: cambios.observaciones !== undefined ? cambios.observaciones : mov.data.observaciones,
+             estado: mov.data.estado,
+             vencimiento: vencimientoFinal,
+             pais: mov.data.pais,
+             filaIndex: filaIndex,
+             actualizarCotizacion: cambios.monto !== undefined,
+             pagos: [{
+                forma: cambios.formaPago !== undefined ? cambios.formaPago : mov.data.formaPago,
+                monto: cambios.monto !== undefined ? cambios.monto : mov.data.monto
+             }]
+          };
+ 
+          // Guardar en el backend
+          google.script.run.withSuccessHandler(res => {
+             if (res.error) {
+                mostrarAlerta('Error al guardar cambios: ' + res.mensaje);
+                // Limpiar cambios pendientes aunque haya error
+                delete CAMBIOS_PENDIENTES[filaIndex];
+                setTimeout(() => cargarDatosCajaCompleto(), 1000);
+             } else {
+                delete CAMBIOS_PENDIENTES[filaIndex];
+                FILAS_EN_EDICION[filaIndex] = false;
+                cargarDatosCajaCompleto();
+             }
+          }).withFailureHandler(err => {
+             mostrarAlerta('Error de conexión al guardar: ' + err.message);
+             delete CAMBIOS_PENDIENTES[filaIndex];
+             setTimeout(() => cargarDatosCajaCompleto(), 1000);
+          }).procesarMovimientoCaja(datosActualizados);
+       }).obtenerMovimientoCaja(filaIndex);
+    }
+ 
+    function editarCampoMovimiento(filaIndex, campo, nuevoValor) {
+       // Validar que nuevoValor no sea undefined o null
+       if (nuevoValor === undefined || nuevoValor === null) {
+          nuevoValor = '';
+       }
+ 
+       // Inicializar cambios pendientes para esta fila si no existe
+       if (!CAMBIOS_PENDIENTES[filaIndex]) {
+          CAMBIOS_PENDIENTES[filaIndex] = {};
+       }
+ 
+       // Procesar el valor según el campo
+       let valorProcesado = nuevoValor;
+       let valorParaMostrar = nuevoValor;
+       
+       if (campo === 'monto') {
+          valorProcesado = parseFloat(nuevoValor.toString().replace(/[$.]/g, '').replace(',', '.').trim()) || 0;
+          valorParaMostrar = valorProcesado;
+       } else if (campo === 'vencimiento') {
+          // Guardar en formato YYYY-MM-DD (formato del input date) para el backend
+          valorProcesado = nuevoValor;
+          // Convertir a DD/MM/YYYY solo para mostrar en la UI
+          valorParaMostrar = convertirFechaYYYYMMDDaDDMMYYYY(nuevoValor);
+       }
+ 
+       // Guardar el cambio pendiente en formato para backend (NO guardar en backend todavía)
+       CAMBIOS_PENDIENTES[filaIndex][campo] = valorProcesado;
+ 
+       // Actualizar localmente para mostrar el cambio en la UI
+       let movIndex = HISTORIAL_CAJA_COMPLETO.findIndex(m => m.filaIndex === filaIndex);
+       if (movIndex !== -1) {
+          if (campo === 'vencimiento') {
+             HISTORIAL_CAJA_COMPLETO[movIndex].vencimiento = valorParaMostrar;
+          } else if (campo === 'monto') {
+             HISTORIAL_CAJA_COMPLETO[movIndex].monto = valorParaMostrar;
+          } else if (campo === 'formaPago') {
+             HISTORIAL_CAJA_COMPLETO[movIndex].formaPago = valorProcesado;
+          } else if (campo === 'observaciones') {
+             HISTORIAL_CAJA_COMPLETO[movIndex].observaciones = valorProcesado;
+          }
+          // NO re-renderizar si es el campo de vencimiento para evitar que pierda el foco
+          // Solo re-renderizar para otros campos
+          if (campo !== 'vencimiento') {
+             renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);
+          }
+       }
+    }
+ 
+    function cargarMediosPago() {
+       let container = document.getElementById('medios-pago-content');
+       if (!container) return;
+ 
+       container.innerHTML = '<div style="padding:20px; text-align:center;"><div class="spinner" style="width:24px; height:24px; border-width:3px;"></div><div style="color:#94a3b8; margin-top:8px; font-size:12px;">Cargando medios de pago...</div></div>';
+ 
+       let selMes = document.getElementById('selMesBalance');
+       let mes = selMes ? parseInt(selMes.value) : 0;
+       let anio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
+ 
+       google.script.run.withSuccessHandler((res) => {
+          if (res.error) {
+             container.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444;">Error: ' + (res.mensaje || '') + '</div>';
+             return;
+          }
+          renderMediosPago(res.data);
+       }).withFailureHandler((err) => {
+          if (typeof getHtmlErrorRedConReintentar === 'function') {
+             window._reintentarCarga = function () { cargarDatosCajaCompleto(true); };
+             container.innerHTML = getHtmlErrorRedConReintentar(err && err.message ? err.message : 'Error al cargar medios de pago.');
+          } else {
+             container.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444;">Error: ' + (err && err.message ? err.message : '') + '</div>';
+          }
+       }).obtenerBalanceCajaMediosPago(PAIS_CAJA_ACTUAL, mes, anio);
+    }
+ 
+    function renderMediosPago(data) {
+       let container = document.getElementById('medios-pago-content');
+       if (!container) return;
+ 
+       if (!data || Object.keys(data).length === 0) {
+          container.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8;">No hay datos de medios de pago</div>';
+          return;
+       }
+ 
+       let html = '';
+ 
+       // Ordenar medios de pago por saldo descendente
+       let mediosOrdenados = Object.keys(data).sort((a, b) => {
+          let saldoA = data[a].saldo || 0;
+          let saldoB = data[b].saldo || 0;
+          return saldoB - saldoA;
+       });
+ 
+       mediosOrdenados.forEach(medio => {
+          let info = data[medio];
+          let saldoColor = info.saldo >= 0 ? '#10b981' : '#ef4444';
+ 
+          html += `
+             <div class="card" style="border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; background: var(--sidebar);">
+                <div style="font-weight: 700; color: white; font-size: 14px; margin-bottom: 18px; text-align: center; padding-bottom: 12px; border-bottom: 2px solid var(--border-color); text-transform: uppercase; letter-spacing: 0.5px;">
+                   ${medio}
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                   <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                      <span style="color: #94a3b8; font-size: 13px; font-weight: 500;">Ingresos:</span>
+                      <span style="color: #10b981; font-weight: 700; font-size: 14px;">${formatNumberAr(info.ingresos || 0)}</span>
+                   </div>
+                   <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                      <span style="color: #94a3b8; font-size: 13px; font-weight: 500;">Egresos:</span>
+                      <span style="color: #ef4444; font-weight: 700; font-size: 14px;">${formatNumberAr(info.egresos || 0)}</span>
+                   </div>
+                   <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                      <span style="color: #94a3b8; font-size: 13px; font-weight: 500;">Saldo:</span>
+                      <span style="color: ${saldoColor}; font-weight: 800; font-size: 16px;">${formatNumberAr(info.saldo || 0)}</span>
+                   </div>
+                </div>
+             </div>`;
+       });
+ 
+       container.innerHTML = html;
+    }
+ 
+    function abrirModalCaja(modo, filaIndex) {
+       let form = document.getElementById('formCaja');
+       if (!form) return;
+ 
+       if (modo === 'editar' && filaIndex) {
+          // Modo edición: cargar datos del movimiento
+          google.script.run.withSuccessHandler((res) => {
+             if (res.error) {
+                mostrarAlerta('Error al cargar movimiento: ' + res.mensaje);
+                return;
+             }
+ 
+             let mov = res.data;
+             
+             // Establecer filaIndex
+             document.getElementById('cajaFilaIndex').value = filaIndex;
+             
+             // Establecer fecha
+             if (mov.fecha) {
+                let partesFecha = mov.fecha.split('/');
+                if (partesFecha.length === 3) {
+                   document.getElementById('fechaCaja').value = `${partesFecha[2]}-${partesFecha[1]}-${partesFecha[0]}`;
+                }
+             }
+             
+             // Establecer tipo
+             document.getElementById('tipoCaja').value = mov.tipo || 'EGRESO';
+             
+             // Función auxiliar para establecer el resto de los campos
+             let establecerRestoCamposModal = (mov) => {
+                // Establecer estado y manejar vencimiento
+                document.getElementById('estadoCaja').value = mov.estado || 'PAGADO';
+                
+                // Si es EGRESO y está PENDIENTE, mostrar campo de vencimiento
+                if (mov.tipo === 'EGRESO' && mov.estado === 'PENDIENTE') {
+                   document.getElementById('group-vencimiento').style.display = 'block';
+                   document.getElementById('fechaVencimiento').required = true;
+                   if (mov.vencimiento) {
+                      let partesVenc = mov.vencimiento.split('/');
+                      if (partesVenc.length === 3) {
+                         document.getElementById('fechaVencimiento').value = `${partesVenc[2]}-${partesVenc[1]}-${partesVenc[0]}`;
+                      }
+                   }
+                } else {
+                   document.getElementById('group-vencimiento').style.display = 'none';
+                   document.getElementById('fechaVencimiento').required = false;
+                }
+                
+                // Llamar a toggleVencimiento para actualizar la UI
+                if (typeof toggleVencimiento === 'function') {
+                   toggleVencimiento();
+                }
+                
+                // Establecer observaciones
+                document.getElementById('obsCaja').value = mov.observaciones || '';
+                
+                // Establecer pagos (forma de pago y monto)
+                document.getElementById('pagos-container').innerHTML = '';
+                if (mov.formaPago && mov.monto) {
+                   agregarFilaPago();
+                   setTimeout(() => {
+                      let selectPago = document.querySelector('#pagos-container select');
+                      let inputMonto = document.querySelector('#pagos-container input[type="text"]');
+                      if (selectPago) selectPago.value = mov.formaPago;
+                      if (inputMonto) inputMonto.value = formatNumberAr(mov.monto).replace('ARS', '').trim();
+                   }, 100);
+                } else {
+                   agregarFilaPago();
+                }
+                
+                // Actualizar título y botón
+                document.getElementById('modalTitleCaja').innerText = "EDITAR MOVIMIENTO DE CAJA";
+                document.getElementById('btnGuardarCaja').innerText = "ACTUALIZAR";
+                
+                // Abrir modal
+                document.getElementById('modalCaja').classList.add('open');
+             };
+             
+             // Establecer país primero (necesario para cargar conceptos)
+             let selPais = document.getElementById('paisCajaSelect');
+             if (selPais && mov.pais) {
+                selPais.value = mov.pais;
+                
+                // Esperar a que se carguen los conceptos antes de continuar usando callback
+                poblarSelectsCaja(() => {
+                   // Una vez que los conceptos están cargados, establecer el concepto
+                   let selConcepto = document.getElementById('conceptoCajaSelect');
+                   if (selConcepto && mov.concepto) {
+                      selConcepto.value = mov.concepto;
+                      
+                      // Cargar descripciones del concepto
+                      let selDesc = document.getElementById('descCajaSelect');
+                      if (selDesc) {
+                         google.script.run.withSuccessHandler((resDesc) => {
+                            if (!resDesc.error && resDesc.data) {
+                               selDesc.innerHTML = '<option value="">Selecciona...</option>';
+                               resDesc.data.forEach(desc => {
+                                  selDesc.innerHTML += `<option value="${desc}">${desc}</option>`;
+                               });
+                               selDesc.disabled = false;
+                               if (mov.descripcion) {
+                                  selDesc.value = mov.descripcion;
+                               }
+                            }
+                            
+                            // Una vez que todo está cargado, establecer el resto de los campos
+                            establecerRestoCamposModal(mov);
+                         }).obtenerDescripcionesPorPaisConcepto(mov.pais, mov.concepto);
+                      } else {
+                         establecerRestoCamposModal(mov);
+                      }
+                   } else {
+                      establecerRestoCamposModal(mov);
+                   }
+                });
+             } else {
+                establecerRestoCamposModal(mov);
+             }
+          }).obtenerMovimientoCaja(filaIndex);
+       } else {
+          // Modo creación: resetear formulario
+          form.reset();
+          document.getElementById('cajaFilaIndex').value = '';
+          document.getElementById('fechaCaja').valueAsDate = new Date();
+          document.getElementById('obsCaja').value = '';
+ 
+          // Resetear selector de país y conceptos
+          let selPaisCajaReset = document.getElementById('paisCajaSelect');
+          if (selPaisCajaReset) selPaisCajaReset.value = '';
+          document.getElementById('conceptoCajaSelect').innerHTML = '<option value="">Selecciona un país primero...</option>';
+          document.getElementById('descCajaSelect').innerHTML = '<option value="">Selecciona Concepto</option>';
+          document.getElementById('descCajaSelect').disabled = true;
+ 
+          document.getElementById('modalTitleCaja').innerText = "MOVIMIENTO DE CAJA";
+          document.getElementById('btnGuardarCaja').innerText = "REGISTRAR MOVIMIENTO";
+ 
+          // REINICIAR ESTADO
+          document.getElementById('estadoCaja').value = 'PAGADO';
+          document.getElementById('group-vencimiento').style.display = 'none';
+          document.getElementById('fechaVencimiento').required = false;
+          document.getElementById('fechaVencimiento').value = '';
+ 
+          document.getElementById('pagos-container').innerHTML = '';
+          agregarFilaPago();
+ 
+          // Poblar conceptos y medios de pago del país actual
+          poblarSelectsCaja();
+ 
+          document.getElementById('modalCaja').classList.add('open');
+       }
+    }
+
+ 
+    function borrarMovimientoCaja(filaIndex) {
+       abrirConfirmacion("¿Eliminar este movimiento permanentemente?", () => {
+          google.script.run.withSuccessHandler((res) => {
+             if (res.error) {
+                mostrarAlerta('Error: ' + res.mensaje);
+             } else {
+                if (typeof mostrarToast === 'function') mostrarToast('Movimiento eliminado correctamente');
+                cargarDatosCajaCompleto();
+             }
+          }).borrarMovimientoCajaBackend(filaIndex);
+       });
+    }
+ 
+    function cambiarEstadoMovimientoCaja(filaIndex, nuevoEstado) {
+       google.script.run.withSuccessHandler((res) => {
+          if (res.error) {
+             mostrarAlerta('Error: ' + res.mensaje);
+          } else {
+             mostrarAlerta('Estado actualizado correctamente');
+             cargarDatosCajaCompleto();
+          }
+       }).actualizarEstadoMovimientoCaja(filaIndex, nuevoEstado);
+    }
+
+    function delConfig(tipo, val) {
+       // NUEVA VALIDACIÓN: Si es concepto y tiene descripciones, BLOQUEAR.
+       if (tipo === 'CONCEPTO') {
+          if (GLOBAL_CONFIG.descripciones[val] && GLOBAL_CONFIG.descripciones[val].length > 0) {
+             mostrarAlerta(`No puedes eliminar el concepto "${val}" porque tiene descripciones asociadas. Primero elimina todas sus descripciones.`);
+             return;
+          }
+       }
+ 
+       abrirConfirmacion("¿Eliminar " + val + "?", () => {
+          let padreActual = document.getElementById('sel-config-padre') ? document.getElementById('sel-config-padre').value : '';
+ 
+          google.script.run.withSuccessHandler(() => {
+             if (tipo === 'MEDIO_PAGO') GLOBAL_CONFIG.medios = GLOBAL_CONFIG.medios.filter(x => x !== val);
+             if (tipo === 'CONCEPTO') GLOBAL_CONFIG.conceptos = GLOBAL_CONFIG.conceptos.filter(x => x !== val);
+             if (tipo === 'DESCRIPCION') { for (let k in GLOBAL_CONFIG.descripciones) { GLOBAL_CONFIG.descripciones[k] = GLOBAL_CONFIG.descripciones[k].filter(x => x !== val); } }
+             poblarSelectsCaja();
+             if (tipo === 'DESCRIPCION') renderDescripcionesConfig(padreActual, PAIS_CAJA_ACTUAL);
+             else renderConfigModalContent(padreActual, null);
+          }).borrarItemConfig(tipo, val);
+       });
+    }
+ 
+    // Función auxiliar para usar medios del país actual
+    function agregarFilaPago(valorDefecto = '', montoDefecto = '', mediosArray = null) {
+       let container = document.getElementById('pagos-container');
+       let medios = mediosArray || [];
+ 
+       // Si no se proporciona array de medios, obtener del país seleccionado
+       if (!mediosArray || mediosArray.length === 0) {
+          let selPais = document.getElementById('paisCajaSelect');
+          if (selPais && selPais.value) {
+             // Si hay país seleccionado, obtener medios
+             google.script.run.withSuccessHandler((res) => {
+                if (!res.error && res.data) {
+                   medios = res.data;
+                   crearFilaPagoHTML(container, valorDefecto, montoDefecto, medios);
+                } else {
+                   crearFilaPagoHTML(container, valorDefecto, montoDefecto, []);
+                }
+             }).obtenerMediosPorPais(selPais.value);
+             return;
+          }
+       }
+ 
+       crearFilaPagoHTML(container, valorDefecto, montoDefecto, medios);
+    }
+ 
+    function crearFilaPagoHTML(container, valorDefecto, montoDefecto, medios) {
+       let div = document.createElement('div');
+       div.className = 'pago-row';
+       div.innerHTML = `
+           <select class="form-input" required>
+              ${medios.length > 0 ? medios.map(m => `<option value="${m}" ${m === valorDefecto ? 'selected' : ''}>${m}</option>`).join('') : '<option value="">No hay medios de pago</option>'}
+           </select>
+           <input type="text" class="form-input" value="${montoDefecto}" onkeyup="formatoMoneda(this)" placeholder="$ 0,00" required>
+           <button type="button" class="btn-remove-pago" onclick="this.parentElement.remove()"><span class="material-symbols-outlined">close</span></button>
+         `;
+       container.appendChild(div);
+    }
+ 
+ 
+
+    // --- CONFIGURACIÓN MODAL ---
+    function abrirModalConfig() {
+       // Pasar el país actual como parámetro para que se seleccione automáticamente
+       let paisInicial = PAIS_CAJA_ACTUAL;
+       renderConfigModalContent('', paisInicial);
+       document.getElementById('modalConfig').classList.add('open');
+    }
+
+    function poblarSelectsCaja(callback) {
+       let selConcepto = document.getElementById('conceptoCajaSelect');
+       let selPais = document.getElementById('paisCajaSelect');
+       if (!selConcepto || !selPais) {
+          if (callback) callback();
+          return;
+       }
+ 
+       let paisSeleccionado = selPais.value;
+ 
+       // Limpiar el select de concepto y descripción
+       selConcepto.innerHTML = '<option value="">Cargando...</option>';
+       let descSelect = document.getElementById('descCajaSelect');
+       if (descSelect) {
+          descSelect.innerHTML = '<option value="">Selecciona Concepto</option>';
+          descSelect.disabled = true;
+       }
+ 
+       // Si no hay país seleccionado, dejar mensaje
+       if (!paisSeleccionado || paisSeleccionado === '') {
+          selConcepto.innerHTML = '<option value="">Selecciona un país primero...</option>';
+          if (callback) callback();
+          return;
+       }
+ 
+       // Obtener conceptos del backend filtrados por país
+       google.script.run.withSuccessHandler((res) => {
+          if (res.error) {
+             selConcepto.innerHTML = '<option value="">Error al cargar conceptos</option>';
+             if (callback) callback();
+             return;
+          }
+ 
+          selConcepto.innerHTML = '<option value="">Selecciona...</option>';
+ 
+          if (res.data && res.data.length > 0) {
+             res.data.forEach(c => {
+                let opt = document.createElement('option');
+                opt.value = c;
+                opt.innerText = c;
+                selConcepto.appendChild(opt);
+             });
+          } else {
+             selConcepto.innerHTML = '<option value="">No hay conceptos agregados en ese país</option>';
+          }
+ 
+          // Actualizar medios de pago también
+          actualizarMediosPagoCaja(paisSeleccionado);
+          
+          // Llamar callback si existe
+          if (callback) callback();
+       }).obtenerConceptosPorPais(paisSeleccionado);
+    }
+ 
+    function actualizarMediosPagoCaja(pais) {
+       // Limpiar el contenedor de pagos y agregar nueva fila con medios del país
+       let container = document.getElementById('pagos-container');
+       if (!container) return;
+ 
+       container.innerHTML = '';
+ 
+       google.script.run.withSuccessHandler((res) => {
+          if (!res.error && res.data && res.data.length > 0) {
+             agregarFilaPago('', '', res.data);
+          } else {
+             agregarFilaPago('', '', []);
+          }
+       }).obtenerMediosPorPais(pais);
+    }
+ 
+    function actualizarDescripciones() {
+       let concepto = document.getElementById('conceptoCajaSelect').value;
+       let selPais = document.getElementById('paisCajaSelect');
+       let descSelect = document.getElementById('descCajaSelect');
+ 
+       if (!descSelect || !selPais) return;
+ 
+       descSelect.innerHTML = '<option value="">Cargando...</option>';
+       descSelect.disabled = true;
+ 
+       let paisSeleccionado = selPais.value;
+ 
+       // Si no hay concepto o país seleccionado, deshabilitar
+       if (!concepto || !paisSeleccionado) {
+          descSelect.innerHTML = '<option value="">Selecciona Concepto</option>';
+          return;
+       }
+ 
+       // Obtener descripciones del backend filtradas por concepto y país
+       google.script.run.withSuccessHandler((res) => {
+          if (res.error) {
+             descSelect.innerHTML = '<option value="">Error al cargar descripciones</option>';
+             return;
+          }
+ 
+          descSelect.innerHTML = '<option value="">Selecciona...</option>';
+ 
+          if (res.data && res.data.length > 0) {
+             descSelect.disabled = false;
+             res.data.forEach(desc => {
+                let opt = document.createElement('option');
+                opt.value = desc;
+                opt.innerText = desc;
+                descSelect.appendChild(opt);
+             });
+          } else {
+             descSelect.innerHTML = '<option value="">No hay descripciones para este concepto</option>';
+             descSelect.disabled = true;
+          }
+       }).obtenerDescripcionesPorPaisConcepto(paisSeleccionado, concepto);
+    }
+ 
+    function renderConfigModalContent(padreSeleccionado = '', paisInicial = null) {
+       let app = document.getElementById('config-body');
+ 
+       // Usar el país inicial si se proporciona, sino usar PAIS_CAJA_ACTUAL
+       let paisParaSeleccionar = paisInicial || PAIS_CAJA_ACTUAL;
+ 
+       // Mostrar solo el nombre del país (sin "CONFIGURANDO PARA:")
+       let html = `
+        <div style="margin-bottom:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
+           <div style="color:white; font-size:18px; font-weight:600;">${paisParaSeleccionar}</div>
+        </div>`;
+ 
+       let paisConfig = paisParaSeleccionar;
+       let data = GLOBAL_CONFIG[paisConfig] || { conceptos: [], medios: [], descripciones: {}, sentidos: {} };
+ 
+       html += `
+          <div class="config-section"><div class="card-header">MEDIOS DE PAGO</div>
+            <div class="add-row">
+               <input id="new-medio" class="form-input" placeholder="Nuevo Medio...">
+               <button class="action-btn" style="color:var(--grass-green)" onclick="addConfig('MEDIO_PAGO', 'new-medio', '', '${paisConfig}')">➕</button>
+            </div>
+            <div class="config-container">${(data.medios || []).map(m => `<div class="config-tag">${m} <span onclick="delConfig('MEDIO_PAGO', '${m}', '${paisConfig}')">×</span></div>`).join('')}</div>
+          </div>
+          
+          <div class="config-section"><div class="card-header">CONCEPTOS</div>
+            <div class="add-row" style="flex-wrap: wrap; gap: 8px;">
+               <input id="new-concepto" class="form-input" style="flex: 2; min-width: 150px;" placeholder="Nuevo Concepto...">
+               <select id="sentido-concepto" class="form-input" style="flex: 1; min-width: 100px;">
+                  <option value="EGRESO">EGRESO</option>
+                  <option value="INGRESO">INGRESO</option>
+               </select>
+               <button class="action-btn" style="color:var(--grass-green)" onclick="addConfig('CONCEPTO', 'new-concepto', '', '${paisConfig}')">➕</button>
+            </div>
+            <div class="config-container">${(data.conceptos || []).map(c => {
+               let sentido = data.sentidos[c] || 'EGRESO';
+               let color = sentido === 'EGRESO' ? '#ef4444' : '#10b981';
+               return `<div class="config-tag" style="border-left: 3px solid ${color}">${c} <small style="opacity:0.7; font-size:9px;">(${sentido})</small> <span onclick="delConfig('CONCEPTO', '${c}', '${paisConfig}')">×</span></div>`;
+            }).join('')}</div>
+          </div>
+ 
+          <div class="config-section"><div class="card-header">DESCRIPCIONES</div>
+            <div style="margin-bottom:10px;"><label class="form-label">Elige Concepto:</label>
+               <select id="sel-config-padre" class="form-input" onchange="renderDescripcionesConfig(this.value, '${paisConfig}')">
+                  <option value="">Selecciona...</option>${(data.conceptos || []).map(c => `<option value="${c}" ${c === padreSeleccionado ? 'selected' : ''}>${c}</option>`).join('')}
+               </select>
+            </div>
+            <div id="desc-container"></div>
+          </div>`;
+ 
+       app.innerHTML = html;
+       if (padreSeleccionado) renderDescripcionesConfig(padreSeleccionado, paisConfig);
+    }
+ 
+    function renderDescripcionesConfig(padre, pais) {
+       let container = document.getElementById('desc-container');
+       if (!padre) { container.innerHTML = ''; return; }
+ 
+       let data = GLOBAL_CONFIG[pais] || { descripciones: {} };
+       let lista = (data.descripciones && data.descripciones[padre]) ? data.descripciones[padre] : [];
+ 
+       let html = `
+             <div class="add-row"><input id="new-desc" class="form-input" placeholder="Nueva Descripción..."><button class="action-btn" style="color:var(--grass-green)" onclick="addConfig('DESCRIPCION', 'new-desc', '${padre}', '${pais}')">➕</button></div>
+             <div class="config-container">${lista.map(d => `<div class="config-tag">${d} <span onclick="delConfig('DESCRIPCION', '${d}', '${pais}')">×</span></div>`).join('')}</div>`;
+       container.innerHTML = html;
+    }
+ 
+    function addConfig(tipo, inputId, padre = '', pais) {
+       let val = document.getElementById(inputId).value.trim();
+       if (!val) return;
+ 
+       let sentido = '';
+       if (tipo === 'CONCEPTO') {
+          sentido = document.getElementById('sentido-concepto').value;
+       }
+ 
+       // Capitalizar medios de pago (primera letra de cada palabra en mayúscula)
+       if (tipo === 'MEDIO_PAGO') {
+          val = val.toLowerCase().split(' ').map(palabra => {
+             return palabra.charAt(0).toUpperCase() + palabra.slice(1);
+          }).join(' ');
+       } else {
+          val = val.toUpperCase();
+       }
+ 
+       google.script.run.withSuccessHandler(() => {
+          if (!GLOBAL_CONFIG[pais]) GLOBAL_CONFIG[pais] = { conceptos: [], medios: [], descripciones: {}, sentidos: {} };
+ 
+          if (tipo === 'MEDIO_PAGO') GLOBAL_CONFIG[pais].medios.push(val);
+          if (tipo === 'CONCEPTO') {
+             GLOBAL_CONFIG[pais].conceptos.push(val);
+             GLOBAL_CONFIG[pais].sentidos[val] = sentido;
+          }
+          if (tipo === 'DESCRIPCION') {
+             if (!GLOBAL_CONFIG[pais].descripciones[padre]) GLOBAL_CONFIG[pais].descripciones[padre] = [];
+             GLOBAL_CONFIG[pais].descripciones[padre].push(val);
+          }
+ 
+          if (pais === PAIS_CAJA_ACTUAL) poblarSelectsCaja();
+          if (tipo === 'DESCRIPCION') renderDescripcionesConfig(padre, pais);
+          else renderConfigModalContent(padre, null);
+
+          // El backend ya añade el nuevo concepto/descripción a movimientos desde mes actual en adelante (guardarItemConfig)
+          if (typeof cargarHistorialMovimientos === 'function') cargarHistorialMovimientos();
+          if (typeof actualizarAvisoPendientes === 'function') actualizarAvisoPendientes();
+       }).guardarItemConfig(tipo, val, padre, pais, sentido);
+    }
+ 
+    function delConfig(tipo, val, pais) {
+       // Bloqueo de borrado seguro
+       if (tipo === 'CONCEPTO') {
+          let cfg = GLOBAL_CONFIG[pais];
+          if (cfg && cfg.descripciones[val] && cfg.descripciones[val].length > 0) {
+             mostrarAlerta(`No puedes eliminar "${val}" en ${pais} porque tiene descripciones.`);
+             return;
+          }
+       }
+ 
+       abrirConfirmacion("¿Eliminar " + val + "?", () => {
+          let padreActual = document.getElementById('sel-config-padre') ? document.getElementById('sel-config-padre').value : '';
+          google.script.run.withSuccessHandler(() => {
+             // Actualización local
+             let c = GLOBAL_CONFIG[pais];
+             if (tipo === 'MEDIO_PAGO') c.medios = c.medios.filter(x => x !== val);
+             if (tipo === 'CONCEPTO') c.conceptos = c.conceptos.filter(x => x !== val);
+             if (tipo === 'DESCRIPCION') { c.descripciones[padreActual] = c.descripciones[padreActual].filter(x => x !== val); }
+ 
+             if (pais === PAIS_CAJA_ACTUAL) poblarSelectsCaja();
+             if (tipo === 'DESCRIPCION') renderDescripcionesConfig(padreActual, pais);
+             else renderConfigModalContent(padreActual, null);
+             if (typeof cargarHistorialMovimientos === 'function') cargarHistorialMovimientos();
+             if (typeof actualizarAvisoPendientes === 'function') actualizarAvisoPendientes();
+          }).borrarItemConfig(tipo, val, pais, tipo === 'DESCRIPCION' ? padreActual : undefined);
+       });
+    }
+ 
+    function toggleVencimiento() {
+       let estado = document.getElementById('estadoCaja').value;
+       let div = document.getElementById('group-vencimiento');
+       if (estado === 'PENDIENTE') {
+          div.style.display = 'block';
+          document.getElementById('fechaVencimiento').required = true;
+       } else {
+          div.style.display = 'none';
+          document.getElementById('fechaVencimiento').required = false;
+          document.getElementById('fechaVencimiento').value = '';
+       }
+    }
+ 
+    function enviarCaja(e) {
+       e.preventDefault();
+
+       let btn = document.getElementById('btnGuardarCaja');
+       if (!btn) return;
+
+       // Validación: concepto, descripción y vencimiento si está pendiente
+       if (typeof validarCampos === 'function') {
+          var err = validarCampos([
+             { id: 'conceptoCajaSelect', nombre: 'Concepto', requerido: true, mensaje: 'Selecciona un concepto.' },
+             { id: 'descCajaSelect', nombre: 'Descripción', requerido: true, mensaje: 'Selecciona una descripción.' }
+          ]);
+          if (err) {
+             mostrarAlerta(err);
+             return;
+          }
+       }
+       var estadoCajaVal = document.getElementById('estadoCaja') ? document.getElementById('estadoCaja').value : 'PAGADO';
+       var fechaVencVal = document.getElementById('fechaVencimiento') ? document.getElementById('fechaVencimiento').value : '';
+       if (estadoCajaVal === 'PENDIENTE' && !fechaVencVal) {
+          mostrarAlerta('Si el estado es Pendiente, indica la fecha de vencimiento.');
+          return;
+       }
+
+       btn.disabled = true;
+       btn.innerText = "Guardando...";
+
+       // Recopilar datos del formulario
+       let fechaCaja = document.getElementById('fechaCaja').value;
+       let tipoCaja = document.getElementById('tipoCaja').value;
+       let conceptoCaja = document.getElementById('conceptoCajaSelect').value;
+       let descCaja = document.getElementById('descCajaSelect').value;
+       let estadoCaja = document.getElementById('estadoCaja').value;
+       let fechaVencimiento = document.getElementById('fechaVencimiento').value;
+       let obsCaja = document.getElementById('obsCaja').value || '';
+       let cajaFilaIndex = document.getElementById('cajaFilaIndex').value;
+ 
+       // Recopilar pagos
+       let pagosContainer = document.getElementById('pagos-container');
+       let pagos = [];
+       let pagosRows = pagosContainer.querySelectorAll('.pago-row');
+ 
+       pagosRows.forEach(row => {
+          let select = row.querySelector('select');
+          let input = row.querySelector('input[type="text"]');
+          if (select && input && select.value && input.value) {
+             let monto = parseFloat(input.value.replace(/[$.]/g, '').replace(',', '.').trim());
+             if (!isNaN(monto) && monto > 0) {
+                pagos.push({
+                   forma: select.value,
+                   monto: monto
+                });
+             }
+          }
+       });
+ 
+       if (pagos.length === 0) {
+          mostrarAlerta('Debes agregar al menos una forma de pago con monto válido.');
+          btn.disabled = false;
+          btn.innerText = "Registrar Movimiento";
+          return;
+       }
+ 
+       // Obtener país seleccionado
+       let paisSeleccionado = (document.getElementById('paisCajaSelect') && document.getElementById('paisCajaSelect').value) ? document.getElementById('paisCajaSelect').value : PAIS_CAJA_ACTUAL;
+ 
+       // Si es EGRESO y no es Argentina, obtener cotización actual para guardarla
+       let cotizacionUsada = null;
+       if (tipoCaja === 'EGRESO' && paisSeleccionado !== 'ARGENTINA') {
+          // Obtener cotización actual del momento
+          let paisNormalizado = paisSeleccionado.toString().toUpperCase().trim();
+          if (paisNormalizado === 'USA') paisNormalizado = 'EEUU';
+          if (paisNormalizado === 'ESPAÑA') paisNormalizado = 'ESPANA';
+ 
+          // Obtener cotización actual
+          cotizacionUsada = COTIZACIONES[paisNormalizado] || 1;
+       }
+ 
+       // Preparar datos
+       let datos = {
+          fecha: fechaCaja,
+          tipo: tipoCaja,
+          concepto: conceptoCaja,
+          descripcion: descCaja,
+          estado: estadoCaja,
+          vencimiento: fechaVencimiento || '',
+          observaciones: obsCaja,
+          pagos: pagos,
+          pais: paisSeleccionado,
+          cotizacion: cotizacionUsada, // Guardar cotización para egresos
+          filaIndex: cajaFilaIndex || ''
+       };
+ 
+       // Enviar al backend
+       google.script.run
+          .withSuccessHandler(function (res) {
+             // Determinar texto del botón según si es edición
+             let esEdicion = cajaFilaIndex && cajaFilaIndex !== '';
+             let textoBoton = esEdicion ? 'ACTUALIZAR' : 'REGISTRAR MOVIMIENTO';
+ 
+             btn.disabled = false;
+             btn.innerText = textoBoton;
+ 
+             if (res && res.error) {
+                mostrarAlerta('Error: ' + (res.mensaje || 'Error desconocido'));
+                return;
+             }
+ 
+             cerrarModals();
+ 
+             // Limpiar formulario completamente
+             document.getElementById('formCaja').reset();
+             document.getElementById('cajaFilaIndex').value = '';
+             document.getElementById('pagos-container').innerHTML = '';
+             document.getElementById('estadoCaja').value = 'PAGADO';
+             document.getElementById('group-vencimiento').style.display = 'none';
+             document.getElementById('fechaVencimiento').required = false;
+             document.getElementById('fechaVencimiento').value = '';
+             document.getElementById('obsCaja').value = '';
+             document.getElementById('conceptoCajaSelect').innerHTML = '<option value="">Selecciona...</option>';
+             document.getElementById('descCajaSelect').innerHTML = '<option value="">Selecciona Concepto</option>';
+             document.getElementById('descCajaSelect').disabled = true;
+             document.getElementById('fechaCaja').valueAsDate = new Date();
+ 
+             if (typeof mostrarToast === 'function') mostrarToast('Movimiento registrado correctamente');
+             cargarDatosCajaCompleto();
+          })
+          .withFailureHandler(function (error) {
+             // Determinar texto del botón según si es edición
+             let esEdicion = cajaFilaIndex && cajaFilaIndex !== '';
+             let textoBoton = esEdicion ? 'ACTUALIZAR' : 'REGISTRAR MOVIMIENTO';
+ 
+             btn.disabled = false;
+             btn.innerText = textoBoton;
+             mostrarAlerta('Error al registrar movimiento: ' + error.message);
+          })
+          .procesarMovimientoCaja(datos);
+    }
+</script>

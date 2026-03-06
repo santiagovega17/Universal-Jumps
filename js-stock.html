@@ -1,0 +1,1152 @@
+<script>
+    // --- FUNCIONALIDAD DE STOCK DE BOTAS ---
+ 
+    // Configuración de Cloudinary
+    const CLOUDINARY_CLOUD_NAME = 'dfhf9xlp2';
+    const CLOUDINARY_PRESET = 'botas_preset';
+    const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/image/upload';
+ 
+    // Cargar stock desde el backend y renderizar tarjetas
+    function cargarStock() {
+       // Si la vista es MOVIMIENTOS, cargar movimientos
+       if (VISTA_STOCK_ACTUAL === 'MOVIMIENTOS') {
+          cargarMovimientosStock();
+          return;
+       }
+       
+       // Si la vista es STOCK, cargar stock normal
+       google.script.run.withSuccessHandler(res => {
+          NAVEGANDO = false;
+          if (HOJA_ACTUAL !== 'STOCK' && HOJA_ACTUAL !== 'MENU_STOCK') return;
+          if (res.error) {
+             var msg = res.mensaje || 'Error desconocido';
+             if (typeof getHtmlErrorRedConReintentar === 'function') {
+                window._reintentarCarga = function () { cargarStock(); };
+                document.getElementById('app').innerHTML =
+                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                   '<div class="dash-section-title">STOCK</div>' +
+                   getHtmlErrorRedConReintentar(msg);
+             } else {
+                document.getElementById('app').innerHTML =
+                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                   '<div class="dash-section-title">STOCK</div>' +
+                   '<div style="padding:40px; text-align:center; color:#ef4444;">' +
+                      '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
+                      '<div style="font-size:16px; margin-bottom:10px;">Error al cargar el inventario</div>' +
+                      '<div style="font-size:14px; color:#94a3b8;">' + msg + '</div>' +
+                   '</div>';
+             }
+          } else {
+             // Aceptar res.data o res.productos según cómo responda el backend
+             var lista = (res && (res.data || res.productos)) || [];
+             if (!Array.isArray(lista)) lista = [];
+             try {
+                renderizarTarjetasStock(lista);
+             } catch (e) {
+                console.error('Error al renderizar stock:', e);
+                document.getElementById('app').innerHTML =
+                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                   '<div class="dash-section-title">STOCK</div>' +
+                   '<div style="padding:40px; text-align:center; color:#ef4444;">' +
+                      '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
+                      '<div style="font-size:16px; margin-bottom:10px;">Error al mostrar el inventario</div>' +
+                      '<div style="font-size:14px; color:#94a3b8;">' + (e.message || String(e)) + '</div>' +
+                   '</div>';
+             }
+          }
+       }).withFailureHandler(err => {
+          NAVEGANDO = false;
+          if (HOJA_ACTUAL !== 'STOCK' && HOJA_ACTUAL !== 'MENU_STOCK') return;
+          var errMsg = err && (err.message || err.toString()) ? (err.message || err.toString()) : 'Error desconocido';
+          if (typeof getHtmlErrorRedConReintentar === 'function') {
+             window._reintentarCarga = function () { cargarStock(); };
+             document.getElementById('app').innerHTML =
+                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                '<div class="dash-section-title">STOCK</div>' +
+                getHtmlErrorRedConReintentar(errMsg);
+          } else {
+             document.getElementById('app').innerHTML =
+                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                '<div class="dash-section-title">STOCK</div>' +
+                '<div style="padding:40px; text-align:center; color:#ef4444;">' +
+                   '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
+                   '<div style="font-size:16px; margin-bottom:10px;">Error al cargar el inventario</div>' +
+                   '<div style="font-size:14px; color:#94a3b8;">' + errMsg + '</div>' +
+                '</div>';
+          }
+       }).obtenerStockBotas(PAIS_STOCK_ACTUAL);
+    }
+    
+    // Cargar movimientos de stock
+    function cargarMovimientosStock() {
+       console.log('Cargando movimientos de stock para país:', PAIS_STOCK_ACTUAL);
+       google.script.run.withSuccessHandler(res => {
+          NAVEGANDO = false;
+          console.log('Respuesta recibida:', res);
+          if (HOJA_ACTUAL !== 'STOCK' && HOJA_ACTUAL !== 'MENU_STOCK') return;
+          // Validar que res no sea null o undefined
+          if (!res || typeof res !== 'object') {
+             console.error('Respuesta inválida:', res);
+             document.getElementById('app').innerHTML =
+                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                '<div class="dash-section-title">MOVIMIENTOS</div>' +
+                '<div style="padding:40px; text-align:center; color:#ef4444;">' +
+                   '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
+                   '<div style="font-size:16px; margin-bottom:10px;">Error al cargar los movimientos</div>' +
+                   '<div style="font-size:14px; color:#94a3b8;">No se recibió respuesta válida del servidor. Verifica que la hoja STOCK_MOVIMIENTOS exista.</div>' +
+                '</div>';
+             return;
+          }
+          if (res.error) {
+             console.error('Error en respuesta:', res.mensaje);
+             var resMsg = res.mensaje || 'Error desconocido';
+             if (typeof getHtmlErrorRedConReintentar === 'function') {
+                window._reintentarCarga = function () { cargarMovimientosStock(); };
+                document.getElementById('app').innerHTML =
+                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                   '<div class="dash-section-title">MOVIMIENTOS</div>' +
+                   getHtmlErrorRedConReintentar(resMsg);
+             } else {
+                document.getElementById('app').innerHTML =
+                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                   '<div class="dash-section-title">MOVIMIENTOS</div>' +
+                   '<div style="padding:40px; text-align:center; color:#ef4444;">' +
+                      '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
+                      '<div style="font-size:16px; margin-bottom:10px;">Error al cargar los movimientos</div>' +
+                      '<div style="font-size:14px; color:#94a3b8;">' + resMsg + '</div>' +
+                   '</div>';
+             }
+          } else {
+             console.log('Movimientos cargados:', res.data ? res.data.length : 0);
+             renderizarMovimientosStock(res.data || []);
+          }
+       }).withFailureHandler(err => {
+          NAVEGANDO = false;
+          console.error('Error en obtenerMovimientosStock:', err);
+          if (HOJA_ACTUAL !== 'STOCK' && HOJA_ACTUAL !== 'MENU_STOCK') return;
+          var errMsgMov = err ? (err.message || err.toString() || 'Error desconocido') : 'No se recibió respuesta del servidor';
+          if (typeof getHtmlErrorRedConReintentar === 'function') {
+             window._reintentarCarga = function () { cargarMovimientosStock(); };
+             document.getElementById('app').innerHTML =
+                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                '<div class="dash-section-title">MOVIMIENTOS</div>' +
+                getHtmlErrorRedConReintentar(errMsgMov + '. Verifica que la hoja STOCK_MOVIMIENTOS exista y tenga la columna H con el país.');
+          } else {
+             document.getElementById('app').innerHTML =
+                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+                '<div class="dash-section-title">MOVIMIENTOS</div>' +
+                '<div style="padding:40px; text-align:center; color:#ef4444;">' +
+                   '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
+                   '<div style="font-size:16px; margin-bottom:10px;">Error al cargar los movimientos</div>' +
+                   '<div style="font-size:14px; color:#94a3b8;">' + errMsgMov + '</div>' +
+                   '<div style="font-size:12px; color:#64748b; margin-top:10px;">Verifica que la hoja STOCK_MOVIMIENTOS exista en la planilla y que tenga la columna H con el país.</div>' +
+                '</div>';
+          }
+       }).obtenerMovimientosStock(PAIS_STOCK_ACTUAL);
+    }
+ 
+    // Renderizar tarjetas de productos en la grilla agrupadas por MARCA > MODELO > COLOR
+    /**
+     * Función auxiliar para optimizar URLs de Cloudinary
+     * Inyecta parámetros de transformación: f_auto, q_auto, c_fill, w_ancho, h_alto
+     * @param {string} url - URL de la imagen (Cloudinary u otra)
+     * @param {number} ancho - Ancho deseado en píxeles
+     * @param {number} alto - Alto deseado en píxeles
+     * @returns {string} - URL optimizada o la original si no es Cloudinary
+     */
+    function obtenerUrlMin(url, ancho, alto) {
+       if (!url || typeof url !== 'string') {
+          return url;
+       }
+       
+       // Verificar si es una URL de Cloudinary
+       // Las URLs de Cloudinary tienen el formato: https://res.cloudinary.com/...
+       if (!url.includes('res.cloudinary.com')) {
+          // No es una URL de Cloudinary, devolver sin modificar
+          return url;
+       }
+       
+       // Si ya tiene transformaciones, extraer la base y el path
+       // Formato típico: https://res.cloudinary.com/CLOUD_NAME/image/upload/vTIMESTAMP/PATH.jpg
+       // O con transformaciones: https://res.cloudinary.com/CLOUD_NAME/image/upload/TRANSFORM/PATH.jpg
+       
+       try {
+          const urlObj = new URL(url);
+          const pathParts = urlObj.pathname.split('/');
+          
+          // Buscar el índice de 'upload' en la ruta
+          const uploadIndex = pathParts.indexOf('upload');
+          if (uploadIndex === -1 || uploadIndex === pathParts.length - 1) {
+             return url; // No se encontró 'upload' o está mal formada
+          }
+          
+          // Construir la ruta de transformación
+          // Insertar transformaciones después de 'upload'
+          const transformaciones = 'f_auto,q_auto,c_fill,w_' + ancho + ',h_' + alto;
+          
+          // Reconstruir la URL
+          const baseParts = pathParts.slice(0, uploadIndex + 1); // Hasta 'upload'
+          const remainingParts = pathParts.slice(uploadIndex + 1); // Desde después de 'upload'
+          
+          // Insertar transformaciones antes del resto del path
+          const newPathParts = [...baseParts, transformaciones, ...remainingParts];
+          const newPath = newPathParts.join('/');
+          
+          return urlObj.origin + newPath + urlObj.search + urlObj.hash;
+       } catch (e) {
+          // Si hay algún error al parsear la URL, devolver la original
+          return url;
+       }
+    }
+ 
+    function renderizarTarjetasStock(productos) {
+       let app = document.getElementById('app');
+       if (!app) return;
+ 
+       // Países con códigos cortos (igual que en balance de caja)
+       const paisesStock = [
+          { key: 'ARGENTINA', codigo: 'AR', nombre: 'ARGENTINA', colorHeader: '#75AADB', colorBorder: '#6C8EBF' },
+          { key: 'CHILE', codigo: 'CL', nombre: 'CHILE', colorHeader: '#0039A6', colorBorder: '#002E83' },
+          { key: 'MEXICO', codigo: 'MX', nombre: 'MEXICO', colorHeader: '#006847', colorBorder: '#005638' },
+          { key: 'ESPANA', codigo: 'ES', nombre: 'ESPAÑA', colorHeader: '#AA151B', colorBorder: '#8B1116' },
+          { key: 'EEUU', codigo: 'US', nombre: 'EEUU', colorHeader: '#B22234', colorBorder: '#9B1C2C' }
+       ];
+ 
+       if (!productos || productos.length === 0) {
+          // Mostrar selector de países incluso si no hay productos
+          let htmlSinProductos = '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+             '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
+             '<div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">';
+ 
+          paisesStock.forEach(pais => {
+             let isActive = PAIS_STOCK_ACTUAL === pais.key ? 'active-view' : '';
+             let estiloActivo = isActive ? ('background: ' + pais.colorHeader + ' !important; border-color: ' + pais.colorBorder + ' !important; color: white !important; font-weight: 800;') : '';
+             htmlSinProductos += '<div class="view-option ' + isActive + '" onclick="switchPaisStock(\'' + pais.key + '\')" style="' + estiloActivo + '" data-pais="' + pais.key + '">' + pais.nombre + '</div>';
+          });
+ 
+          htmlSinProductos += '</div></div>';
+          
+          // Selector de vista (STOCK / MOVIMIENTOS)
+          var vistaStockClase = VISTA_STOCK_ACTUAL === 'STOCK' ? 'active-view' : '';
+          var vistaStockEstilo = VISTA_STOCK_ACTUAL === 'STOCK' ? 'background: var(--accent) !important; border-color: var(--accent) !important; color: white !important; font-weight: 800;' : '';
+          var vistaMovClase = VISTA_STOCK_ACTUAL === 'MOVIMIENTOS' ? 'active-view' : '';
+          var vistaMovEstilo = VISTA_STOCK_ACTUAL === 'MOVIMIENTOS' ? 'background: var(--accent) !important; border-color: var(--accent) !important; color: white !important; font-weight: 800;' : '';
+          htmlSinProductos += '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
+             '<div class="type-toggle" style="width: 100%; max-width: 600px; margin: 0 auto;">' +
+             '<div class="view-option ' + vistaStockClase + '" onclick="switchVistaStock(\'STOCK\')" style="' + vistaStockEstilo + '">STOCK</div>' +
+             '<div class="view-option ' + vistaMovClase + '" onclick="switchVistaStock(\'MOVIMIENTOS\')" style="' + vistaMovEstilo + '">MOVIMIENTOS</div>' +
+             '</div></div>' +
+             '<div id="stock-container" style="margin-top:20px; padding:40px; text-align:center; color:#94a3b8;">' +
+             '<span class="material-symbols-outlined" style="font-size:48px; opacity:0.6;">inventory_2</span>' +
+             '<div style="font-size:16px; margin-top:15px;">No hay productos de stock para este país.</div>' +
+             '<div style="font-size:14px; margin-top:8px;">Agrega productos desde el botón + del encabezado.</div>' +
+             '</div>';
+          
+          app.innerHTML = htmlSinProductos;
+          return;
+       }
+ 
+       // Agrupar productos por MARCA > TIPO > MODELO > COLOR
+       const agrupados = {};
+       productos.forEach(producto => {
+          const marca = producto.marca || 'Sin Marca';
+          const tipo = producto.tipo || 'General';
+          const modelo = producto.modelo || 'Sin Dureza';
+          const color = producto.color || 'Sin Color';
+          if (!agrupados[marca]) agrupados[marca] = {};
+          if (!agrupados[marca][tipo]) agrupados[marca][tipo] = {};
+          if (!agrupados[marca][tipo][modelo]) agrupados[marca][tipo][modelo] = {};
+          if (!agrupados[marca][tipo][modelo][color]) agrupados[marca][tipo][modelo][color] = [];
+          agrupados[marca][tipo][modelo][color].push(producto);
+       });
+ 
+       // Ordenar marcas alfabéticamente (case-insensitive)
+       const marcasOrdenadas = Object.keys(agrupados).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+ 
+       let html = '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+          '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
+          '<div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">';
+ 
+       // Selector de países con colores (igual estilo que balance de caja)
+       paisesStock.forEach(pais => {
+          let isActive = PAIS_STOCK_ACTUAL === pais.key ? 'active-view' : '';
+          let estiloActivo = isActive ? ('background: ' + pais.colorHeader + ' !important; border-color: ' + pais.colorBorder + ' !important; color: white !important; font-weight: 800;') : '';
+          html += '<div class="view-option ' + isActive + '" onclick="switchPaisStock(\'' + pais.key + '\')" style="' + estiloActivo + '" data-pais="' + pais.key + '">' + pais.nombre + '</div>';
+       });
+ 
+       html += '</div></div>';
+       
+       // Selector de vista (STOCK / MOVIMIENTOS)
+       var vistaStockClase2 = VISTA_STOCK_ACTUAL === 'STOCK' ? 'active-view' : '';
+       var vistaStockEstilo2 = VISTA_STOCK_ACTUAL === 'STOCK' ? 'background: var(--accent) !important; border-color: var(--accent) !important; color: white !important; font-weight: 800;' : '';
+       var vistaMovClase2 = VISTA_STOCK_ACTUAL === 'MOVIMIENTOS' ? 'active-view' : '';
+       var vistaMovEstilo2 = VISTA_STOCK_ACTUAL === 'MOVIMIENTOS' ? 'background: var(--accent) !important; border-color: var(--accent) !important; color: white !important; font-weight: 800;' : '';
+       html += '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
+          '<div class="type-toggle" style="width: 100%; max-width: 600px; margin: 0 auto;">' +
+          '<div class="view-option ' + vistaStockClase2 + '" onclick="switchVistaStock(\'STOCK\')" style="' + vistaStockEstilo2 + '">STOCK</div>' +
+          '<div class="view-option ' + vistaMovClase2 + '" onclick="switchVistaStock(\'MOVIMIENTOS\')" style="' + vistaMovEstilo2 + '">MOVIMIENTOS</div>' +
+          '</div></div>' +
+          '<div id="stock-container" style="margin-top:20px;">';
+ 
+       marcasOrdenadas.forEach(marca => {
+          html += '<div style="margin-bottom:40px;"><h3 style="color:white; font-size:20px; font-weight:600; margin-bottom:20px; padding-bottom:10px; border-bottom:2px solid var(--accent);">' + marca + '</h3>';
+          const tiposOrdenados = Object.keys(agrupados[marca]).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+          tiposOrdenados.forEach(tipo => {
+          const modelosOrdenados = Object.keys(agrupados[marca][tipo]).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+          modelosOrdenados.forEach(modelo => {
+             html += '<div style="margin-bottom:30px;"><h4 style="color:#94a3b8; font-size:16px; font-weight:500; margin-bottom:15px; padding-left:10px;">' + tipo + ' - ' + modelo + '</h4><div style="overflow-x:auto; overflow-y:hidden; padding-bottom:10px;"><div style="display:flex; gap:15px; min-width:fit-content; max-width:100%;">';
+             const coloresOrdenados = Object.keys(agrupados[marca][tipo][modelo]).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+             const productosModelo = [];
+             coloresOrdenados.forEach(color => {
+                productosModelo.push(...agrupados[marca][tipo][modelo][color]);
+             });
+ 
+             // Renderizar productos de este modelo (5 por línea visual)
+             productosModelo.forEach(producto => {
+          let imagenUrlOriginal = producto.imagenUrl || 'https://via.placeholder.com/300x300?text=Sin+Imagen';
+          // Optimizar imagen de Cloudinary: la tarjeta tiene max-width:220px y la imagen es un cuadrado (220x220px)
+          let imagenUrl = obtenerUrlMin(imagenUrlOriginal, 220, 220);
+          let tallesHtml = '';
+          const divideTalles = (producto.divideTalles || 'SI').toUpperCase() === 'NO' ? false : true;
+          let todosTallesEnCero = true;
+          
+          if (divideTalles) {
+             const ordenTalles = ['XS', 'S', 'M', 'L'];
+             ordenTalles.forEach(talle => {
+                let cantidad = producto.talles && producto.talles[talle] !== undefined ? producto.talles[talle] : 0;
+                if (cantidad !== 0) todosTallesEnCero = false;
+             });
+             ordenTalles.forEach(talle => {
+                let cantidad = producto.talles && producto.talles[talle] !== undefined ? producto.talles[talle] : 0;
+                let claseStock = cantidad > 0 ? 'stock-disponible' : cantidad < 0 ? 'stock-negativo' : 'stock-cero';
+                let iconoStock = cantidad > 0 ? 'check_circle' : cantidad < 0 ? 'error' : 'remove_circle';
+                var colorTalle = cantidad > 0 ? '#22c55e' : cantidad < 0 ? '#ef4444' : '#94a3b8';
+                tallesHtml += '<tr><td style="font-weight:600; padding:8px 0; color:white; font-size:13px;">Talle ' + talle + '</td><td style="text-align:right; padding:8px 0;"><span style="display:inline-flex; align-items:center; gap:5px; color:' + colorTalle + '; font-size:13px;"><span class="material-symbols-outlined" style="font-size:18px;">' + iconoStock + '</span>' + cantidad + '</span></td></tr>';
+             });
+          } else {
+             let cantidad = producto.talles && producto.talles['UNICO'] !== undefined ? producto.talles['UNICO'] : 0;
+             if (cantidad !== 0) todosTallesEnCero = false;
+             let iconoStock = cantidad > 0 ? 'check_circle' : cantidad < 0 ? 'error' : 'remove_circle';
+             var colorUnico = cantidad > 0 ? '#22c55e' : cantidad < 0 ? '#ef4444' : '#94a3b8';
+             tallesHtml = '<tr><td style="font-weight:600; padding:8px 0; color:white; font-size:13px;">Cantidad</td><td style="text-align:right; padding:8px 0;"><span style="display:inline-flex; align-items:center; gap:5px; color:' + colorUnico + '; font-size:13px;"><span class="material-symbols-outlined" style="font-size:18px;">' + iconoStock + '</span>' + cantidad + '</span></td></tr>';
+          }
+          
+          // Guardar si todos los talles están en 0 en el producto para usar en el botón
+          producto.todosTallesEnCero = todosTallesEnCero;
+ 
+          // Determinar color del círculo: verde si está activo, gris si está inactivo
+          let circuloColor = producto.activo === 'SI' ? '#22c55e' : '#64748b';
+          let circuloEstilo = producto.activo === 'SI' && !producto.todosTallesEnCero 
+             ? 'opacity:0.5; cursor:not-allowed;' 
+             : 'cursor:pointer;';
+          let circuloOnclick = producto.activo === 'SI' 
+             ? ('onclick="desactivarProducto(\'' + producto.id + '\', ' + producto.todosTallesEnCero + ')" title="' + (producto.todosTallesEnCero ? 'Desactivar producto' : 'No se puede desactivar: hay stock en algunos talles') + '"')
+             : ('onclick="activarProducto(\'' + producto.id + '\')" title="Activar producto"');
+          
+         // Formato del título: solo color
+         let tituloProducto = (producto.color && String(producto.color).trim() !== '')
+            ? String(producto.color).trim()
+            : 'Sin información';
+ 
+          var descrHtml = producto.descripcion ? ('<div style="color:#64748b; font-size:12px; flex:1; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.4; max-height:2.8em;">' + producto.descripcion + '</div>') : '';
+          var colorProd = producto.color || '';
+          html += '<div class="card" style="overflow:hidden; display:flex; flex-direction:column; width:calc(20% - 12px); min-width:220px; max-width:220px; flex-shrink:0;">' +
+             '<div style="position:relative; width:100%; padding-top:100%; background:#0f172a; border-radius:8px 8px 0 0; overflow:hidden;">' +
+             '<img src="' + imagenUrl + '" alt="' + (producto.modelo || '') + '" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;" onerror="this.src=\'https://via.placeholder.com/300x300?text=Sin+Imagen\';">' +
+             '<div style="position:absolute; top:10px; right:10px; width:18px; height:18px; border-radius:50%; background:' + circuloColor + '; border:2px solid #1e293b; ' + circuloEstilo + '" ' + circuloOnclick + '></div></div>' +
+             '<div style="padding:15px; flex:1; display:flex; flex-direction:column; gap:12px;">' +
+             '<h3 style="margin:0; color:white; font-size:16px; font-weight:600;">' + tituloProducto + '</h3>' + descrHtml +
+             '<div style="border-top:1px solid #1e293b; padding-top:12px; margin-top:0;">' +
+             '<table style="width:100%; border-collapse:collapse;"><tbody>' + tallesHtml + '</tbody></table></div>' +
+             '<button class="btn-submit" onclick="abrirModalAjusteStock(\'' + producto.id + '\', \'' + (producto.modelo || '') + '\', \'' + String(colorProd).replace(/'/g, '&#39;') + '\', ' + (producto.divideTalles === 'NO') + ')" style="width:100%; background:var(--accent); margin-top:0;">' +
+             '<span class="material-symbols-outlined" style="font-size:18px; vertical-align:middle;">edit</span> Ajustar Stock</button></div></div>';
+             });
+ 
+             html += '</div></div></div>';
+          });
+          });
+          html += '</div>';
+       });
+ 
+       html += '</div>';
+ 
+       html += '</div>';
+       app.innerHTML = html;
+    }
+ 
+    // Renderizar historial de movimientos
+    function renderizarMovimientosStock(movimientos) {
+       let app = document.getElementById('app');
+       if (!app) return;
+ 
+       // Países con códigos cortos (igual que en balance de caja)
+       const paisesStock = [
+          { key: 'ARGENTINA', codigo: 'AR', nombre: 'ARGENTINA', colorHeader: '#75AADB', colorBorder: '#6C8EBF' },
+          { key: 'CHILE', codigo: 'CL', nombre: 'CHILE', colorHeader: '#0039A6', colorBorder: '#002E83' },
+          { key: 'MEXICO', codigo: 'MX', nombre: 'MEXICO', colorHeader: '#006847', colorBorder: '#005638' },
+          { key: 'ESPANA', codigo: 'ES', nombre: 'ESPAÑA', colorHeader: '#AA151B', colorBorder: '#8B1116' },
+          { key: 'EEUU', codigo: 'US', nombre: 'EEUU', colorHeader: '#B22234', colorBorder: '#9B1C2C' }
+       ];
+ 
+       let html = '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
+          '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
+          '<div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">';
+ 
+       // Selector de países con colores (igual estilo que balance de caja)
+       paisesStock.forEach(pais => {
+          let isActive = PAIS_STOCK_ACTUAL === pais.key ? 'active-view' : '';
+          let estiloActivo = isActive ? ('background: ' + pais.colorHeader + ' !important; border-color: ' + pais.colorBorder + ' !important; color: white !important; font-weight: 800;') : '';
+          html += '<div class="view-option ' + isActive + '" onclick="switchPaisStock(\'' + pais.key + '\')" style="' + estiloActivo + '" data-pais="' + pais.key + '">' + pais.nombre + '</div>';
+       });
+ 
+       html += '</div></div>';
+       
+       // Selector de vista (STOCK / MOVIMIENTOS)
+       var vistaStockClaseM = VISTA_STOCK_ACTUAL === 'STOCK' ? 'active-view' : '';
+       var vistaStockEstiloM = VISTA_STOCK_ACTUAL === 'STOCK' ? 'background: var(--accent) !important; border-color: var(--accent) !important; color: white !important; font-weight: 800;' : '';
+       var vistaMovClaseM = VISTA_STOCK_ACTUAL === 'MOVIMIENTOS' ? 'active-view' : '';
+       var vistaMovEstiloM = VISTA_STOCK_ACTUAL === 'MOVIMIENTOS' ? 'background: var(--accent) !important; border-color: var(--accent) !important; color: white !important; font-weight: 800;' : '';
+       html += '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
+          '<div class="type-toggle" style="width: 100%; max-width: 600px; margin: 0 auto;">' +
+          '<div class="view-option ' + vistaStockClaseM + '" onclick="switchVistaStock(\'STOCK\')" style="' + vistaStockEstiloM + '">STOCK</div>' +
+          '<div class="view-option ' + vistaMovClaseM + '" onclick="switchVistaStock(\'MOVIMIENTOS\')" style="' + vistaMovEstiloM + '">MOVIMIENTOS</div>' +
+          '</div></div>';
+ 
+       // Tabla de movimientos
+       if (!movimientos || movimientos.length === 0) {
+          html += '<div style="padding:40px; text-align:center; color:#94a3b8;">' +
+             '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">history</span>' +
+             '<div style="font-size:16px;">No hay movimientos registrados</div>' +
+             '</div>';
+       } else {
+          html += '<div style="overflow-x:auto;">' +
+             '<table style="width:100%; border-collapse:collapse; background:#0f172a; border-radius:8px; overflow:hidden;">' +
+             '<thead><tr style="background:#1e293b;">' +
+             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Fecha</th>' +
+             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Producto</th>' +
+             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Talle</th>' +
+             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Tipo</th>' +
+             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Cantidad</th>' +
+             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Observación</th>' +
+             '</tr></thead><tbody>';
+ 
+          movimientos.forEach(mov => {
+             const tipoColor = mov.tipo === 'INGRESO' ? '#22c55e' : '#ef4444';
+             const tipoIcono = mov.tipo === 'INGRESO' ? 'add_circle' : 'remove_circle';
+             const cantidad = mov.cantidad;
+             const cantidadAbs = Math.abs(cantidad);
+             const marcaTipo = mov.marca + (mov.tipo ? ' - ' + mov.tipo : '') + ' - ' + mov.modelo;
+             const signo = mov.tipo === 'INGRESO' ? '+' : '-';
+             html += '<tr style="border-bottom:1px solid #1e293b;">' +
+                '<td style="padding:12px; text-align:center; color:#f1f5f9; font-size:14px;">' + (mov.fecha || '') + '</td>' +
+                '<td style="padding:12px; text-align:center; color:#f1f5f9; font-size:14px;">' +
+                '<div style="font-weight:600;">' + marcaTipo + '</div>' +
+                '<div style="color:#94a3b8; font-size:12px;">' + (mov.color || '') + '</div></td>' +
+                '<td style="padding:12px; text-align:center; color:#f1f5f9; font-size:14px;">' + (mov.talle || '') + '</td>' +
+                '<td style="padding:12px; text-align:center;">' +
+                '<span style="display:inline-flex; align-items:center; gap:5px; color:' + tipoColor + '; font-size:13px; font-weight:600;">' +
+                '<span class="material-symbols-outlined" style="font-size:18px;">' + tipoIcono + '</span>' + (mov.tipo || '') + '</span></td>' +
+                '<td style="padding:12px; text-align:center; color:' + tipoColor + '; font-size:14px; font-weight:600;">' + signo + cantidadAbs + '</td>' +
+                '<td style="padding:12px; text-align:center; color:#94a3b8; font-size:13px;">' + (mov.observacion || '') + '</td>' +
+                '</tr>';
+          });
+ 
+          html += '</tbody></table></div>';
+       }
+ 
+       app.innerHTML = html;
+    }
+ 
+    // Abrir modal para crear nuevo producto
+    function abrirModalNuevoProducto() {
+       let modal = document.getElementById('modalNuevoProducto');
+       let form = document.getElementById('formNuevoProducto');
+       
+       // Limpiar formulario
+       if (form) {
+          form.reset();
+          document.getElementById('preview-container').style.display = 'none';
+          document.getElementById('preview-imagen').src = '';
+          document.getElementById('productoActivo').checked = true;
+          document.getElementById('productoTipo').disabled = true;
+          document.getElementById('productoTipo').innerHTML = '<option value="">Selecciona marca primero...</option>';
+          document.getElementById('productoModelo').disabled = true;
+          document.getElementById('productoModelo').innerHTML = '<option value="">Selecciona tipo primero...</option>';
+          let textoArchivo = document.getElementById('textoSeleccionarArchivo');
+          if (textoArchivo) {
+             textoArchivo.textContent = 'Seleccionar archivo';
+          }
+       }
+       
+       // Cargar marcas disponibles
+       cargarMarcasDisponibles();
+       
+       if (modal) {
+          modal.classList.add('open');
+       }
+    }
+ 
+    // Cargar marcas disponibles en el selector
+    function cargarMarcasDisponibles() {
+       google.script.run.withSuccessHandler(res => {
+          if (res.error) {
+             mostrarAlerta('Error al cargar marcas: ' + res.mensaje);
+             return;
+          }
+          
+          let selectMarca = document.getElementById('productoMarca');
+          if (!selectMarca) return;
+          
+          // Limpiar opciones excepto la primera
+          selectMarca.innerHTML = '<option value="">Selecciona una marca...</option>';
+          
+          // Agregar marcas
+          if (res.data && res.data.marcas && res.data.marcas.length > 0) {
+             res.data.marcas.forEach(marca => {
+                let option = document.createElement('option');
+                option.value = marca;
+                option.textContent = marca;
+                selectMarca.appendChild(option);
+             });
+          }
+       }).obtenerMarcasModelos();
+    }
+ 
+    // Actualizar tipos cuando se selecciona una marca
+    function actualizarTipos() {
+       let selectMarca = document.getElementById('productoMarca');
+       let selectTipo = document.getElementById('productoTipo');
+       let selectModelo = document.getElementById('productoModelo');
+       if (!selectMarca || !selectTipo || !selectModelo) return;
+       let marca = selectMarca.value;
+       if (!marca) {
+          selectTipo.disabled = true;
+          selectTipo.innerHTML = '<option value="">Selecciona marca primero...</option>';
+          selectModelo.disabled = true;
+          selectModelo.innerHTML = '<option value="">Selecciona tipo primero...</option>';
+          return;
+       }
+       google.script.run.withSuccessHandler(res => {
+          if (res.error) { selectTipo.disabled = true; return; }
+          selectTipo.innerHTML = '<option value="">Selecciona un tipo...</option>';
+          const tipos = res.data && res.data.tiposPorMarca && res.data.tiposPorMarca[marca] ? res.data.tiposPorMarca[marca] : [];
+          if (tipos.length > 0) {
+             selectTipo.disabled = false;
+             tipos.forEach(t => { let o = document.createElement('option'); o.value = t; o.textContent = t; selectTipo.appendChild(o); });
+          } else {
+             selectTipo.innerHTML = '<option value="General">General</option>';
+             selectTipo.disabled = false;
+          }
+          selectModelo.disabled = true;
+          selectModelo.innerHTML = '<option value="">Selecciona tipo primero...</option>';
+          actualizarModelos();
+       }).obtenerMarcasModelos();
+    }
+ 
+    // Actualizar durezas cuando se selecciona marca y tipo
+    function actualizarModelos() {
+       let selectMarca = document.getElementById('productoMarca');
+       let selectTipo = document.getElementById('productoTipo');
+       let selectModelo = document.getElementById('productoModelo');
+       if (!selectMarca || !selectTipo || !selectModelo) return;
+       let marca = selectMarca.value;
+       let tipo = selectTipo ? selectTipo.value : 'General';
+       if (!marca || !tipo) {
+          selectModelo.disabled = true;
+          selectModelo.innerHTML = '<option value="">Selecciona marca y tipo...</option>';
+          return;
+       }
+       const clave = marca + '|' + tipo;
+       google.script.run.withSuccessHandler(res => {
+          if (res.error) { selectModelo.disabled = true; return; }
+          selectModelo.innerHTML = '<option value="">Selecciona una dureza...</option>';
+          const modelos = res.data && res.data.modelosPorMarcaTipo && res.data.modelosPorMarcaTipo[clave] ? res.data.modelosPorMarcaTipo[clave] : (res.data.modelos && res.data.modelos[marca] || []);
+          if (modelos.length > 0) {
+             selectModelo.disabled = false;
+             modelos.forEach(m => { let o = document.createElement('option'); o.value = m; o.textContent = m; selectModelo.appendChild(o); });
+          } else {
+             selectModelo.innerHTML = '<option value="">No hay durezas</option>';
+          }
+       }).obtenerMarcasModelos();
+    }
+ 
+    // Cerrar modal de nuevo producto
+    function cerrarModalNuevoProducto() {
+       let modal = document.getElementById('modalNuevoProducto');
+       if (modal) {
+          modal.classList.remove('open');
+       }
+    }
+ 
+    // Preview de imagen antes de subir
+    function previsualizarImagen(event) {
+       let file = event.target.files[0];
+       let preview = document.getElementById('preview-imagen');
+       let container = document.getElementById('preview-container');
+       
+       if (file && preview && container) {
+          // Actualizar texto del botón con el nombre del archivo
+          let textoArchivo = document.getElementById('textoSeleccionarArchivo');
+          if (textoArchivo) {
+             textoArchivo.textContent = file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name;
+          }
+          
+          let reader = new FileReader();
+          reader.onload = function(e) {
+             preview.src = e.target.result;
+             container.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+       } else if (container) {
+          container.style.display = 'none';
+          let textoArchivo = document.getElementById('textoSeleccionarArchivo');
+          if (textoArchivo) {
+             textoArchivo.textContent = 'Seleccionar archivo';
+          }
+       }
+    }
+ 
+    // Subir imagen a Cloudinary
+    function subirImagenACloudinary(file) {
+       return new Promise((resolve, reject) => {
+          if (!file) {
+             resolve(''); // Si no hay imagen, devolver string vacío
+             return;
+          }
+ 
+          let formData = new FormData();
+          formData.append('file', file);
+          formData.append('upload_preset', CLOUDINARY_PRESET);
+ 
+          fetch(CLOUDINARY_UPLOAD_URL, {
+             method: 'POST',
+             body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+             if (data.secure_url) {
+                resolve(data.secure_url);
+             } else {
+                reject(new Error('Error al subir imagen: ' + (data.error?.message || 'Respuesta inválida')));
+             }
+          })
+          .catch(error => {
+             reject(error);
+          });
+       });
+    }
+ 
+    // Enviar formulario de nuevo producto
+    function enviarNuevoProducto(e) {
+       e.preventDefault();
+       
+       let btn = document.getElementById('btnGuardarProducto');
+       let btnTextoOriginal = btn.innerText;
+       btn.disabled = true;
+       btn.innerText = 'Guardando...';
+ 
+       let marca = document.getElementById('productoMarca').value.trim();
+       let tipo = (document.getElementById('productoTipo') && document.getElementById('productoTipo').value) ? document.getElementById('productoTipo').value.trim() : 'General';
+       let modelo = document.getElementById('productoModelo').value.trim();
+       let color = document.getElementById('productoColor').value.trim();
+       let descripcion = document.getElementById('productoDescripcion').value.trim();
+       let divideTalles = document.getElementById('productoDivideTalles') && document.getElementById('productoDivideTalles').checked ? 'SI' : 'NO';
+       let activo = document.getElementById('productoActivo').checked ? 'SI' : 'NO';
+       let imagenInput = document.getElementById('productoImagen');
+       let archivoImagen = imagenInput.files[0];
+ 
+       // Validaciones
+       if (!marca) {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('La marca es requerida');
+          return;
+       }
+ 
+       if (!modelo) {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('La dureza es requerida');
+          return;
+       }
+ 
+       if (!color) {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('El color es requerido');
+          return;
+       }
+ 
+       // Si hay imagen, subirla primero a Cloudinary
+       if (archivoImagen) {
+          subirImagenACloudinary(archivoImagen)
+             .then(imagenUrl => {
+                crearProductoEnBackend(marca, tipo, modelo, color, descripcion, imagenUrl, divideTalles, activo, btn, btnTextoOriginal);
+             })
+             .catch(error => {
+                btn.disabled = false;
+                btn.innerText = btnTextoOriginal;
+                mostrarAlerta('Error al subir imagen: ' + error.message);
+             });
+       } else {
+          // Si no hay imagen, crear el producto directamente
+          crearProductoEnBackend(marca, tipo, modelo, color, descripcion, '', divideTalles, activo, btn, btnTextoOriginal);
+       }
+    }
+ 
+    function crearProductoEnBackend(marca, tipo, modelo, color, descripcion, imagenUrl, divideTalles, activo, btn, btnTextoOriginal) {
+       let datos = {
+          marca: marca, tipo: tipo || 'General', modelo: modelo,
+          color: color, descripcion: descripcion, imagenUrl: imagenUrl,
+          divideTalles: divideTalles || 'SI', activo: activo, pais: PAIS_STOCK_ACTUAL
+       };
+ 
+       google.script.run.withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          if (res.error) {
+             mostrarAlerta('Error: ' + res.mensaje);
+          } else {
+             if (typeof mostrarToast === 'function') mostrarToast(res.mensaje || 'Producto creado correctamente');
+             cerrarModalNuevoProducto();
+             cargarStock();
+          }
+       }).withFailureHandler(error => {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('Error al crear producto: ' + error.message);
+       }).crearProductoBota(datos);
+    }
+ 
+    function abrirModalAjusteStock(idProducto, nombreProducto, colorProducto, sinTalles) {
+       let modal = document.getElementById('modalAjusteStock');
+       let form = document.getElementById('formAjusteStock');
+       if (!modal || !form) return;
+       form.reset();
+       let nombreCompleto = nombreProducto || 'Producto';
+       if (colorProducto && colorProducto.trim() !== '') nombreCompleto += ' - ' + colorProducto;
+       document.getElementById('ajusteIdProducto').value = idProducto;
+       document.getElementById('ajusteProductoNombre').value = nombreCompleto;
+       let selTalle = document.getElementById('ajusteTalle');
+       if (selTalle) {
+          if (sinTalles) {
+             selTalle.innerHTML = '<option value="UNICO" selected>Único</option>';
+             selTalle.required = false;
+          } else {
+             selTalle.innerHTML = '<option value="">Selecciona un talle...</option><option value="XS">XS</option><option value="S">S</option><option value="M">M</option><option value="L">L</option>';
+             selTalle.required = true;
+          }
+       }
+       
+       // Establecer fecha actual por defecto
+       let hoy = new Date();
+       let fechaStr = hoy.getFullYear() + '-' + 
+                      String(hoy.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(hoy.getDate()).padStart(2, '0');
+       document.getElementById('ajusteFecha').value = fechaStr;
+       
+       // Establecer tipo por defecto (INGRESO)
+       setTipoAjuste('INGRESO');
+       
+       // Abrir modal
+       modal.classList.add('open');
+    }
+ 
+    // Cerrar modal de ajuste de stock
+    function cerrarModalAjusteStock() {
+       let modal = document.getElementById('modalAjusteStock');
+       if (modal) {
+          modal.classList.remove('open');
+          // Resetear tipo a INGRESO
+          setTipoAjuste('INGRESO');
+       }
+    }
+ 
+    // Establecer tipo de ajuste (INGRESO/EGRESO)
+    function setTipoAjuste(tipo) {
+       let btnIngreso = document.getElementById('btn-ajuste-ingreso');
+       let btnEgreso = document.getElementById('btn-ajuste-egreso');
+       
+       // Almacenar el tipo en el elemento para poder leerlo después
+       if (!btnIngreso || !btnEgreso) return;
+       
+       if (tipo === 'EGRESO') {
+          btnEgreso.classList.add('active-egreso');
+          btnIngreso.classList.remove('active-ingreso');
+          btnEgreso.dataset.tipo = 'EGRESO';
+          btnIngreso.dataset.tipo = '';
+       } else {
+          btnIngreso.classList.add('active-ingreso');
+          btnEgreso.classList.remove('active-egreso');
+          btnIngreso.dataset.tipo = 'INGRESO';
+          btnEgreso.dataset.tipo = '';
+       }
+    }
+ 
+    // Enviar ajuste de stock
+    function enviarAjusteStock(e) {
+       e.preventDefault();
+       
+       let btn = document.getElementById('btnGuardarAjuste');
+       let btnTextoOriginal = btn.innerText;
+       btn.disabled = true;
+       btn.innerText = 'Registrando...';
+ 
+       let idProducto = document.getElementById('ajusteIdProducto').value;
+       let talle = document.getElementById('ajusteTalle').value;
+       let cantidad = parseInt(document.getElementById('ajusteCantidad').value);
+       let motivo = document.getElementById('ajusteMotivo').value.trim();
+       let fecha = document.getElementById('ajusteFecha').value;
+       
+       // Determinar tipo según los botones
+       let btnIngreso = document.getElementById('btn-ajuste-ingreso');
+       let btnEgreso = document.getElementById('btn-ajuste-egreso');
+       let tipo = (btnIngreso && btnIngreso.dataset.tipo === 'INGRESO') ? 'INGRESO' : 'EGRESO';
+ 
+       // Validaciones
+       if (!idProducto) {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('Error: ID de producto no encontrado');
+          return;
+       }
+ 
+       if (!talle) {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('Selecciona un talle');
+          return;
+       }
+ 
+       if (!cantidad || cantidad <= 0) {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('La cantidad debe ser un número positivo');
+          return;
+       }
+ 
+       if (!motivo) {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('El motivo/observación es requerido');
+          return;
+       }
+ 
+       if (!fecha) {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('La fecha es requerida');
+          return;
+       }
+ 
+       let datos = {
+          idProducto: idProducto,
+          talle: talle,
+          tipo: tipo,
+          cantidad: cantidad,
+          observacion: motivo,
+          fecha: fecha,
+          pais: PAIS_STOCK_ACTUAL
+       };
+ 
+       google.script.run.withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          if (res.error) {
+             mostrarAlerta('Error: ' + res.mensaje);
+          } else {
+             if (typeof mostrarToast === 'function') mostrarToast(res.mensaje || 'Ajuste registrado correctamente');
+             cerrarModalAjusteStock();
+             cargarStock();
+          }
+       }).withFailureHandler(error => {
+          btn.disabled = false;
+          btn.innerText = btnTextoOriginal;
+          mostrarAlerta('Error al registrar ajuste: ' + error.message);
+       }).registrarMovimientoStock(datos);
+    }
+ 
+    // --- CONFIGURACIÓN DE MARCAS Y MODELOS ---
+ 
+    // Abrir modal de configuración de marcas y modelos
+    function abrirModalConfigMarcas() {
+       let modal = document.getElementById('modalConfigMarcas');
+       if (modal) {
+          modal.classList.add('open');
+          // Resetear el select a "Nueva marca..."
+          let select = document.getElementById('selectMarcaExistente');
+          if (select) {
+             select.value = '';
+          }
+          // Mostrar el input de nueva marca por defecto (con un pequeño delay para asegurar que los elementos estén disponibles)
+          setTimeout(() => {
+             actualizarInputMarca();
+          }, 100);
+          cargarMarcasEnSelect();
+          cargarListaMarcasModelos();
+       }
+    }
+ 
+    // Cargar marcas en el select
+    function cargarMarcasEnSelect() {
+       google.script.run.withSuccessHandler(res => {
+          if (res.error) return;
+          
+          let select = document.getElementById('selectMarcaExistente');
+          if (!select) return;
+          
+          // Limpiar opciones excepto "Nueva marca..."
+          select.innerHTML = '<option value="">Nueva marca...</option>';
+          
+          if (res.data && res.data.marcas && res.data.marcas.length > 0) {
+             res.data.marcas.forEach(marca => {
+                let option = document.createElement('option');
+                option.value = marca;
+                option.textContent = marca;
+                select.appendChild(option);
+             });
+          }
+          
+          // Asegurar que el input de nueva marca esté visible si no hay selección
+          actualizarInputMarca();
+       }).obtenerMarcasModelos();
+    }
+ 
+    // Actualizar input de nueva marca según selección
+    function actualizarInputMarca() {
+       let select = document.getElementById('selectMarcaExistente');
+       let inputNuevaMarca = document.getElementById('inputNuevaMarca');
+       let inputMarca = document.getElementById('nuevaMarca');
+       
+       if (!select || !inputNuevaMarca || !inputMarca) return;
+       
+       if (select.value === '') {
+          // Mostrar input para nueva marca
+          inputNuevaMarca.style.display = 'block';
+          inputMarca.required = true;
+          inputMarca.value = '';
+       } else {
+          // Ocultar input, usar marca seleccionada
+          inputNuevaMarca.style.display = 'none';
+          inputMarca.required = false;
+          inputMarca.value = '';
+       }
+    }
+ 
+    // Cerrar modal de configuración
+    function cerrarModalConfigMarcas() {
+       let modal = document.getElementById('modalConfigMarcas');
+       if (modal) {
+          modal.classList.remove('open');
+          // Resetear formulario
+          let form = document.getElementById('formMarcaModelo');
+          if (form) {
+             form.reset();
+             document.getElementById('selectMarcaExistente').value = '';
+             document.getElementById('inputNuevaMarca').style.display = 'none';
+          }
+       }
+    }
+ 
+    // Cargar lista de marcas y modelos
+    function cargarListaMarcasModelos() {
+       google.script.run.withSuccessHandler(res => {
+          if (res.error) {
+             document.getElementById('lista-marcas-modelos').innerHTML =
+                '<div style="padding:20px; text-align:center; color:#ef4444;">Error: ' + (res.mensaje || '') + '</div>';
+             return;
+          }
+          
+          let html = '';
+          
+          if (!res.data || !res.data.marcas || res.data.marcas.length === 0) {
+             html += '<div style="padding:20px; text-align:center; color:#94a3b8;">No hay marcas, tipos y durezas configurados.</div>';
+          } else {
+             html += '<div style="display:flex; flex-direction:column; gap:15px;">';
+             const modelosPorMarcaTipo = res.data.modelosPorMarcaTipo || {};
+             const modelosConProductosActivos = res.data.modelosConProductosActivos || {};
+             res.data.marcas.forEach(marca => {
+                const tipos = res.data.tiposPorMarca && res.data.tiposPorMarca[marca] ? res.data.tiposPorMarca[marca] : ['General'];
+                html += '<div class="card" style="padding:15px;"><h4 style="color:white; font-size:16px; font-weight:600; margin:0 0 10px 0;">' + marca + '</h4>';
+                tipos.forEach(tipo => {
+                   const claveMT = marca + '|' + tipo;
+                   const modelos = modelosPorMarcaTipo[claveMT] || (tipo === 'General' && res.data.modelos && res.data.modelos[marca]) || [];
+                   if (modelos.length > 0) {
+                      html += '<div style="margin-bottom:10px;"><div style="color:#94a3b8; font-size:12px; margin-bottom:6px;">' + tipo + '</div><div style="display:flex; flex-wrap:wrap; gap:8px;">';
+                      modelos.forEach(modelo => {
+                         const claveFull = marca + '|' + tipo + '|' + modelo;
+                         const tieneProductosActivos = modelosConProductosActivos[claveFull] === true;
+                         const puedeEliminar = !tieneProductosActivos;
+                         const esc = s => (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                         var colorBtn = puedeEliminar ? '#ef4444' : '#64748b';
+                         var cursorBtn = puedeEliminar ? 'pointer' : 'not-allowed';
+                         var titleBtn = puedeEliminar ? 'Eliminar' : 'Tiene productos activos';
+                         html += '<div style="display:flex; align-items:center; gap:8px; background:#1e293b; padding:6px 12px; border-radius:6px;">' +
+                            '<span style="color:#94a3b8; font-size:13px;">' + modelo + '</span>' +
+                            '<button onclick="eliminarMarcaModeloFrontend(\'' + esc(marca) + '\',\'' + esc(tipo) + '\',\'' + esc(modelo) + '\')" ' +
+                            'style="background:transparent; border:none; color:' + colorBtn + '; cursor:' + cursorBtn + '; padding:0; font-size:16px;" title="' + titleBtn + '">' +
+                            '<span class="material-symbols-outlined" style="font-size:18px;">delete</span></button></div>';
+                      });
+                      html += '</div></div>';
+                   }
+                });
+                html += '</div>';
+             });
+             html += '</div>';
+          }
+          
+          document.getElementById('lista-marcas-modelos').innerHTML = html;
+       }).obtenerMarcasModelos();
+    }
+ 
+    // Guardar nueva marca y modelo
+    function guardarMarcaModelo(e) {
+       e.preventDefault();
+       
+       let selectMarca = document.getElementById('selectMarcaExistente');
+       let inputMarca = document.getElementById('nuevaMarca');
+       let tipo = (document.getElementById('nuevoTipo') && document.getElementById('nuevoTipo').value) ? document.getElementById('nuevoTipo').value.trim() : 'General';
+       let modelo = document.getElementById('nuevoModelo').value.trim();
+       let marca = '';
+       if (selectMarca && selectMarca.value && selectMarca.value !== '') {
+          marca = selectMarca.value.trim();
+       } else if (inputMarca) {
+          marca = inputMarca.value.trim();
+       }
+       if (!marca || !modelo) {
+          mostrarAlerta('La marca y la dureza son requeridas');
+          return;
+       }
+       
+       google.script.run.withSuccessHandler(res => {
+          if (res.error) {
+             mostrarAlerta('Error: ' + res.mensaje);
+          } else {
+             if (typeof mostrarToast === 'function') mostrarToast(res.mensaje || 'Marca, tipo y dureza guardados correctamente');
+             document.getElementById('formMarcaModelo').reset();
+             document.getElementById('selectMarcaExistente').value = '';
+             document.getElementById('inputNuevaMarca').style.display = 'none';
+             cargarMarcasEnSelect();
+             cargarListaMarcasModelos();
+             // Si el modal de producto está abierto, recargar marcas
+             if (document.getElementById('modalNuevoProducto').classList.contains('open')) {
+                cargarMarcasDisponibles();
+             }
+          }
+       }).withFailureHandler(err => {
+          mostrarAlerta('Error: ' + err.message);
+       }).guardarMarcaModelo({ marca: marca, tipo: tipo || 'General', modelo: modelo });
+    }
+ 
+    function eliminarMarcaModeloFrontend(marca, tipo, modelo) {
+       let msg = tipo ? ('¿Eliminar "' + marca + ' - ' + tipo + ' - ' + modelo + '"?') : ('¿Eliminar la dureza "' + modelo + '" de la marca "' + marca + '"?');
+       abrirConfirmacion(msg, () => {
+          google.script.run.withSuccessHandler(res => {
+             if (res.error) {
+                mostrarAlerta('Error: ' + res.mensaje);
+             } else {
+                if (typeof mostrarToast === 'function') mostrarToast(res.mensaje || 'Marca, tipo y dureza eliminados correctamente');
+                cargarListaMarcasModelos();
+                // Si el modal de producto está abierto, recargar marcas
+                if (document.getElementById('modalNuevoProducto').classList.contains('open')) {
+                   cargarMarcasDisponibles();
+                   // Si la marca eliminada estaba seleccionada, limpiar
+                   let selectMarca = document.getElementById('productoMarca');
+                   if (selectMarca && selectMarca.value === marca) {
+                      selectMarca.value = '';
+                      actualizarModelos();
+                   }
+                }
+             }
+          }).withFailureHandler(err => {
+             mostrarAlerta('Error: ' + err.message);
+          }).eliminarMarcaModelo({ marca: marca, tipo: tipo || 'General', modelo: modelo });
+       });
+    }
+ 
+    // --- FUNCIONES PARA SELECTOR DE VISTA Y PAÍSES EN STOCK ---
+    
+    /**
+     * Cambiar vista (STOCK o MOVIMIENTOS)
+     */
+    function switchVistaStock(vista) {
+       if (VISTA_STOCK_ACTUAL === vista) return; // Ya está en esa vista, no hacer nada
+       if (typeof APP_STATE !== 'undefined') APP_STATE.set('vistaStock', vista); else VISTA_STOCK_ACTUAL = vista;
+       
+       // Recargar inmediatamente
+       cargarStock();
+    }
+    
+    /**
+     * Cambiar país en stock
+     */
+    function switchPaisStock(pais) {
+       if (typeof APP_STATE !== 'undefined') APP_STATE.set('paisStock', pais); else PAIS_STOCK_ACTUAL = pais;
+ 
+       // Definir colores de países (igual que en balance de caja)
+       const paisesStock = [
+          { key: 'ARGENTINA', colorHeader: '#75AADB', colorBorder: '#6C8EBF' },
+          { key: 'CHILE', colorHeader: '#0039A6', colorBorder: '#002E83' },
+          { key: 'MEXICO', colorHeader: '#006847', colorBorder: '#005638' },
+          { key: 'ESPANA', colorHeader: '#AA151B', colorBorder: '#8B1116' },
+          { key: 'EEUU', colorHeader: '#B22234', colorBorder: '#9B1C2C' }
+       ];
+ 
+       // Actualizar visualmente las pestañas (igual que en balance de caja)
+       document.querySelectorAll('[data-pais]').forEach(el => {
+          el.classList.remove('active-view');
+          if (el.getAttribute('data-pais') === pais) {
+             el.classList.add('active-view');
+             let paisData = paisesStock.find(p => p.key === pais);
+             if (paisData) {
+                el.style.background = paisData.colorHeader;
+                el.style.borderColor = paisData.colorBorder;
+                el.style.color = 'white';
+             }
+          } else {
+             // Resetear estilos para pestañas no activas
+             el.style.background = '';
+             el.style.borderColor = '';
+             el.style.color = '';
+          }
+       });
+ 
+       // Recargar stock para el nuevo país
+       cargarStock();
+    }
+ 
+    // Desactivar producto (solo si todos los talles están en 0)
+    function desactivarProducto(idProducto, todosTallesEnCero) {
+       if (!todosTallesEnCero) {
+          mostrarAlerta('No se puede desactivar el producto. Todos los talles deben estar en 0 para desactivarlo.');
+          return;
+       }
+ 
+       abrirConfirmacion('¿Estás seguro de desactivar este producto?', () => {
+          google.script.run.withSuccessHandler(res => {
+             if (res.error) {
+                mostrarAlerta('Error: ' + res.mensaje);
+             } else {
+                if (typeof mostrarToast === 'function') mostrarToast('Producto desactivado correctamente');
+                cargarStock();
+             }
+          }).withFailureHandler(err => {
+             mostrarAlerta('Error: ' + err.message);
+          }).actualizarEstadoProducto({ id: idProducto, activo: 'NO' });
+       });
+    }
+ 
+    // Activar producto
+    function activarProducto(idProducto) {
+       google.script.run.withSuccessHandler(res => {
+          if (res.error) {
+             mostrarAlerta('Error: ' + res.mensaje);
+          } else {
+             if (typeof mostrarToast === 'function') mostrarToast('Producto activado correctamente');
+             cargarStock();
+          }
+       }).withFailureHandler(err => {
+          mostrarAlerta('Error: ' + err.message);
+       }).actualizarEstadoProducto({ id: idProducto, activo: 'SI' });
+    }
+</script>

@@ -1,0 +1,386 @@
+<script>
+    function iniciarSesion() {
+       let btn = document.getElementById('btn-entrar');
+       let err = document.getElementById('login-error');
+       let switcher = document.getElementById('account-switcher');
+       btn.disabled = true; btn.innerText = "Verificando..."; err.style.display = 'none'; switcher.style.display = 'none';
+ 
+       google.script.run.withSuccessHandler(perfil => {
+          if (perfil.error) {
+             btn.disabled = false; btn.innerText = "Ingresar";
+             if (perfil.authError) {
+                err.innerText = "Tu usuario no tiene permisos."; err.style.display = 'block';
+                document.getElementById('wrong-email').innerText = perfil.emailDetectado; switcher.style.display = 'block';
+             } else { err.innerText = perfil.mensaje; err.style.display = 'block'; }
+          } else {
+             USUARIO_ACTUAL = perfil; aplicarPermisos(perfil);
+             document.getElementById('login-screen').style.opacity = '0';
+             setTimeout(() => {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+                var vEl = document.getElementById('sidebar-version');
+                if (vEl && typeof APP_VERSION !== 'undefined') vEl.textContent = 'v' + APP_VERSION;
+             }, 500);
+             inicializarApp();
+          }
+       }).withFailureHandler(e => { err.innerText = "Error: " + e; err.style.display = 'block'; btn.disabled = false; }).obtenerPerfilUsuario();
+    }
+ 
+    function cambiarCuentaGoogle() { window.open("https://accounts.google.com/AccountChooser?service=wise&continue=" + encodeURIComponent(window.location.href), '_top'); }
+ 
+    function aplicarPermisos(perfil) {
+       document.getElementById('user-display-name').innerText = perfil.email;
+       document.getElementById('user-display-role').innerText = perfil.rol + (perfil.hoja !== 'TODAS' ? ` (${perfil.hoja})` : '');
+ 
+       if (perfil.rol === 'VENDEDOR') {
+          document.querySelector('[onclick="toggleSection(\'admin-section\')"]').parentNode.style.display = 'none';
+          document.getElementById('menu-consolidado').style.display = 'none';
+          document.getElementById('menu-comisiones').style.display = 'none';
+          let sublabels = document.querySelectorAll('.menu-sublabel');
+          if (sublabels[0]) sublabels[0].style.display = 'none';
+          document.querySelectorAll('.vendor-item').forEach(item => { if (item.id !== 'menu-' + perfil.hoja.replace(/\s/g, '')) item.style.display = 'none'; });
+          // Clientes siempre visible para vendedores
+          if (document.getElementById('menu-clientes')) document.getElementById('menu-clientes').style.display = 'block';
+       } else if (perfil.rol === 'VENDEDORGRAL') {
+          // VENDEDORGRAL puede ver todo pero no tiene acceso a admin
+          document.querySelector('[onclick="toggleSection(\'admin-section\')"]').parentNode.style.display = 'none';
+          // Ocultar consolidado y comisiones para VENDEDORGRAL
+          if (document.getElementById('menu-consolidado')) document.getElementById('menu-consolidado').style.display = 'none';
+          if (document.getElementById('menu-comisiones')) document.getElementById('menu-comisiones').style.display = 'none';
+          // Ocultar config permisos
+          if (document.getElementById('menu-config-permisos')) document.getElementById('menu-config-permisos').style.display = 'none';
+       } else if (perfil.rol === 'ROOT') {
+          // ROOT tiene todos los permisos (se definirán más adelante)
+       }
+       // ADMIN ya puede ver todo por defecto (no se oculta nada)
+    }
+ 
+    // NUEVA FUNCIÓN: Renderizar lista de vendedores dinámicamente
+    function renderizarVendedores() {
+       google.script.run.withSuccessHandler(res => {
+          if (res.error) {
+             console.error('Error cargando vendedores:', res.mensaje);
+             return;
+          }
+ 
+          let container = document.getElementById('vendor-list-container');
+          if (!container) return;
+ 
+          let html = '';
+ 
+          // Vendedores activos (ordenados alfabéticamente)
+          let activosOrdenados = (res.activos || []).sort((a, b) => a.nombre.localeCompare(b.nombre));
+          activosOrdenados.forEach(v => {
+             let idNombre = v.nombre.replace(/\s/g, '');
+             let icono = v.nombre === 'Universal Jumps' ? 'storefront' : 'person';
+             html += `<div class="menu-item vendor-item vendor-active" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
+                   <span class="material-symbols-outlined">${icono}</span> ${v.nombre}
+                </div>`;
+          });
+ 
+          // Separador si hay inactivos
+          if ((res.inactivos || []).length > 0) {
+             html += `<div class="menu-sublabel" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">VENDEDORES INACTIVOS</div>`;
+ 
+             // Vendedores inactivos (ordenados alfabéticamente)
+             let inactivosOrdenados = (res.inactivos || []).sort((a, b) => a.nombre.localeCompare(b.nombre));
+             inactivosOrdenados.forEach(v => {
+                let idNombre = v.nombre.replace(/\s/g, '');
+                let icono = v.nombre === 'Universal Jumps' ? 'storefront' : 'person';
+                html += `<div class="menu-item vendor-item vendor-inactive" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
+                      <span class="material-symbols-outlined">${icono}</span> ${v.nombre}
+                   </div>`;
+             });
+          }
+ 
+          container.innerHTML = html;
+ 
+          // Aplicar permisos después de renderizar
+          if (USUARIO_ACTUAL) aplicarPermisos(USUARIO_ACTUAL);
+       }).obtenerListaVendedores();
+    }
+ 
+    function inicializarApp() {
+       document.getElementById('fechaInput').valueAsDate = new Date();
+       document.getElementById('fechaCaja').valueAsDate = new Date();
+ 
+       google.script.run.withSuccessHandler(res => {
+          if (!res.error) COTIZACIONES = res.data;
+       }).obtenerCotizacionesBackend();
+ 
+       google.script.run.withSuccessHandler(res => {
+          if (!res.error) { GLOBAL_CONFIG = res.data; poblarSelectsCaja(); }
+       }).obtenerConfiguracion();
+ 
+       // Cargar vendedores dinámicamente
+       renderizarVendedores();
+ 
+       let hoy = new Date();
+       // Inicializar selectores de balance si existen
+       let selMesBalance = document.getElementById('selMesBalance');
+       let selAnioBalance = document.getElementById('selAnioBalance');
+       if (selMesBalance) selMesBalance.value = (hoy.getMonth() + 1).toString(); // Mes actual (1-12)
+       if (selAnioBalance) selAnioBalance.value = hoy.getFullYear();
+ 
+       const mesActual = hoy.getMonth();
+       let obj = 'OBJETIVOS 1°T';
+       if (mesActual >= 3 && mesActual <= 5) obj = 'OBJETIVOS 2°T';
+       else if (mesActual >= 6 && mesActual <= 8) obj = 'OBJETIVOS 3°T';
+       else if (mesActual >= 9) obj = 'OBJETIVOS 4°T';
+       document.getElementById('selTrimestreHeader').value = obj;
+ 
+       if (typeof poblarAnioConsolidado === 'function') poblarAnioConsolidado();
+       navegar(null, 'HOME');
+    }
+ 
+ 
+ 
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('mobile-overlay').classList.toggle('active'); }
+ 
+    function navegar(el, hoja) {
+       // Prevenir navegación múltiple
+       if (NAVEGANDO) return;
+       NAVEGANDO = true;
+ 
+       if (window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobile-overlay').classList.remove('active'); }
+       if (typeof debugLog === 'function') debugLog('NAV', 'Navegando', { hoja: hoja });
+ 
+       document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+       if (el) { el.classList.add('active'); }
+ 
+       let selVentas = document.getElementById('selTrimestreHeader');
+       let selBalance = document.getElementById('balance-filters');
+       let selConsolidadoVentas = document.getElementById('consolidado-ventas-filters');
+       let selStock = document.getElementById('stock-filters');
+       let fabVenta = document.querySelector('.fab');
+       let fabCaja = document.getElementById('fab-caja');
+ 
+       // Ocultar todas las vistas personalizadas PRIMERO (antes de cualquier otra operación)
+       document.querySelectorAll('[id^="vista-"]').forEach(v => {
+          v.style.display = 'none';
+       });
+ 
+       selVentas.style.display = 'none';
+       selBalance.style.display = 'none';
+       if (selConsolidadoVentas) selConsolidadoVentas.style.display = 'none';
+       if (selStock) selStock.style.display = 'none';
+       if (fabVenta) fabVenta.style.display = 'none';
+       if (fabCaja) fabCaja.style.display = 'none';
+
+       if (typeof APP_STATE !== 'undefined') APP_STATE.set('hojaActual', hoja); else HOJA_ACTUAL = hoja;
+ 
+       if (hoja === 'HOME') { 
+          document.getElementById('titulo').innerText = 'INICIO';
+          renderMainMenu(); 
+       }
+       else if (hoja === 'MENU_ADMIN') { 
+          document.getElementById('titulo').innerText = 'ADMINISTRACIÓN';
+          renderAdminMenu(); 
+       }
+       else if (hoja === 'MENU_VENTAS') { 
+          document.getElementById('titulo').innerText = 'VENTAS';
+          renderVentasMenu(); 
+       }
+       else if (hoja === 'MENU_STOCK') { 
+          document.getElementById('titulo').innerText = 'STOCK';
+          if (selStock) selStock.style.display = 'flex';
+          let vistaStock = document.getElementById('vista-stock');
+          if (vistaStock) vistaStock.style.display = 'none';
+          if (document.getElementById('app')) document.getElementById('app').innerHTML = '';
+          renderStockMenu(); 
+       }
+       else if (hoja === 'STOCK') {
+          document.getElementById('titulo').innerText = 'STOCK';
+          if (selStock) {
+             selStock.style.display = 'flex';
+          }
+          let vistaStock = document.getElementById('vista-stock');
+          if (vistaStock) vistaStock.style.display = 'none';
+          if (document.getElementById('app') && typeof getSkeletonHTML === 'function') {
+             document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">STOCK</div>${getSkeletonHTML('STOCK')}`;
+          } else if (document.getElementById('app')) {
+             document.getElementById('app').innerHTML = '';
+          }
+          cargarStock();
+       }
+       else if (hoja === 'OBJETIVOS') {
+          // Asegurar que vista-stock esté oculta
+          let vistaStock = document.getElementById('vista-stock');
+          if (vistaStock) vistaStock.style.display = 'none';
+          
+          selVentas.style.display = 'block';
+          document.getElementById('titulo').innerText = 'OBJETIVOS';
+          mostrarEstadoCarga('OBJETIVOS', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'OBJETIVOS');
+          cargar(selVentas.value);
+       }
+       else if (hoja === 'CAMBIAR_TRIMESTRE') {
+          // Asegurar que vista-stock esté oculta
+          let vistaStock = document.getElementById('vista-stock');
+          if (vistaStock) vistaStock.style.display = 'none';
+          
+          selVentas.style.display = 'block';
+          let currentTitle = document.getElementById('titulo').innerText;
+          if (currentTitle === 'COMISIONES') {
+             // Si estamos en comisiones, recargar todas las comisiones
+             document.getElementById('titulo').innerText = 'COMISIONES';
+             mostrarEstadoCarga('COMISIONES', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'COMISIONES');
+             google.script.run.withSuccessHandler(res => {
+                NAVEGANDO = false;
+                if (HOJA_ACTUAL !== 'CAMBIAR_TRIMESTRE' || (document.getElementById('titulo') && document.getElementById('titulo').innerText !== 'COMISIONES')) return;
+                if (res.error) {
+                   document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">COMISIONES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
+                } else {
+                   renderComisiones(res.data);
+                }
+             }).obtenerTodasLasComisiones();
+          } else {
+             document.getElementById('titulo').innerText = 'OBJETIVOS';
+             document.getElementById('btnObjetivos').classList.add('active');
+             mostrarEstadoCarga('OBJETIVOS', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'OBJETIVOS');
+             cargar(selVentas.value);
+          }
+       }
+       else if (hoja === 'GESTION_USUARIOS') {
+          // Asegurar que vista-stock esté oculta
+          let vistaStock = document.getElementById('vista-stock');
+          if (vistaStock) vistaStock.style.display = 'none';
+          
+          document.getElementById('titulo').innerText = 'GESTIONAR USUARIOS';
+          mostrarEstadoCarga('GESTIONAR USUARIOS', '<div class="back-nav" onclick="navegar(null, \'MENU_ADMIN\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'USUARIOS');
+          google.script.run.withSuccessHandler(res => {
+             NAVEGANDO = false;
+             if (HOJA_ACTUAL !== 'GESTION_USUARIOS') return;
+             if (res.error) {
+                document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_ADMIN')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">GESTIONAR USUARIOS</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
+             } else {
+                renderGestionUsuarios();
+             }
+          }).obtenerTodosUsuarios();
+       }
+       else if (hoja === 'CAJA') {
+          // Asegurar que vista-stock esté oculta
+          let vistaStock = document.getElementById('vista-stock');
+          if (vistaStock) vistaStock.style.display = 'none';
+          
+          selBalance.style.display = 'flex';
+          document.getElementById('titulo').innerText = 'BALANCE DE CAJA';
+          mostrarEstadoCarga('BALANCE DE CAJA', '<div class="back-nav" onclick="navegar(null, \'MENU_ADMIN\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CAJA');
+          renderBalanceCaja();
+       }
+       else if (hoja === 'CLIENTES') {
+          // Asegurar que vista-stock esté oculta
+          let vistaStock = document.getElementById('vista-stock');
+          if (vistaStock) vistaStock.style.display = 'none';
+          
+          document.getElementById('titulo').innerText = 'CLIENTES';
+          mostrarEstadoCarga('CLIENTES', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CLIENTES');
+          google.script.run.withSuccessHandler(res => {
+             NAVEGANDO = false;
+             if (HOJA_ACTUAL !== 'CLIENTES') return;
+             if (res.error) {
+                document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">CLIENTES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
+             } else {
+                renderClientes();
+             }
+          }).obtenerListaVendedores();
+       }
+       else if (hoja === 'CONSOLIDADO' || hoja === '%') {
+          // Verificar permisos para CONSOLIDADO y COMISIONES
+          if (USUARIO_ACTUAL && USUARIO_ACTUAL.rol === 'VENDEDORGRAL') {
+             alert('No tienes permisos para ver esta sección');
+             NAVEGANDO = false;
+             return;
+          }
+          let tituloConsolidado = hoja === '%' ? 'COMISIONES' : 'CONSOLIDADO';
+          document.getElementById('titulo').innerText = tituloConsolidado;
+          mostrarEstadoCarga(tituloConsolidado, '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', hoja === '%' ? 'COMISIONES' : 'CONSOLIDADO');
+          cargar(hoja);
+       }
+       else {
+          // Asegurar que vista-stock esté oculta
+          let vistaStock = document.getElementById('vista-stock');
+          if (vistaStock) vistaStock.style.display = 'none';
+          
+          // Ocultar el FAB global siempre en vistas de vendedor específico (se usa el botón dinámico dentro de renderVendedor)
+          if (fabVenta) fabVenta.style.display = 'none';
+          let tituloVendedor = 'VENTAS: ' + hoja.toUpperCase();
+          document.getElementById('titulo').innerText = tituloVendedor;
+          mostrarEstadoCarga(tituloVendedor, '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'VENTAS');
+          cargar(hoja);
+       }
+ 
+       // Resetear flag después de un breve delay para permitir la navegación
+       setTimeout(() => { NAVEGANDO = false; }, 300);
+    }
+ 
+    // --- MENUS ---
+    function renderMainMenu() {
+       // Asegurar que vista-stock esté oculta
+       let vistaStock = document.getElementById('vista-stock');
+       if (vistaStock) vistaStock.style.display = 'none';
+       
+       let user = USUARIO_ACTUAL;
+       let rol = user ? user.rol : '';
+       let html = `<div class="welcome-banner"><div class="welcome-title">Panel Principal</div></div>
+          <div class="home-grid">`;
+ 
+       // VENDEDOR y VENDEDORGRAL solo ven VENTAS
+       if (rol === 'VENDEDOR' || rol === 'VENDEDORGRAL') {
+          html += `<div class="home-card main-cat" onclick="navegar(null, 'MENU_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">trending_up</span></div><div class="home-title">VENTAS</div></div>`;
+       }
+       // ADMIN y ROOT ven todo
+       else if (rol === 'ADMIN' || rol === 'ROOT') {
+          html += `<div class="home-card main-cat" onclick="navegar(null, 'MENU_ADMIN')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">domain</span></div><div class="home-title">ADMINISTRACIÓN</div></div>
+             <div class="home-card main-cat" onclick="navegar(null, 'MENU_STOCK')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">inventory_2</span></div><div class="home-title">STOCK</div></div>
+             <div class="home-card main-cat" onclick="navegar(null, 'MENU_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">trending_up</span></div><div class="home-title">VENTAS</div></div>`;
+       }
+ 
+       html += `</div>`;
+       document.getElementById('app').innerHTML = html;
+    }
+ 
+    function renderAdminMenu() {
+       // Asegurar que vista-stock esté oculta
+       let vistaStock = document.getElementById('vista-stock');
+       if (vistaStock) vistaStock.style.display = 'none';
+       
+       let html = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
+          <div class="dash-section-title">ADMINISTRACIÓN</div>
+          <div class="home-grid">
+             <div class="home-card" onclick="navegar(null, 'CAJA')"><div class="home-icon"><span class="material-symbols-outlined">account_balance_wallet</span></div><div class="home-title">Balance de Caja</div><div class="home-desc">Ingresos y Egresos</div></div>
+             <div class="home-card" onclick="navegar(null, 'GESTION_USUARIOS')"><div class="home-icon"><span class="material-symbols-outlined">groups</span></div><div class="home-title">Gestionar Usuarios</div><div class="home-desc">Usuarios y Permisos</div></div>
+          </div>`;
+       document.getElementById('app').innerHTML = html;
+    }
+ 
+    function renderVentasMenu() {
+       // Asegurar que vista-stock esté oculta
+       let vistaStock = document.getElementById('vista-stock');
+       if (vistaStock) vistaStock.style.display = 'none';
+       let user = USUARIO_ACTUAL;
+       let html = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">VENTAS</div><div class="home-grid">`;
+       if (user.rol === 'ADMIN' || user.rol === 'ROOT') {
+          html += `<div class="home-card" onclick="navegar(null, 'CONSOLIDADO')"><div class="home-icon"><span class="material-symbols-outlined">leaderboard</span></div><div class="home-title">Consolidado</div></div>
+                      <div class="home-card" onclick="navegar(null, '%')"><div class="home-icon"><span class="material-symbols-outlined">trending_up</span></div><div class="home-title">Comisiones</div></div>
+                      <div class="home-card" onclick="navegar(null, 'OBJETIVOS')"><div class="home-icon"><span class="material-symbols-outlined">track_changes</span></div><div class="home-title">Objetivos</div></div>
+                      <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
+       } else if (user.rol === 'VENDEDORGRAL') {
+          html += `<div class="home-card" onclick="navegar(null, 'OBJETIVOS')"><div class="home-icon"><span class="material-symbols-outlined">track_changes</span></div><div class="home-title">Objetivos</div></div>
+                      <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
+       } else {
+          html += `<div class="home-card" onclick="navegar(null, '${user.hoja}')"><div class="home-icon"><span class="material-symbols-outlined">edit_note</span></div><div class="home-title">Mis Ventas</div></div>
+                      <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
+       }
+       html += `</div>`;
+       document.getElementById('app').innerHTML = html;
+    }
+ 
+    function renderStockMenu() {
+       mostrarEstadoCarga('Inventario de Botas', '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'STOCK');
+       if (typeof cargarStock === 'function') {
+          cargarStock();
+       } else {
+          document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">Inventario de Botas</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: no se cargó el script de stock. Comprueba la consola (errores de sintaxis).</div>';
+       }
+    }
+</script>

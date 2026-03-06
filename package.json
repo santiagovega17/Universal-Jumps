@@ -1,0 +1,14 @@
+{
+  "name": "universal-jumps",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API serverless para migracion de GAS a Vercel + Supabase.",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "vercel dev",
+    "test": "echo \"Sin tests por ahora\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.98.0"
+  }
+}

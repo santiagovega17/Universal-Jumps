@@ -1,0 +1,324 @@
+<script>
+    // Año activo para filtros y reportes (cambiar en un solo lugar)
+    const ANIO_ACTIVO = 2026;
+    const APP_VERSION = '1.5.0';
+
+    /** Modo debug: poner a true para ver logs en consola (F12). También se puede activar en consola con: window.DEBUG = true */
+    var DEBUG = false;
+
+    /** Log solo si DEBUG está activo. Uso: debugLog('CAJA', 'Desde caché', { key: cacheKey }); */
+    function debugLog(tag, message, data) {
+       if (typeof window !== 'undefined' && (window.DEBUG === true || (typeof DEBUG !== 'undefined' && DEBUG === true))) {
+          if (typeof console !== 'undefined' && console.log) {
+             var prefix = '[DEBUG][' + (tag || 'APP') + '] ';
+             if (data !== undefined) console.log(prefix + (message || ''), data);
+             else console.log(prefix + (message || ''));
+          }
+       }
+    }
+
+    let GLOBAL_CONFIG = {}; // Se llenará estructurada por país
+    let PAIS_CAJA_ACTUAL = 'ARGENTINA'; // País por defecto
+    let PAIS_STOCK_ACTUAL = 'ARGENTINA'; // País por defecto para stock
+    let VISTA_STOCK_ACTUAL = 'STOCK'; // Vista por defecto: 'STOCK' o 'MOVIMIENTOS'
+    let ALL_OBJECTIVES = []; // Cache de objetivos
+    let ALL_OBJECTIVES_ESPECIALES = {}; // Cache de objetivos especiales { trimestre: { vendedor: objetivo } }
+    let COTIZACIONES = {};
+    const TRIMESTRES = ["1° TRIMESTRE", "2° TRIMESTRE", "3° TRIMESTRE", "4° TRIMESTRE"];
+    let HOJA_ACTUAL = 'HOME';
+    let USUARIO_ACTUAL = null;
+    let HISTORIAL_CACHE = [];
+    let HISTORIAL_CAJA_COMPLETO = [];
+    var VENTAS_CACHE = { vendedor: '', data: null, ts: 0 };
+    var VENTAS_CACHE_TTL_MS = 30000; // Almacenar todos los movimientos para filtrar
+    let FILTRO_TIPO_HISTORIAL = 'EGRESO'; // Filtro predeterminado
+    let FILAS_EN_EDICION = {}; // { filaIndex: true/false } para rastrear qué filas están en modo edición
+    let CAMBIOS_PENDIENTES = {}; // { filaIndex: { campo: valor } } para almacenar cambios no guardados
+
+    let accionPendiente = null;
+    let NAVEGANDO = false; // Flag para prevenir navegación múltiple
+
+    /** Objeto de estado mínimo: lectura/escritura centralizada (get/set) y sincronización con variables globales. */
+    var APP_STATE = {
+       _data: {
+          hojaActual: 'HOME',
+          paisCaja: 'ARGENTINA',
+          paisStock: 'ARGENTINA',
+          vistaStock: 'STOCK'
+       },
+       get: function (key) {
+          if (this._data.hasOwnProperty(key)) return this._data[key];
+          return undefined;
+       },
+       set: function (key, val) {
+          this._data[key] = val;
+          if (key === 'hojaActual') HOJA_ACTUAL = val;
+          if (key === 'paisCaja') PAIS_CAJA_ACTUAL = val;
+          if (key === 'paisStock') PAIS_STOCK_ACTUAL = val;
+          if (key === 'vistaStock') VISTA_STOCK_ACTUAL = val;
+          return val;
+       }
+    };
+    HOJA_ACTUAL = APP_STATE._data.hojaActual;
+    PAIS_CAJA_ACTUAL = APP_STATE._data.paisCaja;
+    PAIS_STOCK_ACTUAL = APP_STATE._data.paisStock;
+    VISTA_STOCK_ACTUAL = APP_STATE._data.vistaStock;
+
+    /** Rellena el select de año del consolidado con ANIO_ACTIVO-2 hasta ANIO_ACTIVO. Llamar al iniciar app o al entrar a consolidado. */
+    function poblarAnioConsolidado() {
+       var sel = document.getElementById('selAnioConsolidadoVentas');
+       if (!sel || typeof ANIO_ACTIVO === 'undefined') return;
+       var anio = ANIO_ACTIVO;
+       sel.innerHTML = '';
+       for (var a = anio - 2; a <= anio; a++) {
+          var opt = document.createElement('option');
+          opt.value = a;
+          opt.textContent = a;
+          if (a === anio) opt.selected = true;
+          sel.appendChild(opt);
+       }
+    }
+
+    // DETECTAR ESC PARA CERRAR MODALES
+    document.addEventListener('keydown', function (event) {
+       if (event.key === "Escape") {
+          cerrarModals();
+       }
+    });
+
+    // Listener para actualizar clientes cuando cambia el vendedor o el país en el modal de venta
+    setTimeout(() => {
+       let selVendedor = document.getElementById('selVendedor');
+       if (selVendedor && !selVendedor.dataset.listenerAdded) {
+          selVendedor.addEventListener('change', function () {
+             actualizarSelectorClientes(this.value);
+          });
+          selVendedor.dataset.listenerAdded = 'true';
+       }
+
+       let paisInput = document.getElementById('paisInput');
+       if (paisInput && !paisInput.dataset.listenerAdded) {
+          paisInput.addEventListener('change', function () {
+             // Actualizar clientes cuando cambia el país
+             let selVendedor = document.getElementById('selVendedor');
+             if (selVendedor && selVendedor.value) {
+                actualizarSelectorClientes(selVendedor.value);
+             }
+          });
+          paisInput.dataset.listenerAdded = 'true';
+       }
+    }, 2000);
+
+    // --- NUEVA FUNCIÓN: CAMBIAR PAÍS EN CAJA ---
+    function switchCountryCaja(pais) {
+       PAIS_CAJA_ACTUAL = pais;
+
+       // Actualizar visualmente las pestañas usando data-pais
+       document.querySelectorAll('.tab-caja').forEach(el => {
+          el.classList.remove('active-view');
+          if (el.getAttribute('data-pais') === pais) {
+             el.classList.add('active-view');
+          }
+       });
+
+       // Recargar Balance y Selects para el país seleccionado
+       cargarBalance();
+       poblarSelectsCaja();
+    }
+
+    // --- FORMATO ARGENTINA ---
+    function formatoMoneda(input) {
+       let val = input.value.replace(/\D/g, '');
+       if (!val) { input.value = ""; return; }
+       let num = parseInt(val) / 100;
+       input.value = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }).format(num).replace('ARS', '').trim();
+    }
+    function parseCurrency(str) {
+       if (!str) return 0;
+       if (typeof str === 'number') return str;
+       let limpio = str.toString().replace(/[$.]/g, '').replace(',', '.').trim();
+       return parseFloat(limpio) || 0;
+    }
+    function formatNumberAr(num) {
+       if (num === null || num === undefined) return "$ 0,00";
+       return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }).format(num);
+    }
+    function calcularTotal() {
+       let cant = parseFloat(document.getElementById('cantInput').value) || 0;
+       let precio = parseCurrency(document.getElementById('precioInput').value);
+       let total = cant * precio;
+       document.getElementById('totalDisplay').value = formatNumberAr(total);
+    }
+
+    function formatCurrency(amount, currencyCode) {
+       if (!amount) amount = 0;
+       return new Intl.NumberFormat('en-US', { style: 'currency', currency: currencyCode }).format(amount);
+    }
+
+    // --- UI HELPERS ---
+    function setTipoCaja(tipo) {
+       document.getElementById('tipoCaja').value = tipo;
+       let btnEgreso = document.getElementById('btn-egreso');
+       let btnIngreso = document.getElementById('btn-ingreso');
+       if (tipo === 'EGRESO') { btnEgreso.classList.add('active-egreso'); btnIngreso.classList.remove('active-ingreso'); }
+       else { btnIngreso.classList.add('active-ingreso'); btnEgreso.classList.remove('active-egreso'); }
+    }
+
+    function toggleSection(id) {
+       let el = document.getElementById(id);
+       let cat = el.previousElementSibling;
+       if (el.classList.contains('open')) { el.classList.remove('open'); cat.classList.remove('active'); }
+       else { el.classList.add('open'); cat.classList.add('active'); }
+    }
+
+    function parseFecha(s) {
+       if (!s) return new Date(0);
+       if (s instanceof Date) return s;
+       let p = s.split('/');
+       return new Date(p[2], p[1] - 1, p[0]);
+    }
+
+    // Skeletons por vista: diseño específico para cada pantalla (mejor percepción de carga)
+    function getSkeletonHTML(vista) {
+       vista = (vista || 'GENERAL').toUpperCase();
+       if (vista === 'CAJA') {
+          return `<div class="skeleton-view skeleton-caja" style="margin-top:20px;">
+             <div style="display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin-bottom:32px;">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+             </div>
+             <div style="margin-bottom:16px;">
+                <div class="skeleton-line" style="width:280px; height:18px; margin-bottom:16px;"></div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+                   <div class="skeleton-card" style="height:140px;"></div>
+                   <div class="skeleton-card" style="height:140px;"></div>
+                   <div class="skeleton-card" style="height:140px;"></div>
+                </div>
+             </div>
+             <div style="margin-top:32px;">
+                <div class="skeleton-line" style="width:200px; height:16px; margin-bottom:12px;"></div>
+                <div class="skeleton-table">
+                   <div class="skeleton-row"></div>
+                   <div class="skeleton-row"></div>
+                   <div class="skeleton-row"></div>
+                   <div class="skeleton-row"></div>
+                   <div class="skeleton-row"></div>
+                </div>
+             </div>
+          </div>`;
+       }
+       if (vista === 'VENTAS') {
+          return `<div class="skeleton-view skeleton-ventas" style="margin-top:20px;">
+             <div class="skeleton-tabs"></div>
+             <div style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; margin:24px 0 20px 0;">
+                <div class="skeleton-card" style="height:70px;"></div>
+                <div class="skeleton-card" style="height:70px;"></div>
+                <div class="skeleton-card" style="height:70px;"></div>
+             </div>
+             <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+                <div class="skeleton-line" style="width:80px; height:36px; border-radius:8px;"></div>
+                <div class="skeleton-line" style="width:70px; height:36px; border-radius:8px;"></div>
+                <div class="skeleton-line" style="width:100px; height:36px; border-radius:8px;"></div>
+                <div class="skeleton-line" style="width:90px; height:36px; border-radius:8px;"></div>
+             </div>
+             <div class="skeleton-table">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+             </div>
+          </div>`;
+       }
+       if (vista === 'STOCK') {
+          return `<div class="skeleton-view skeleton-stock" style="margin-top:20px;">
+             <div class="skeleton-tabs" style="max-width:600px; margin-bottom:24px;"></div>
+             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:16px;">
+                <div class="skeleton-card skeleton-product-card"></div>
+                <div class="skeleton-card skeleton-product-card"></div>
+                <div class="skeleton-card skeleton-product-card"></div>
+                <div class="skeleton-card skeleton-product-card"></div>
+                <div class="skeleton-card skeleton-product-card"></div>
+                <div class="skeleton-card skeleton-product-card"></div>
+             </div>
+          </div>`;
+       }
+       if (vista === 'OBJETIVOS' || vista === 'COMISIONES') {
+          return `<div class="skeleton-view skeleton-objetivos" style="margin-top:20px;">
+             <div class="skeleton-line" style="width:180px; height:40px; margin-bottom:24px; border-radius:8px;"></div>
+             <div style="display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin-bottom:28px;">
+                <div class="skeleton-card" style="height:90px;"></div>
+                <div class="skeleton-card" style="height:90px;"></div>
+                <div class="skeleton-card" style="height:90px;"></div>
+                <div class="skeleton-card" style="height:90px;"></div>
+             </div>
+             <div class="skeleton-table">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+             </div>
+          </div>`;
+       }
+       if (vista === 'CLIENTES' || vista === 'USUARIOS') {
+          return `<div class="skeleton-view skeleton-tabla" style="margin-top:20px;">
+             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div class="skeleton-line" style="width:120px; height:16px;"></div>
+                <div class="skeleton-line" style="width:100px; height:36px; border-radius:8px;"></div>
+             </div>
+             <div class="skeleton-table">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+             </div>
+          </div>`;
+       }
+       if (vista === 'CONSOLIDADO') {
+          return `<div class="skeleton-view skeleton-consolidado" style="margin-top:20px;">
+             <div class="skeleton-line" style="width:200px; height:40px; margin-bottom:20px; border-radius:8px;"></div>
+             <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-bottom:24px;">
+                <div class="skeleton-card" style="height:80px;"></div>
+                <div class="skeleton-card" style="height:80px;"></div>
+             </div>
+             <div class="skeleton-table">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+             </div>
+          </div>`;
+       }
+       // GENERAL: diseño neutro (cualquier otra vista)
+       return `<div class="skeleton-view skeleton-general" style="margin-top:20px;">
+          <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-bottom:24px;">
+             <div class="skeleton-card" style="height:72px;"></div>
+             <div class="skeleton-card" style="height:72px;"></div>
+          </div>
+          <div class="skeleton-line" style="width:160px; height:16px; margin-bottom:12px;"></div>
+          <div class="skeleton-table">
+             <div class="skeleton-row"></div>
+             <div class="skeleton-row"></div>
+             <div class="skeleton-row"></div>
+             <div class="skeleton-row"></div>
+          </div>
+       </div>`;
+    }
+
+    // Muestra de inmediato back + título + skeleton según vista (opcional tercer param)
+    function mostrarEstadoCarga(titulo, backNav, vista) {
+       let backNavHtml = backNav || '';
+       document.getElementById('app').innerHTML = `
+             ${backNavHtml}
+             <div class="dash-section-title">${titulo}</div>
+             ${getSkeletonHTML(vista)}
+          `;
+    }
+</script>

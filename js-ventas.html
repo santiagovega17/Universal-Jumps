@@ -1,0 +1,649 @@
+<script>
+    /**
+     * Ventas – lógica por vendedor: historial, filtros, modal venta, consolidado/tarjetas.
+     */
+    // --- VENTAS Y VENDEDOR ---
+
+    var TAMANO_PAGINA_VENTAS = 25;
+    var VENTAS_HISTORIAL_VISIBLE = 25;
+    var VENTAS_HISTORIAL_VENDEDOR = '';
+
+    function aplicarFiltrosHistorial(sellerName, resetVisible) {
+       if (resetVisible !== false) VENTAS_HISTORIAL_VISIBLE = TAMANO_PAGINA_VENTAS;
+       VENTAS_HISTORIAL_VENDEDOR = sellerName || VENTAS_HISTORIAL_VENDEDOR;
+       var nombreVendedor = sellerName || VENTAS_HISTORIAL_VENDEDOR;
+
+       let mes = document.getElementById('fMes') ? document.getElementById('fMes').value : '';
+       let anio = document.getElementById('fAnio') ? document.getElementById('fAnio').value : '';
+       let estado = document.getElementById('fEstado') ? document.getElementById('fEstado').value.toUpperCase() : '';
+       let pais = document.getElementById('fPais') ? document.getElementById('fPais').value.toUpperCase() : '';
+       let concepto = document.getElementById('fConcepto') ? document.getElementById('fConcepto').value.toUpperCase() : '';
+       let pago = document.getElementById('fPago') ? document.getElementById('fPago').value.toUpperCase() : '';
+ 
+       let filtrados = HISTORIAL_CACHE.filter(row => {
+          let f = parseFecha(row[0]);
+          let matchMes = (mes === "" || (f.getMonth() + 1) == mes);
+          let matchAnio = (anio === "" || f.getFullYear() == anio);
+          let matchEstado = (estado === "" || row[1].toUpperCase().includes(estado));
+          let matchPais = (pais === "" || row[3].toUpperCase().includes(pais));
+          let matchConcepto = (concepto === "" || row[5].toUpperCase().includes(concepto));
+          let matchPago = (pago === "" || row[6].toUpperCase().includes(pago));
+          return matchMes && matchAnio && matchEstado && matchPais && matchConcepto && matchPago;
+       });
+       var mostrar = filtrados.slice(0, VENTAS_HISTORIAL_VISIBLE);
+       var restantes = Math.max(0, filtrados.length - VENTAS_HISTORIAL_VISIBLE);
+       var html = construirTablaHistorialAcciones(mostrar, nombreVendedor);
+       if (restantes > 0) {
+          html += '<div class="cargar-mas-wrap"><button type="button" class="btn-submit btn-cargar-mas" onclick="VENTAS_HISTORIAL_VISIBLE += TAMANO_PAGINA_VENTAS; aplicarFiltrosHistorial(VENTAS_HISTORIAL_VENDEDOR, false);">Cargar más (' + restantes + ' restantes)</button></div>';
+       }
+       var cont = document.getElementById('contenedorHistorial');
+       if (cont) cont.innerHTML = html;
+    }
+ 
+
+    function renderVendedor(datos, nombreVendedor) {
+       let filas = [];
+       if (datos && datos.length > 1) {
+          let cabecera = datos[0];
+          for (let i = 1; i < datos.length; i++) {
+             if (datos[i][0]) {
+                let filaConId = [...datos[i]];
+                filaConId.push(i + 1);
+                filas.push(filaConId);
+             }
+          }
+          filas.sort((a, b) => parseFecha(b[0]) - parseFecha(a[0]));
+       }
+          HISTORIAL_CACHE = filas;
+          VENTAS_HISTORIAL_VENDEDOR = nombreVendedor;
+          VENTAS_HISTORIAL_VISIBLE = TAMANO_PAGINA_VENTAS;
+          
+          // ELIMINADO DE AQUÍ (Se movió a Balance de Caja)
+          // actualizarAvisoPendientes(filas, nombreVendedor);
+ 
+          let resumenBotas = generarMatrizResumenCompleja(filas, 'GRUPO_BOTAS', nombreVendedor);
+       let resumenCerts = generarMatrizResumenCompleja(filas, 'GRUPO_CERTS', nombreVendedor);
+ 
+       let html = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="vendor-grid force-header-style">';
+ 
+       // PESTAÑAS (TABS)
+       html += `<div class="view-toggle-container">
+            <div class="type-toggle" style="width:100%; max-width:600px; margin:0 auto 20px auto;">
+               <div class="view-option active-view" onclick="switchView(this, 'general')">GENERAL</div>
+               <div class="view-option" onclick="switchView(this, 'botas')">BOTAS</div>
+               <div class="view-option" onclick="switchView(this, 'certs')">CERTIFICACIONES</div>
+            </div>
+         </div>`;
+ 
+       // CONTENIDO PESTAÑAS
+ 
+          // 1. GENERAL: Tarjeta del mes actual (o seleccionado) + Historial
+          html += `<div id="tab-general">
+             <div id="general-cards-container"></div>
+ 
+             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; margin-bottom: 16px;">
+                <div style="font-weight: 700; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+                   <span class="material-symbols-outlined" style="font-size: 18px;">history</span>
+                   HISTORIAL
+                </div>
+                ${USUARIO_ACTUAL && USUARIO_ACTUAL.rol !== 'VENDEDORGRAL' ? `<button class="btn-submit" onclick="abrirModalVenta()" style="padding: 8px 16px; font-size: 13px; width: auto; flex-shrink: 0;">
+                   <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">add</span>
+                   Agregar Venta
+                </button>` : ''}
+             </div>
+             <div class="filter-bar">
+                 <select id="fMes" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}'); actualizarTarjetasGeneral(this.value, '${nombreVendedor}');">
+                     <option value="">Mes Actual...</option><option value="1">Ene</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Abr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Ago</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option>
+                 </select>
+                 <select id="fAnio" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}'); actualizarTarjetasGeneral(document.getElementById('fMes').value || new Date().getMonth() + 1, '${nombreVendedor}');">
+                     <option value="">Año...</option>${(function() { var anio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026; var opts = ''; for (var a = anio - 2; a <= anio; a++) { opts += '<option value="' + a + '"' + (a === anio ? ' selected' : '') + '>' + a + '</option>'; } return opts; })()}
+                 </select>
+                 <select id="fEstado" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}')">
+                     <option value="">Estado...</option><option value="Cobrado">Cobrado</option><option value="Cta corriente">Cta corriente</option><option value="Pendiente">Pendiente</option><option value="Prevendido">Prevendido</option><option value="Señado">Señado</option>
+                 </select>
+                 <select id="fPais" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}')">
+                     <option value="">País...</option><option value="Argentina">Argentina</option><option value="Chile">Chile</option><option value="Mexico">Mexico</option><option value="España">España</option><option value="EEUU">EEUU</option><option value="Brasil">Brasil</option><option value="Uruguay">Uruguay</option><option value="RDM">RDM</option>
+                 </select>
+                 <select id="fConcepto" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}')">
+                     <option value="">Concepto...</option><option value="Botas">Botas</option><option value="Cursos">Cursos</option><option value="Eventos">Eventos</option><option value="Indu - Acce">Indu - Acce</option><option value="Repuestos">Repuestos</option><option value="Talleres">Talleres</option><option value="Torneos">Torneos</option>
+                 </select>
+                 <select id="fPago" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}')">
+                     <option value="">Pago...</option><option value="Mercado Pago">Mercado Pago</option><option value="Transferencia">Transferencia</option><option value="Efectivo">Efectivo</option><option value="Cta corriente">Cta corriente</option><option value="Mercado Libre">Mercado Libre</option><option value="Amazon">Amazon</option><option value="Prisma">Prisma</option><option value="Paypal">Paypal</option><option value="Banco Bci (CL)">Banco Bci (CL)</option><option value="Dólar App (MX)">Dólar App (MX)</option><option value="Banco Sadabell (ESP)">Banco Sadabell (ESP)</option><option value="Banco Itaú (URU)">Banco Itaú (URU)</option>
+                 </select>
+             </div>
+             <div class="card"><div class="card-scroll" id="contenedorHistorial">
+                 ${filas.length > 0 ? (function() { var ini = filas.slice(0, TAMANO_PAGINA_VENTAS); var rest = filas.length - TAMANO_PAGINA_VENTAS; return construirTablaHistorialAcciones(ini, nombreVendedor) + (rest > 0 ? '<div class="cargar-mas-wrap"><button type="button" class="btn-submit btn-cargar-mas" onclick="VENTAS_HISTORIAL_VISIBLE += TAMANO_PAGINA_VENTAS; aplicarFiltrosHistorial(VENTAS_HISTORIAL_VENDEDOR, false);">Cargar más (' + rest + ' restantes)</button></div>' : ''); }()) : '<div style="padding:30px;text-align:center;color:#94a3b8;font-weight:400;">No hay movimientos registrados.</div>'}
+             </div></div>
+         </div>`;
+ 
+       // 2. BOTAS
+       html += `<div id="tab-botas" style="display:none;">
+             <div class="card-header"><span class="material-symbols-outlined">steps</span> RESUMEN BOTAS</div>
+             <div class="month-grid">${construirGridTarjetas(resumenBotas, 'BOTAS')}</div>
+         </div>`;
+ 
+       // 3. CERTIFICACIONES
+       html += `<div id="tab-certs" style="display:none;">
+             <div class="card-header"><span class="material-symbols-outlined">verified</span> RESUMEN CERTIFICACIONES</div>
+             <div class="month-grid">${construirGridTarjetas(resumenCerts, 'CERTIFICACIONES')}</div>
+         </div>`;
+ 
+ 
+       document.getElementById('app').innerHTML = html;
+ 
+       // Inicializar tarjeta General con mes actual
+       let mesActual = new Date().getMonth() + 1;
+       let anioActual = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
+       window.resumenBotasGlobal = resumenBotas;
+       window.resumenCertsGlobal = resumenCerts;
+       setTimeout(() => {
+          let fAnio = document.getElementById('fAnio');
+          if (fAnio) {
+             fAnio.value = anioActual.toString();
+             aplicarFiltrosHistorial(nombreVendedor);
+          }
+       }, 100);
+       actualizarTarjetasGeneral(mesActual, nombreVendedor);
+    }
+
+    /**
+     * Actualiza el widget de pagos pendientes usando el historial ya cargado (HISTORIAL_CAJA_COMPLETO).
+     * No hace llamada al backend; usa renderPendingWidgetFromHistorial de js-caja.
+     */
+    function actualizarAvisoPendientes() {
+       if (typeof renderPendingWidgetFromHistorial === 'function' && HISTORIAL_CAJA_COMPLETO && Array.isArray(HISTORIAL_CAJA_COMPLETO)) {
+          renderPendingWidgetFromHistorial(HISTORIAL_CAJA_COMPLETO);
+       }
+    }
+
+    function esFechaVencida(fechaStr) {
+       if (!fechaStr) return false;
+       let partes = fechaStr.split('/');
+       if (partes.length !== 3) return false;
+       let fechaVto = new Date(partes[2], partes[1] - 1, partes[0]);
+       let hoy = new Date();
+       hoy.setHours(0, 0, 0, 0);
+       return fechaVto < hoy;
+    }
+ 
+    function switchView(el, tabName) {
+       document.querySelectorAll('.view-option').forEach(t => t.classList.remove('active-view'));
+       el.classList.add('active-view');
+ 
+       document.getElementById('tab-general').style.display = 'none';
+       document.getElementById('tab-botas').style.display = 'none';
+       document.getElementById('tab-certs').style.display = 'none';
+
+ 
+       document.getElementById('tab-' + tabName).style.display = 'block';
+    }
+ 
+    function actualizarTarjetasGeneral(mes, nombreVendedor) {
+       if (!mes) mes = new Date().getMonth() + 1;
+       mes = parseInt(mes);
+ 
+       const anioFiltro = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
+ 
+       // Filtrar las filas por año antes de generar la matriz
+       let filasFiltradas = HISTORIAL_CACHE.filter(fila => {
+          if (!fila || !fila[0]) return false;
+          let fecha = parseFecha(fila[0]);
+          return fecha.getFullYear() === anioFiltro;
+       });
+ 
+       // Regenerar matrices solo con datos del año seleccionado
+       let resumenBotasFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_BOTAS', nombreVendedor);
+       let resumenCertsFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_CERTS', nombreVendedor);
+ 
+       const MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+       let nombreMes = MESES[mes - 1];
+ 
+       let dBotas = resumenBotasFiltrado[nombreMes];
+       let dCerts = resumenCertsFiltrado[nombreMes];
+ 
+       let html = `<div class="month-grid">
+              ${construirTarjetaMes(dBotas, nombreMes, 'BOTAS')}
+              ${construirTarjetaMes(dCerts, nombreMes, 'CERTIFICACIONES')}
+          </div>`;
+ 
+       document.getElementById('general-cards-container').innerHTML = html;
+    }
+ 
+    function construirGridTarjetas(matriz, titulo) {
+       const MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+       let html = '';
+       MESES.forEach(m => {
+          html += construirTarjetaMes(matriz[m], m, titulo);
+       });
+       return html;
+    }
+ 
+    function construirTarjetaMes(d, nombreMes, titulo) {
+       if (!d) return '';
+       let totalSinIva = d.totalSinIva != null ? d.totalSinIva : 0;
+       return `
+           <div class="month-card">
+               <div class="month-header">
+                   <div class="month-name">${nombreMes} - ${titulo}</div>
+                   <div class="month-total-val">${formatNumberAr(d.total)}</div>
+                   <div class="month-total-siniva" style="font-size: 12px; color: #94a3b8; font-weight: 500; margin-top: 4px;">Sin IVA: ${formatNumberAr(totalSinIva)}</div>
+               </div>
+               <div class="month-body">
+                   <div class="prog-container">
+                       <div class="prog-labels">
+                           <span style="color:var(--accent)">${d.rangoLabel}</span>
+                           <span>Meta: ${formatNumberAr(d.objetivo)}</span>
+                       </div>
+                       <div class="prog-track">
+                          <div class="prog-fill" style="width:${d.pct}%"></div>
+                          <div class="prog-text">${d.pct.toFixed(0)}%</div>
+                       </div>
+                       <div class="prog-stats">
+                            <span>$ ${formatNumberAr(d.total)} / ${formatNumberAr(d.objetivo)}</span>
+                            <span>${d.cantidad} / ${d.cantidadObjetivo} u.</span>
+                       </div>
+                   </div>
+ 
+                   <div class="month-countries">
+                       <div class="c-row"><span class="c-name">ARG</span> <span class="c-val">${formatNumberAr(d['ARGENTINA'].original)}</span></div>
+                       <div class="c-row"><span class="c-name">CHL</span> <span class="c-val">${formatCurrency(d['CHILE'].original, 'CLP')}<span class="c-ars">(${formatNumberAr(d['CHILE'].ars)})</span></span></div>
+                       <div class="c-row"><span class="c-name">MEX</span> <span class="c-val">${formatCurrency(d['MEXICO'].original, 'MXN')}<span class="c-ars">(${formatNumberAr(d['MEXICO'].ars)})</span></span></div>
+                       <div class="c-row"><span class="c-name">ESP</span> <span class="c-val">${formatCurrency(d['ESPAÑA'].original, 'EUR')}<span class="c-ars">(${formatNumberAr(d['ESPAÑA'].ars)})</span></span></div>
+                       <div class="c-row"><span class="c-name">BRA</span> <span class="c-val">${formatCurrency(d['BRASIL'].original, 'BRL')}<span class="c-ars">(${formatNumberAr(d['BRASIL'].ars)})</span></span></div>
+                       <div class="c-row"><span class="c-name">URU</span> <span class="c-val">${formatCurrency(d['URUGUAY'].original, 'UYU')}<span class="c-ars">(${formatNumberAr(d['URUGUAY'].ars)})</span></span></div>
+                       <div class="c-row"><span class="c-name">EEUU</span> <span class="c-val">${formatCurrency(d['EEUU'].original, 'USD')}<span class="c-ars">(${formatNumberAr(d['EEUU'].ars)})</span></span></div>
+                       <div class="c-row"><span class="c-name">RDM</span> <span class="c-val">${formatCurrency(d['RDM'].original, 'USD')}<span class="c-ars">(${formatNumberAr(d['RDM'].ars)})</span></span></div>
+                   </div>
+               </div>
+               <div class="month-footer">
+                   <div class="comm-label">COMISIÓN GANADA</div>
+                   <div class="comm-total">${formatNumberAr(d.comision)}</div>
+               </div>
+           </div>`;
+    }
+ 
+    // --- LOGICA MATRIZ (REUTILIZADA) ---
+    function generarMatrizResumenCompleja(filas, tipoGrupo, nombreVendedor) {
+       const MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+       const GET_TRIM = (idx) => {
+          if (idx <= 2) return 'OBJETIVOS 1°T';
+          if (idx <= 5) return 'OBJETIVOS 2°T';
+          if (idx <= 8) return 'OBJETIVOS 3°T';
+          return 'OBJETIVOS 4°T';
+       };
+       const PAISES_STRUCT = [
+          { key: 'ARGENTINA' }, { key: 'CHILE' }, { key: 'MEXICO' }, { key: 'ESPAÑA' },
+          { key: 'BRASIL' }, { key: 'URUGUAY' }, { key: 'RDM' }, { key: 'EEUU' }
+       ];
+       let matriz = {};
+       MESES.forEach((m, idx) => {
+          matriz[m] = { total: 0, totalSinIva: 0, cantidad: 0, mesIndex: idx };
+          PAISES_STRUCT.forEach(p => { matriz[m][p.key] = { original: 0, ars: 0 }; });
+       });
+       const GRUPO_BOTAS_ITEMS = ['BOTAS', 'INDU - ACCE', 'REPUESTOS'];
+       const GRUPO_CERTS_ITEMS = ['CURSOS', 'TALLERES', 'EVENTOS', 'TORNEOS'];
+ 
+       filas.forEach(f => {
+          let fecha = parseFecha(f[0]);
+          let concepto = (f[5] || "").toUpperCase();
+          let entraEnGrupo = false;
+          if (tipoGrupo === 'GRUPO_BOTAS') entraEnGrupo = GRUPO_BOTAS_ITEMS.some(item => concepto.includes(item));
+          else if (tipoGrupo === 'GRUPO_CERTS') entraEnGrupo = GRUPO_CERTS_ITEMS.some(item => concepto.includes(item));
+ 
+          if (entraEnGrupo) {
+             let mesNombre = MESES[fecha.getMonth()];
+             let paisRaw = (f[3] || "").toUpperCase();
+             let paisKey = paisRaw;
+             if (paisRaw === 'USA' || paisRaw === 'EEUU') paisKey = 'EEUU';
+ 
+             // Total con IVA (columna 9) y sin IVA (columna 10)
+             let montoConIva = typeof f[9] === 'number' ? f[9] : parseCurrency(f[9]);
+             let montoSinIva = typeof f[10] === 'number' ? f[10] : parseCurrency(f[10]);
+             let cotizacionGuardada = 1;
+ 
+             // FIX DE LA MONEDA
+             if (f[12]) {
+                cotizacionGuardada = typeof f[12] === 'number' ? f[12] : parseCurrency(f[12]);
+             } else {
+                cotizacionGuardada = COTIZACIONES[paisKey] || 1;
+             }
+ 
+             let montoArs = montoConIva;
+             if (paisKey !== 'ARGENTINA') montoArs = montoConIva * cotizacionGuardada;
+ 
+             let montoArsSinIva = montoSinIva;
+             if (paisKey !== 'ARGENTINA') montoArsSinIva = montoSinIva * cotizacionGuardada;
+ 
+             if (matriz[mesNombre] && matriz[mesNombre][paisKey]) {
+                matriz[mesNombre][paisKey].original += montoConIva;
+                matriz[mesNombre][paisKey].ars += montoArs;
+                matriz[mesNombre].total += montoArs;
+                matriz[mesNombre].totalSinIva += montoArsSinIva;
+ 
+                let sumarCantidad = false;
+                if (tipoGrupo === 'GRUPO_BOTAS' && concepto.includes('BOTAS')) sumarCantidad = true;
+                if (tipoGrupo === 'GRUPO_CERTS' && concepto.includes('CURSOS')) sumarCantidad = true;
+                if (sumarCantidad) { let qty = parseInt(f[7]) || 0; matriz[mesNombre].cantidad += qty; }
+             }
+          }
+       });
+ 
+       for (let m in matriz) {
+          let d = matriz[m];
+          let trimestreName = GET_TRIM(d.mesIndex);
+ 
+          // Verificar si el vendedor tiene objetivo especial para este trimestre
+          let objetivoEspecial = null;
+          if (nombreVendedor && ALL_OBJECTIVES_ESPECIALES[trimestreName] && ALL_OBJECTIVES_ESPECIALES[trimestreName][nombreVendedor]) {
+             objetivoEspecial = ALL_OBJECTIVES_ESPECIALES[trimestreName][nombreVendedor];
+          }
+ 
+          let rangoAlcanzado = 0;
+          let porcentajeRango = 0;
+          let objetivoSiguiente = 0;
+          let cantidadObjetivo = 0;
+ 
+          if (objetivoEspecial) {
+             // Usar objetivo especial
+             let objetivoMensual = (tipoGrupo === 'GRUPO_BOTAS' ? objetivoEspecial.factBotas : objetivoEspecial.factCerts) / 3;
+             if (objetivoMensual > 0) {
+                porcentajeRango = (tipoGrupo === 'GRUPO_BOTAS' ? objetivoEspecial.pctBotas : objetivoEspecial.pctCerts) || 0;
+                objetivoSiguiente = objetivoMensual;
+                cantidadObjetivo = (tipoGrupo === 'GRUPO_BOTAS') ? objetivoEspecial.botas : objetivoEspecial.certs;
+                rangoAlcanzado = d.total >= objetivoMensual ? 1 : 0; // 1 si alcanzó, 0 si no
+             }
+          } else {
+             // Usar rangos comunes
+             let objsTrim = ALL_OBJECTIVES.filter(o => o.trimestre === trimestreName).sort((a, b) => a.rango - b.rango);
+             for (let i = objsTrim.length - 1; i >= 0; i--) {
+                let targetMensual = (tipoGrupo === 'GRUPO_BOTAS' ? objsTrim[i].factBotas : objsTrim[i].factCerts) / 3;
+                if (d.total >= targetMensual && targetMensual > 0) {
+                   rangoAlcanzado = objsTrim[i].rango;
+                   porcentajeRango = (tipoGrupo === 'GRUPO_BOTAS' ? objsTrim[i].pctBotas : objsTrim[i].pctCerts) || 0;
+                   break;
+                }
+             }
+             let nextRangeIndex = rangoAlcanzado;
+             if (nextRangeIndex >= objsTrim.length) nextRangeIndex = objsTrim.length - 1;
+             let targetObj = objsTrim[nextRangeIndex];
+             if (targetObj) {
+                objetivoSiguiente = (tipoGrupo === 'GRUPO_BOTAS' ? targetObj.factBotas : targetObj.factCerts) / 3;
+                cantidadObjetivo = (tipoGrupo === 'GRUPO_BOTAS') ? targetObj.botas : targetObj.certs;
+             }
+          }
+ 
+          d.rangoLabel = objetivoEspecial ? "ESPECIAL" : (rangoAlcanzado > 0 ? "RANGO " + rangoAlcanzado : "-");
+          d.objetivo = objetivoSiguiente;
+          d.cantidadObjetivo = cantidadObjetivo;
+          d.comision = d.total * (porcentajeRango / 100);
+          if (objetivoSiguiente > 0) {
+             let pct = (d.total / objetivoSiguiente) * 100;
+             if (pct > 100) pct = 100;
+             d.pct = pct;
+          } else { d.pct = 0; }
+       }
+       return matriz;
+    }
+ 
+    function obtenerMonedaPais(pais) {
+       if (pais == 'CHILE') return 'CLP'; if (pais == 'MEXICO') return 'MXN'; if (pais == 'ESPAÑA') return 'EUR';
+       if (pais == 'BRASIL') return 'BRL'; if (pais == 'URUGUAY') return 'UYU'; if (pais == 'RDM' || pais == 'EEUU') return 'USD';
+       return 'ARS';
+    }
+ 
+    function fmt(num) {
+       if (!num || num === 0) return '-';
+       return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
+    }
+ 
+    function construirTablaHistorialAcciones(datos, nombreVendedor) {
+       // Permitir editar si es ADMIN o ROOT (cualquier hoja), o VENDEDOR en su propia hoja
+       let puedeEditar = USUARIO_ACTUAL && (
+          USUARIO_ACTUAL.rol === 'ADMIN' ||
+          USUARIO_ACTUAL.rol === 'ROOT' ||
+          (USUARIO_ACTUAL.rol === 'VENDEDOR' && USUARIO_ACTUAL.hoja && USUARIO_ACTUAL.hoja.toUpperCase() === nombreVendedor.toUpperCase())
+       );
+       let html = '<table><thead><tr>';
+       let headers = [
+          { n: "FECHA", c: "col-sm" },
+          { n: "ESTADO", c: "col-sm" },
+          { n: "CHEQUEADO", c: "col-min" },
+          { n: "PAIS", c: "col-sm" },
+          { n: "CLIENTE", c: "col-md" },
+          { n: "CONCEPTO", c: "col-md" },
+          { n: "FORMA DE PAGO", c: "col-md" },
+          { n: "CANTIDAD", c: "col-min" },
+          { n: "PRECIO", c: "col-sm" },
+          { n: "TOTAL", c: "col-sm" },
+          { n: "TOTAL (SIN IVA)", c: "col-sm" },
+          { n: "OBSERVACIONES", c: "col-lg text-left" }
+       ];
+       if (puedeEditar) headers.push({ n: "ACC", c: "col-min" });
+       headers.forEach(h => html += `<th class="${h.c}">${h.n}</th>`);
+       html += '</tr></thead><tbody>';
+ 
+       for (let r = 0; r < datos.length; r++) {
+          let row = datos[r];
+          let id = row[row.length - 1];
+          let precio = typeof row[8] === 'number' ? row[8] : parseCurrency(row[8]);
+          let total = typeof row[9] === 'number' ? row[9] : parseCurrency(row[9]);
+          let totalSinIva = typeof row[10] === 'number' ? row[10] : parseCurrency(row[10]);
+          let datosPuros = row.slice(0, row.length - 1);
+          let args = `${id},` + datosPuros.map(d => `'${d.replace(/'/g, "\\'")}'`).join(',');
+ 
+          let obs = row[11] || '';
+          let obsHtml = obs;
+          if (obs.length > 20) {
+             obsHtml = `<div class="obs-container">
+                <span class="obs-text">${obs}</span>
+                <span class="view-more-btn">Ver más...</span>
+                <div class="obs-full">${obs}</div>
+             </div>`;
+          }
+ 
+          html += `<tr>
+                 <td>${row[0]}</td>
+                 <td>${row[1]}</td>
+                 <td>${puedeEditar ? `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} onclick="toggleCheck(this, ${id}, '${nombreVendedor}')">` : `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} disabled>`}</td>
+                 <td>${row[3]}</td>
+                 <td>${row[4]}</td>
+                 <td>${row[5]}</td>
+                 <td>${row[6]}</td>
+                 <td>${row[7]}</td>
+                 <td>${formatNumberAr(precio)}</td>
+                 <td>${formatNumberAr(total)}</td>
+                 <td>${formatNumberAr(totalSinIva)}</td>
+                 <td class="text-left">${obsHtml}</td>`;
+ 
+          if (puedeEditar) {
+             html += `<td>
+                     <button class="action-btn btn-edit" onclick="clickEditar(${args})"><span class="material-symbols-outlined">edit</span></button>
+                     <button class="action-btn btn-del" onclick="clickBorrar(${id}, '${nombreVendedor}')"><span class="material-symbols-outlined">delete</span></button>
+                 </td>`;
+          }
+ 
+          html += `</tr>`;
+       }
+       return html + '</tbody></table>';
+    }
+
+    // --- MODALS ---
+    function abrirModalVenta() {
+       // Determinar el vendedor según el contexto actual
+       let vendedorNombre = HOJA_ACTUAL || (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) || 'Adrian';
+       abrirModal('crear', null, null, vendedorNombre);
+    }
+    function abrirModal(modo, datos, id, vendedorNombre) {
+       document.getElementById('formVenta').reset(); document.getElementById('filaIndex').value = '';
+       document.getElementById('selVendedor').value = vendedorNombre || HOJA_ACTUAL || (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) || 'Adrian';
+       let title = document.getElementById('modalTitle'); let btn = document.getElementById('btnGuardar');
+ 
+       // Determinar qué vendedor usar para cargar clientes
+       let vendedorParaClientes = '';
+       if (USUARIO_ACTUAL.rol === 'VENDEDOR') {
+          vendedorParaClientes = USUARIO_ACTUAL.hoja;
+       } else if (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT') {
+          vendedorParaClientes = vendedorNombre || HOJA_ACTUAL || 'Adrian';
+       }
+ 
+       if (modo === 'editar') {
+          title.innerText = "EDITAR"; btn.innerText = "ACTUALIZAR"; document.getElementById('filaIndex').value = id;
+          let f = datos[0].split('/'); document.getElementById('fechaInput').value = `${f[2]}-${f[1]}-${f[0]}`;
+          document.getElementById('estadoInput').value = datos[1]; document.getElementById('paisInput').value = datos[3];
+          document.getElementById('clienteInput').value = datos[4]; document.getElementById('conceptoInput').value = datos[5];
+          document.getElementById('pagoInput').value = datos[6]; document.getElementById('cantInput').value = datos[7];
+          let precioRaw = datos[8].toString().replace(/[$.]/g, '').replace(',', '.');
+          document.getElementById('precioInput').value = formatNumberAr(precioRaw).replace('ARS', '').trim();
+          if (datos[11]) document.getElementById('obsInput').value = datos[11];
+          calcularTotal();
+          if (vendedorParaClientes) {
+             setTimeout(() => actualizarSelectorClientes(vendedorParaClientes), 100);
+          }
+       } else {
+          title.innerText = "AGREGAR VENTA";
+          btn.innerText = "GUARDAR";
+          document.getElementById('fechaInput').valueAsDate = new Date();
+          if (vendedorParaClientes) {
+             setTimeout(() => actualizarSelectorClientes(vendedorParaClientes), 100);
+          }
+       }
+       document.getElementById('modalVenta').classList.add('open');
+    }
+
+    function enviarVenta(e) {
+       e.preventDefault();
+ 
+       let btn = document.getElementById('btnGuardar');
+       if (!btn) return;
+ 
+       btn.disabled = true;
+       btn.innerText = "Guardando...";
+ 
+       // Obtener valores del formulario
+       let fechaInput = document.getElementById('fechaInput');
+       let paisInput = document.getElementById('paisInput');
+       let estadoInput = document.getElementById('estadoInput');
+       let clienteInput = document.getElementById('clienteInput');
+       let conceptoInput = document.getElementById('conceptoInput');
+       let pagoInput = document.getElementById('pagoInput');
+       let cantInput = document.getElementById('cantInput');
+       let precioInput = document.getElementById('precioInput');
+       let obsInput = document.getElementById('obsInput');
+       let filaIndexInput = document.getElementById('filaIndex');
+       let selVendedor = document.getElementById('selVendedor');
+ 
+       // Validación de campos requeridos y numéricos
+       if (typeof validarCampos === 'function') {
+          var err = validarCampos([
+             { id: 'fechaInput', nombre: 'Fecha', requerido: true, mensaje: 'Selecciona la fecha.' },
+             { id: 'paisInput', nombre: 'País', requerido: true, mensaje: 'Selecciona el país.' },
+             { id: 'clienteInput', nombre: 'Cliente', requerido: true, mensaje: 'Selecciona el cliente.' },
+             { id: 'conceptoInput', nombre: 'Concepto', requerido: true, mensaje: 'Selecciona el concepto.' },
+             { id: 'cantInput', nombre: 'Cantidad', requerido: true, min: 0.01, mensaje: 'La cantidad debe ser mayor que 0.' },
+             { id: 'precioInput', nombre: 'Precio', requerido: true, min: 0, mensaje: 'El precio no puede ser negativo.' },
+             { id: 'pagoInput', nombre: 'Forma de pago', requerido: true, mensaje: 'Selecciona la forma de pago.' }
+          ]);
+          if (err) {
+             mostrarAlerta(err);
+             btn.disabled = false;
+             btn.innerText = "Guardar Venta";
+             return;
+          }
+       } else if (!fechaInput.value || !paisInput.value || !clienteInput.value || !conceptoInput.value || !cantInput.value || !precioInput.value) {
+          mostrarAlerta('Por favor completa todos los campos requeridos.');
+          btn.disabled = false;
+          btn.innerText = "Guardar Venta";
+          return;
+       }
+ 
+       // Obtener vendedor
+       let vendedorVal = '';
+       if (selVendedor && selVendedor.value) {
+          vendedorVal = selVendedor.value;
+       } else if (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) {
+          vendedorVal = USUARIO_ACTUAL.hoja;
+       } else if (HOJA_ACTUAL && HOJA_ACTUAL !== 'HOME' && HOJA_ACTUAL !== 'MENU_VENTAS' && HOJA_ACTUAL !== 'MENU_ADMIN' && HOJA_ACTUAL !== 'MENU_STOCK') {
+          vendedorVal = HOJA_ACTUAL;
+       } else {
+          vendedorVal = 'Adrian';
+       }
+ 
+       // Procesar precio
+       let precioLimpio = parseCurrency(precioInput.value);
+ 
+       // Procesar país
+       let pais = paisInput.value.toUpperCase();
+       if (pais === 'USA') pais = 'EEUU';
+       // Clave para buscar cotización (backend guarda España como ESPANA)
+       let paisCotKey = (pais === 'ESPAÑA') ? 'ESPANA' : pais;
+
+       // Obtener cotización del momento para guardarla con la venta (necesaria para España y otros países)
+       let moneda = obtenerMonedaPais(pais);
+       let cotizacionActual = 1;
+       if (moneda !== 'ARS') {
+          cotizacionActual = COTIZACIONES[paisCotKey] || COTIZACIONES[moneda] || 1;
+       }
+ 
+       // Preparar datos
+       let datos = {
+          vendedor: vendedorVal,
+          fecha: fechaInput.value,
+          pais: paisInput.value,
+          estado: estadoInput.value,
+          cliente: clienteInput.value,
+          concepto: conceptoInput.value,
+          formaPago: pagoInput.value,
+          cantidad: cantInput.value,
+          precio: precioLimpio,
+          comentario: obsInput.value || '',
+          filaIndex: filaIndexInput.value || '',
+          cotizacion: cotizacionActual
+       };
+ 
+       // Determinar si es edición o creación
+       let esEdicion = datos.filaIndex && datos.filaIndex !== '';
+       let funcionBackend = esEdicion ? 'editarVenta' : 'guardarVenta';
+ 
+       // Enviar al backend
+       google.script.run
+          .withSuccessHandler(function (res) {
+             btn.disabled = false;
+             btn.innerText = esEdicion ? "ACTUALIZAR" : "Guardar Venta";
+ 
+             if (res && res.error) {
+                alert('Error: ' + (res.mensaje || 'Error desconocido'));
+             } else {
+                if (typeof mostrarToast === 'function') mostrarToast(res && res.mensaje ? res.mensaje : (esEdicion ? 'Venta actualizada correctamente' : 'Venta guardada correctamente'));
+                cerrarModals();
+                // Solo resetear formulario si es una creación (no edición)
+                if (!esEdicion) {
+                   document.getElementById('formVenta').reset();
+                   document.getElementById('filaIndex').value = '';
+                   DATOS_FORMULARIO_VENTA = null; // Limpiar datos guardados
+                }
+                if (HOJA_ACTUAL) {
+                   cargar(HOJA_ACTUAL);
+                }
+             }
+          })
+          .withFailureHandler(function (error) {
+             console.error('Error en guardar venta:', error);
+             btn.disabled = false;
+             btn.innerText = esEdicion ? "ACTUALIZAR" : "Guardar Venta";
+             alert('Error al guardar: ' + error.toString());
+          })[funcionBackend](datos);
+    }
+ 
+    function clickEditar(id, ...d) { abrirModal('editar', d, id); }
+    function clickBorrar(id, v) {
+       abrirConfirmacion("¿Eliminar esta venta permanentemente?", () => {
+          google.script.run
+             .withSuccessHandler(() => cargar(HOJA_ACTUAL))
+             .withFailureHandler(function () {
+                mostrarAlerta('Error de conexión. Revisa tu red e intenta de nuevo.');
+             })
+             .borrarVenta({ vendedor: v, filaIndex: id });
+       });
+    }
+    function toggleCheck(e, id, v) { e.disabled = true; google.script.run.withSuccessHandler(() => e.disabled = false).actualizarCheck({ vendedor: v, filaIndex: id, valor: e.checked ? 'SI' : 'NO' }); }
+</script>

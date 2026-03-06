@@ -1,0 +1,74 @@
+<script>
+    // --- TOAST (mensaje breve de éxito, no bloquea) ---
+    function mostrarToast(mensaje) {
+       var el = document.getElementById('toast');
+       if (!el) return;
+       el.textContent = mensaje || 'Listo';
+       el.classList.add('show');
+       if (window._toastTimer) clearTimeout(window._toastTimer);
+       window._toastTimer = setTimeout(function () {
+          el.classList.remove('show');
+       }, 2500);
+    }
+
+    // --- MODALES COMPARTIDOS (confirmación, alerta, cerrar) ---
+    // Usados por: caja, ventas, stock.
+    function abrirConfirmacion(mensaje, callback) {
+       document.getElementById('confirm-msg').innerText = mensaje;
+       accionPendiente = callback;
+       document.getElementById('modalConfirmacion').classList.add('open');
+    }
+
+    function confirmarAccion() {
+       if (accionPendiente) accionPendiente();
+       cerrarModals();
+    }
+
+    function mostrarAlerta(mensaje) {
+       document.getElementById('alerta-msg').innerText = mensaje;
+       document.getElementById('modalAlerta').classList.add('open');
+    }
+
+    /** Mensaje claro de error de red + botón Reintentar. Antes de llamar, asignar window._reintentarCarga = function() { ... }; */
+    function getHtmlErrorRedConReintentar(mensaje) {
+       var m = (mensaje || 'No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+       return '<div class="error-red-contenedor">' +
+          '<span class="material-symbols-outlined error-red-icono">wifi_off</span>' +
+          '<div class="error-red-titulo">Error de conexión</div>' +
+          '<div class="error-red-texto">' + m + '</div>' +
+          '<button type="button" class="btn-submit btn-reintentar" onclick="if(window._reintentarCarga) window._reintentarCarga();">Reintentar</button>' +
+          '</div>';
+    }
+
+    function cerrarModals() {
+       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+       if (typeof setTipoAjuste === 'function') setTipoAjuste('INGRESO');
+    }
+
+    /**
+     * Validación de formularios: recibe array de reglas y devuelve mensaje de error o null si todo es válido.
+     * Regla: { id: 'idDelInput', nombre: 'Nombre del campo', requerido: true, min: número, max: número, pattern: 'regex' }
+     */
+    function validarCampos(reglas) {
+       for (var i = 0; i < reglas.length; i++) {
+          var r = reglas[i];
+          var el = document.getElementById(r.id);
+          var val = el ? (el.value || '').trim() : '';
+          if (r.requerido && !val) return r.mensaje || ('Completa el campo ' + (r.nombre || r.id));
+          if (r.min !== undefined && r.min !== null) {
+             var num = parseFloat(String(val).replace(/[^\d,.-]/g, '').replace(',', '.'));
+             if (isNaN(num) || num < r.min) return r.mensaje || ((r.nombre || r.id) + ' debe ser al menos ' + r.min);
+          }
+          if (r.max !== undefined && r.max !== null) {
+             var num = parseFloat(String(val).replace(/[^\d,.-]/g, '').replace(',', '.'));
+             if (!isNaN(num) && num > r.max) return r.mensaje || ((r.nombre || r.id) + ' no puede ser mayor que ' + r.max);
+          }
+          if (r.pattern && val) {
+             try {
+                if (!new RegExp(r.pattern).test(val)) return r.mensaje || ('Formato inválido en ' + (r.nombre || r.id));
+             } catch (e) { /* ignore invalid regex */ }
+          }
+       }
+       return null;
+    }
+</script>

@@ -1,0 +1,19 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (nunca subir claves reales)
+.env
+.env.local
+.env.*.local
+
+# Build / salida
+dist/
+.vercel/
+
+# Logs y caché
+*.log
+.cache/
+
+# Sistema
+.DS_Store
+Thumbs.db
