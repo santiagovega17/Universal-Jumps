@@ -464,14 +464,22 @@
     }
 
     // --- MODALS ---
+    const VENDEDORES_INVALIDOS = ['TODAS', 'HOME', 'MENU_VENTAS', 'MENU_ADMIN', 'MENU_STOCK', 'CONSOLIDADO', '%'];
+    function esVendedorValido(n) { return n && !VENDEDORES_INVALIDOS.includes(n); }
     function abrirModalVenta() {
-       // Determinar el vendedor según el contexto actual
+       // Para root/admin: si la hoja actual no es un vendedor real, usar Adrian por defecto
        let vendedorNombre = HOJA_ACTUAL || (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) || 'Adrian';
+       if (!esVendedorValido(vendedorNombre)) vendedorNombre = 'Adrian';
        abrirModal('crear', null, null, vendedorNombre);
     }
     function abrirModal(modo, datos, id, vendedorNombre) {
        document.getElementById('formVenta').reset(); document.getElementById('filaIndex').value = '';
-       document.getElementById('selVendedor').value = vendedorNombre || HOJA_ACTUAL || (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) || 'Adrian';
+       let valVendedor = vendedorNombre || HOJA_ACTUAL || (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) || 'Adrian';
+       if (!esVendedorValido(valVendedor)) valVendedor = 'Adrian';
+       document.getElementById('selVendedor').value = valVendedor;
+       // Mostrar selector de vendedor para root/admin para que puedan elegir cualquier vendedor
+       let grupoVendedor = document.getElementById('grupoVendedor');
+       if (grupoVendedor) grupoVendedor.style.display = (USUARIO_ACTUAL && (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT')) ? 'block' : 'none';
        let title = document.getElementById('modalTitle'); let btn = document.getElementById('btnGuardar');
  
        // Determinar qué vendedor usar para cargar clientes
@@ -479,7 +487,7 @@
        if (USUARIO_ACTUAL.rol === 'VENDEDOR') {
           vendedorParaClientes = USUARIO_ACTUAL.hoja;
        } else if (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT') {
-          vendedorParaClientes = vendedorNombre || HOJA_ACTUAL || 'Adrian';
+          vendedorParaClientes = esVendedorValido(vendedorNombre) ? vendedorNombre : (esVendedorValido(HOJA_ACTUAL) ? HOJA_ACTUAL : 'Adrian');
        }
  
        if (modo === 'editar') {
@@ -552,16 +560,22 @@
           return;
        }
  
-       // Obtener vendedor
+       // Obtener vendedor (nunca usar 'TODAS' ni vistas de menú)
        let vendedorVal = '';
-       if (selVendedor && selVendedor.value) {
+       if (selVendedor && selVendedor.value && esVendedorValido(selVendedor.value)) {
           vendedorVal = selVendedor.value;
-       } else if (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) {
+       } else if (USUARIO_ACTUAL && USUARIO_ACTUAL.rol === 'VENDEDOR' && USUARIO_ACTUAL.hoja) {
           vendedorVal = USUARIO_ACTUAL.hoja;
-       } else if (HOJA_ACTUAL && HOJA_ACTUAL !== 'HOME' && HOJA_ACTUAL !== 'MENU_VENTAS' && HOJA_ACTUAL !== 'MENU_ADMIN' && HOJA_ACTUAL !== 'MENU_STOCK') {
+       } else if (esVendedorValido(HOJA_ACTUAL)) {
           vendedorVal = HOJA_ACTUAL;
        } else {
           vendedorVal = 'Adrian';
+       }
+       if (!esVendedorValido(vendedorVal)) {
+          mostrarAlerta('Selecciona un vendedor para la venta.');
+          btn.disabled = false;
+          btn.innerText = "Guardar Venta";
+          return;
        }
  
        // Procesar precio
