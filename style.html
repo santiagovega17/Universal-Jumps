@@ -1787,24 +1787,54 @@
        z-index: 50;
     }
 
-    /* Tabla de clientes: scroll interno y domicilio acotado */
+    /* Tabla de clientes: scroll interno, columnas acotadas, títulos y Acciones visibles */
     .clientes-table-wrap {
+       width: 100%;
        max-width: 100%;
        overflow: auto;
        background: var(--sidebar);
        border-radius: 12px;
-       padding: 20px;
+       padding: 16px;
        max-height: min(75vh, 600px);
     }
     .clientes-table-wrap .clientes-table {
        width: 100%;
-       min-width: 800px;
        border-collapse: collapse;
        table-layout: fixed;
     }
-    .clientes-table-wrap .col-address {
-       max-width: 220px;
+    .clientes-table-wrap .clientes-table th,
+    .clientes-table-wrap .clientes-table td {
+       padding: 8px 10px;
+       font-size: 13px;
     }
+    .clientes-table-wrap .clientes-table th {
+       white-space: nowrap;
+       overflow: hidden;
+       text-overflow: ellipsis;
+    }
+    .clientes-table-wrap .clientes-table td {
+       overflow: hidden;
+    }
+    .clientes-table-wrap .clientes-table td.col-nombre,
+    .clientes-table-wrap .clientes-table td.col-apellido,
+    .clientes-table-wrap .clientes-table td.col-dni,
+    .clientes-table-wrap .clientes-table td.col-telefono,
+    .clientes-table-wrap .clientes-table td.col-provincia,
+    .clientes-table-wrap .clientes-table td.col-pais {
+       max-width: 0;
+       text-overflow: ellipsis;
+       white-space: nowrap;
+    }
+    .clientes-table-wrap .col-nombre { width: 10%; }
+    .clientes-table-wrap .col-apellido { width: 10%; }
+    .clientes-table-wrap .col-dni { width: 8%; }
+    .clientes-table-wrap .col-telefono { width: 10%; }
+    .clientes-table-wrap .col-correo { width: 14%; max-width: 140px; }
+    .clientes-table-wrap .col-address { width: 20%; max-width: 200px; }
+    .clientes-table-wrap .col-provincia { width: 9%; }
+    .clientes-table-wrap .col-pais { width: 9%; }
+    .clientes-table-wrap .col-acciones { width: 10%; min-width: 88px; white-space: nowrap; }
+    .clientes-table-wrap .obs-container-sm { max-width: 130px; min-width: 80px; }
  
     /* Asegurar que el scroll lateral sea visible siempre que sea necesario */
     .card-scroll, #historial-content {

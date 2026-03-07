@@ -540,15 +540,15 @@
                 <table class="clientes-table">
                    <thead>
                       <tr style="border-bottom: 2px solid var(--border-color);">
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">Nombre</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">Apellido</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">DNI</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">Teléfono</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-md">Correo</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-address text-left">Domicilio</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">Provincia</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">País</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-min">Acciones</th>
+                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-nombre">Nombre</th>
+                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-apellido">Apellido</th>
+                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-dni">DNI</th>
+                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-telefono">Teléfono</th>
+                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-correo">Correo</th>
+                         <th style="text-align: left; color: var(--accent); font-weight: 600;" class="col-address">Domicilio</th>
+                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-provincia">Provincia</th>
+                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-pais">País</th>
+                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-acciones">Acciones</th>
                       </tr>
                    </thead>
                    <tbody id="clientes-table-body">
@@ -581,17 +581,26 @@
                       <div class="obs-full">${dom}</div>
                    </div>`;
                 }
+                let correo = cliente.correo || '';
+                let correoHtml = correo;
+                if (correo.length > 22) {
+                   correoHtml = `<div class="obs-container obs-container-sm">
+                      <span class="obs-text">${correo}</span>
+                      <span class="view-more-btn">Ver más...</span>
+                      <div class="obs-full">${correo}</div>
+                   </div>`;
+                }
                 tableHtml += `
                       <tr>
-                         <td>${cliente.nombre || ''}</td>
-                         <td>${cliente.apellido || ''}</td>
-                         <td>${cliente.dni || ''}</td>
-                         <td>${cliente.telefono || ''}</td>
-                         <td>${cliente.correo || ''}</td>
+                         <td class="col-nombre">${cliente.nombre || ''}</td>
+                         <td class="col-apellido">${cliente.apellido || ''}</td>
+                         <td class="col-dni">${cliente.dni || ''}</td>
+                         <td class="col-telefono">${cliente.telefono || ''}</td>
+                         <td class="col-correo">${correoHtml}</td>
                          <td class="col-address text-left">${domHtml}</td>
-                         <td>${cliente.provincia || ''}</td>
-                         <td>${cliente.pais || ''}</td>
-                         <td style="text-align: center;">
+                         <td class="col-provincia">${cliente.provincia || ''}</td>
+                         <td class="col-pais">${cliente.pais || ''}</td>
+                         <td class="col-acciones" style="text-align: center;">
                             ${puedeAgregar ? `
                             <button class="action-btn btn-edit" onclick="abrirModalCliente('editar', ${index})" data-cliente='${JSON.stringify(cliente)}'>
                                <span class="material-symbols-outlined">edit</span>
