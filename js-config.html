@@ -139,13 +139,16 @@
        let limpio = str.toString().replace(/[$.]/g, '').replace(',', '.').trim();
        return parseFloat(limpio) || 0;
     }
-    /** Para números de API/DB (punto decimal): "1.520919", "800000.50". NO usar para input usuario (formato AR). */
+    /** Acepta formato DB (1.520919, 200000.50) y formato AR (200.000,00). Para input usuario usar parseCurrency. */
     function parseNumeric(val) {
        if (val == null) return 0;
        if (typeof val === 'number') return isNaN(val) ? 0 : val;
        var s = String(val).trim();
        if (!s) return 0;
-       return parseFloat(s.replace(',', '.')) || 0;
+       if (s.indexOf(',') !== -1) {
+          return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
+       }
+       return parseFloat(s) || 0;
     }
     function formatNumberAr(num) {
        if (num === null || num === undefined) return "$ 0,00";
