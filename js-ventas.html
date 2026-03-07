@@ -415,15 +415,17 @@
        headers.forEach(h => html += `<th class="${h.c}">${h.n}</th>`);
        html += '</tr></thead><tbody>';
  
+       function escAttr(s) { return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
        for (let r = 0; r < datos.length; r++) {
           let row = datos[r];
-         let id = row[row.length - 1];
-         let idEsc = String(id).replace(/'/g, "\\'");
+          let id = row[row.length - 1];
+          let idEsc = escAttr(id);
+          let nombreVendedorEsc = escAttr(nombreVendedor);
           let precio = parseNumeric(row[8]);
           let total = parseNumeric(row[9]);
           let totalSinIva = parseNumeric(row[10]);
           let datosPuros = row.slice(0, row.length - 1);
-         let args = `'${idEsc}',` + datosPuros.map(d => `'${String(d).replace(/'/g, "\\'")}'`).join(',');
+          let args = `'${idEsc}', '${nombreVendedorEsc}', ` + datosPuros.map(d => `'${escAttr(d)}'`).join(',');
  
           let obs = row[11] || '';
           let obsHtml = obs;
@@ -438,7 +440,7 @@
           html += `<tr>
                  <td>${row[0]}</td>
                  <td>${row[1]}</td>
-                <td>${puedeEditar ? `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} onclick="toggleCheck(this, '${idEsc}', '${nombreVendedor}')">` : `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} disabled>`}</td>
+                <td>${puedeEditar ? `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} onclick="toggleCheck(this, '${idEsc}', '${nombreVendedorEsc}')">` : `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} disabled>`}</td>
                  <td>${row[3]}</td>
                  <td>${row[4]}</td>
                  <td>${row[5]}</td>
@@ -452,7 +454,7 @@
           if (puedeEditar) {
              html += `<td>
                      <button class="action-btn btn-edit" onclick="clickEditar(${args})"><span class="material-symbols-outlined">edit</span></button>
-                    <button class="action-btn btn-del" onclick="clickBorrar('${idEsc}', '${nombreVendedor}')"><span class="material-symbols-outlined">delete</span></button>
+                     <button class="action-btn btn-del" onclick="clickBorrar('${idEsc}', '${nombreVendedorEsc}')"><span class="material-symbols-outlined">delete</span></button>
                  </td>`;
           }
  
@@ -628,7 +630,7 @@
           })[funcionBackend](datos);
     }
  
-    function clickEditar(id, ...d) { abrirModal('editar', d, id); }
+    function clickEditar(id, vendedorNombre, ...d) { abrirModal('editar', d, id, vendedorNombre); }
     function clickBorrar(id, v) {
        abrirConfirmacion("¿Eliminar esta venta permanentemente?", () => {
           google.script.run

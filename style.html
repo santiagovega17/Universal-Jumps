@@ -2020,7 +2020,7 @@
     .btn-cargar-mas:hover { opacity: 0.9; }
 
     /* Historial caja: una sola tabla, acordeón dentro de la tabla para grupos con >1 movimiento */
-    .caja-historial-table-wrap { overflow-x: auto; }
+    .caja-historial-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .caja-historial-table,
     .caja-summary-inline-table,
     .caja-accordion-inner-table { table-layout: fixed; width: 100%; }
@@ -2033,7 +2033,8 @@
     .caja-acciones-menu.open { display: block; }
     .caja-acciones-menu button { display: block; width: 100%; padding: 8px 12px; background: none; border: none; color: #f1f5f9; font-size: 12px; text-align: left; cursor: pointer; white-space: nowrap; }
     .caja-acciones-menu button:hover { background: rgba(255,255,255,0.08); }
-    .caja-historial-table td:last-child { padding-left: 16px; padding-right: 12px; min-width: 180px; }
+    .caja-historial-table td:last-child { padding-left: 16px; padding-right: 12px; min-width: 200px; }
+    .caja-historial-table .caja-obs-input { min-width: 120px; }
     /* Fila en edición: que no se corte el desplegable y controles visibles */
     .caja-historial-table tr.caja-row-editing { position: relative; z-index: 100; }
     .caja-historial-table tr.caja-row-editing td { overflow: visible; }
