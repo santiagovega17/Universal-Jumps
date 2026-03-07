@@ -239,20 +239,20 @@
                           <div class="prog-text">${d.pct.toFixed(0)}%</div>
                        </div>
                        <div class="prog-stats">
-                            <span>$ ${formatNumberAr(d.total)} / ${formatNumberAr(d.objetivo)}</span>
-                            <span>${d.cantidad} / ${d.cantidadObjetivo} u.</span>
+                            <span>${formatNumberAr(d.total)} / ${formatNumberAr(d.objetivo)}</span>
+                            <span>${d.cantidadObjetivo > 0 ? d.cantidad + ' / ' + d.cantidadObjetivo + ' u.' : (d.cantidad ? d.cantidad + ' u.' : '-')}</span>
                        </div>
                    </div>
  
                    <div class="month-countries">
-                       <div class="c-row"><span class="c-name">ARG</span> <span class="c-val">${formatNumberAr(d['ARGENTINA'].original)}</span></div>
-                       <div class="c-row"><span class="c-name">CHL</span> <span class="c-val">${formatCurrency(d['CHILE'].original, 'CLP')}<span class="c-ars">(${formatNumberAr(d['CHILE'].ars)})</span></span></div>
-                       <div class="c-row"><span class="c-name">MEX</span> <span class="c-val">${formatCurrency(d['MEXICO'].original, 'MXN')}<span class="c-ars">(${formatNumberAr(d['MEXICO'].ars)})</span></span></div>
-                       <div class="c-row"><span class="c-name">ESP</span> <span class="c-val">${formatCurrency(d['ESPAÑA'].original, 'EUR')}<span class="c-ars">(${formatNumberAr(d['ESPAÑA'].ars)})</span></span></div>
-                       <div class="c-row"><span class="c-name">BRA</span> <span class="c-val">${formatCurrency(d['BRASIL'].original, 'BRL')}<span class="c-ars">(${formatNumberAr(d['BRASIL'].ars)})</span></span></div>
-                       <div class="c-row"><span class="c-name">URU</span> <span class="c-val">${formatCurrency(d['URUGUAY'].original, 'UYU')}<span class="c-ars">(${formatNumberAr(d['URUGUAY'].ars)})</span></span></div>
-                       <div class="c-row"><span class="c-name">EEUU</span> <span class="c-val">${formatCurrency(d['EEUU'].original, 'USD')}<span class="c-ars">(${formatNumberAr(d['EEUU'].ars)})</span></span></div>
-                       <div class="c-row"><span class="c-name">RDM</span> <span class="c-val">${formatCurrency(d['RDM'].original, 'USD')}<span class="c-ars">(${formatNumberAr(d['RDM'].ars)})</span></span></div>
+                       <div class="c-row"><span class="c-name">ARG</span> <span class="c-val">${formatNumberAr((d['ARGENTINA']||{}).original || 0)}</span></div>
+                       <div class="c-row"><span class="c-name">CHL</span> <span class="c-val">${formatCurrency((d['CHILE']||{}).original || 0, 'CLP')}<span class="c-ars">(${formatNumberAr((d['CHILE']||{}).ars || 0)})</span></span></div>
+                       <div class="c-row"><span class="c-name">MEX</span> <span class="c-val">${formatCurrency((d['MEXICO']||{}).original || 0, 'MXN')}<span class="c-ars">(${formatNumberAr((d['MEXICO']||{}).ars || 0)})</span></span></div>
+                       <div class="c-row"><span class="c-name">ESP</span> <span class="c-val">${formatCurrency((d['ESPAÑA']||{}).original || 0, 'EUR')}<span class="c-ars">(${formatNumberAr((d['ESPAÑA']||{}).ars || 0)})</span></span></div>
+                       <div class="c-row"><span class="c-name">BRA</span> <span class="c-val">${formatCurrency((d['BRASIL']||{}).original || 0, 'BRL')}<span class="c-ars">(${formatNumberAr((d['BRASIL']||{}).ars || 0)})</span></span></div>
+                       <div class="c-row"><span class="c-name">URU</span> <span class="c-val">${formatCurrency((d['URUGUAY']||{}).original || 0, 'UYU')}<span class="c-ars">(${formatNumberAr((d['URUGUAY']||{}).ars || 0)})</span></span></div>
+                       <div class="c-row"><span class="c-name">EEUU</span> <span class="c-val">${formatCurrency((d['EEUU']||{}).original || 0, 'USD')}<span class="c-ars">(${formatNumberAr((d['EEUU']||{}).ars || 0)})</span></span></div>
+                       <div class="c-row"><span class="c-name">RDM</span> <span class="c-val">${formatCurrency((d['RDM']||{}).original || 0, 'USD')}<span class="c-ars">(${formatNumberAr((d['RDM']||{}).ars || 0)})</span></span></div>
                    </div>
                </div>
                <div class="month-footer">
@@ -296,14 +296,14 @@
              let paisKey = paisRaw;
              if (paisRaw === 'USA' || paisRaw === 'EEUU') paisKey = 'EEUU';
  
-             // Total con IVA (columna 9) y sin IVA (columna 10)
-             let montoConIva = typeof f[9] === 'number' ? f[9] : parseCurrency(f[9]);
-             let montoSinIva = typeof f[10] === 'number' ? f[10] : parseCurrency(f[10]);
+             // Total con IVA (columna 9) y sin IVA (columna 10) - vienen de API/DB con punto decimal
+             let montoConIva = parseNumeric(f[9]);
+             let montoSinIva = parseNumeric(f[10]);
              let cotizacionGuardada = 1;
- 
-             // FIX DE LA MONEDA
-             if (f[12]) {
-                cotizacionGuardada = typeof f[12] === 'number' ? f[12] : parseCurrency(f[12]);
+
+             // Cotización: API/DB usa punto decimal (1.520919). parseCurrency corrompe esos valores
+             if (f[12] != null && f[12] !== '') {
+                cotizacionGuardada = parseNumeric(f[12]);
              } else {
                 cotizacionGuardada = COTIZACIONES[paisKey] || 1;
              }
@@ -426,9 +426,9 @@
           let row = datos[r];
          let id = row[row.length - 1];
          let idEsc = String(id).replace(/'/g, "\\'");
-          let precio = typeof row[8] === 'number' ? row[8] : parseCurrency(row[8]);
-          let total = typeof row[9] === 'number' ? row[9] : parseCurrency(row[9]);
-          let totalSinIva = typeof row[10] === 'number' ? row[10] : parseCurrency(row[10]);
+          let precio = parseNumeric(row[8]);
+          let total = parseNumeric(row[9]);
+          let totalSinIva = parseNumeric(row[10]);
           let datosPuros = row.slice(0, row.length - 1);
          let args = `'${idEsc}',` + datosPuros.map(d => `'${String(d).replace(/'/g, "\\'")}'`).join(',');
  
