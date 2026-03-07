@@ -377,9 +377,9 @@
 
             <div id="caja-modal-acciones-extra" style="display:none; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
                <input type="hidden" id="cajaModalEstado" value="">
-               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                  <button type="button" id="btnCajaMarcarPagado" class="btn-submit" style="background: #10b981;" onclick="marcarPagadoDesdeModal()"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:6px;">check_circle</span>Marcar como pagado</button>
-                  <button type="button" class="btn-reset" style="border-color: #ef4444; color: #ef4444;" onclick="eliminarMovimientoDesdeModal()"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:6px;">delete</span>Eliminar movimiento</button>
+               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                  <button type="button" id="btnCajaMarcarPagado" class="caja-modal-btn caja-modal-btn-marcar" onclick="marcarPagadoDesdeModal()"><span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>Marcar como pagado</button>
+                  <button type="button" class="caja-modal-btn caja-modal-btn-eliminar" onclick="eliminarMovimientoDesdeModal()"><span class="material-symbols-outlined" style="font-size:18px;">delete</span>Eliminar movimiento</button>
                </div>
             </div>
          </form>

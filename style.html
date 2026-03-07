@@ -1635,18 +1635,47 @@
        max-width: 600px;
     }
  
-    /* Modal de caja específico - más compacto */
-    #modalCaja .modal-content {
-       max-height: 95vh;
-       padding: 15px;
+    /* Modal de caja: entra en el alto con margen arriba/abajo, se expande horizontalmente */
+    #modalCaja {
+       padding: 20px 0;
+       align-items: center;
     }
- 
+    #modalCaja .modal-content {
+       max-height: calc(100vh - 40px);
+       max-width: 700px;
+       width: 95%;
+       padding: 20px;
+       overflow-y: auto;
+    }
+
     #modalCaja .form-group {
        margin-bottom: 12px;
     }
- 
+
     #modalCaja .form-row {
        margin-bottom: 10px;
+    }
+
+    /* Acciones extra del modal caja: botones compactos */
+    #caja-modal-acciones-extra .caja-modal-btn {
+       padding: 8px 16px;
+       font-size: 13px;
+       font-weight: 600;
+       border-radius: 6px;
+       border: none;
+       cursor: pointer;
+       display: inline-flex;
+       align-items: center;
+       gap: 6px;
+    }
+    #caja-modal-acciones-extra .caja-modal-btn-marcar {
+       background: #10b981;
+       color: white;
+    }
+    #caja-modal-acciones-extra .caja-modal-btn-eliminar {
+       background: transparent;
+       border: 1px solid #ef4444;
+       color: #ef4444;
     }
  
     .modal-overlay.open .modal-content {
