@@ -450,7 +450,7 @@
        if (mov.tipo === 'EGRESO' && estaEnEdicion) {
           var valorFormaPago = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].formaPago !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].formaPago : (mov.formaPago || '');
           var opcionesMedios = mediosPais.length > 0 ? mediosPais.map(function(medio) { return '<option value="' + medio + '"' + (medio === valorFormaPago ? ' selected' : '') + '>' + medio + '</option>'; }).join('') : '<option value="' + (valorFormaPago || '') + '">' + (valorFormaPago || 'Sin opciones') + '</option>';
-          formaPagoHtml = '<select class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" onchange="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'formaPago\', this.value)" data-fila="' + escCaja(mov.filaIndex) + '">' + opcionesMedios + '</select>';
+          formaPagoHtml = '<span class="caja-edit-control"><select class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" onchange="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'formaPago\', this.value)" data-fila="' + escCaja(mov.filaIndex) + '">' + opcionesMedios + '</select></span>';
        } else if (mov.tipo === 'EGRESO') {
           formaPagoHtml = '<span style="color:white; font-size:13px;">' + (mov.formaPago || '') + '</span>';
        } else {
@@ -459,7 +459,7 @@
        var montoHtml = '';
        if (mov.tipo === 'EGRESO' && estaEnEdicion) {
           var valorMonto = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].monto !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].monto : (mov.monto || 0);
-          montoHtml = '<input type="text" class="form-input" style="width: 100px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block; text-align: center;" value="' + formatNumberAr(valorMonto).replace('ARS', '').trim() + '" onblur="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'monto\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}" data-fila="' + escCaja(mov.filaIndex) + '" autocomplete="off">';
+          montoHtml = '<span class="caja-edit-control"><input type="text" class="form-input" style="width: 100px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block; text-align: center;" value="' + formatNumberAr(valorMonto).replace('ARS', '').trim() + '" onblur="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'monto\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}" data-fila="' + escCaja(mov.filaIndex) + '" autocomplete="off"></span>';
        } else {
           montoHtml = '<span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + formatNumberAr(mov.monto || 0) + '</span>';
        }
@@ -467,7 +467,7 @@
        var vencHtml = '';
        if (mov.tipo === 'EGRESO' && estaEnEdicion) {
           var valorVencimiento = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento : (mov.vencimiento ? convertirFechaDDMMYYYYaYYYYMMDD(mov.vencimiento) : '');
-          vencHtml = '<input type="date" class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" value="' + valorVencimiento + '" onblur="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'vencimiento\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}" data-fila="' + escCaja(mov.filaIndex) + '" autocomplete="off" id="vencimiento-input-' + escCaja(mov.filaIndex) + '">';
+          vencHtml = '<span class="caja-edit-control"><input type="date" class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" value="' + valorVencimiento + '" onblur="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'vencimiento\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}" data-fila="' + escCaja(mov.filaIndex) + '" autocomplete="off" id="vencimiento-input-' + escCaja(mov.filaIndex) + '"></span>';
        } else if (mov.tipo === 'EGRESO') {
           vencHtml = '<span style="color:#94a3b8; font-size:13px;">' + (mov.vencimiento || '') + '</span>';
        } else {
@@ -475,6 +475,10 @@
        }
        var fid = escIdCaja(mov.filaIndex);
        var acciones = '';
+       if (estaEnEdicion) {
+          acciones += '<button type="button" class="caja-edit-btn caja-edit-btn-guardar" onclick="guardarCambiosPendientes(' + fid + '); event.stopPropagation();" title="Guardar cambios">Guardar</button>';
+          acciones += '<button type="button" class="caja-edit-btn caja-edit-btn-cancelar" onclick="cancelarEdicionMovimiento(' + fid + '); event.stopPropagation();" title="Descartar cambios">Cancelar</button>';
+       }
        acciones += '<div class="caja-acciones-dropdown"><button type="button" class="action-btn btn-edit" onclick="toggleCajaAccionesMenu(this); event.stopPropagation();" title="Acciones"><span class="material-symbols-outlined">more_vert</span></button>';
        acciones += '<div class="caja-acciones-menu" data-fila="' + escCaja(mov.filaIndex) + '"><button type="button" onclick="toggleCajaAccionesMenu(this.closest(\'.caja-acciones-dropdown\')?.querySelector(\'button\')); toggleEdicionMovimiento(' + fid + '); event.stopPropagation();"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:6px;">edit</span>Editar</button>';
        if (mov.tipo === 'EGRESO' && mov.estado === 'PENDIENTE') {
@@ -482,7 +486,8 @@
        }
        acciones += '<button type="button" onclick="toggleCajaAccionesMenu(this.closest(\'.caja-acciones-menu\')?.parentElement?.querySelector(\'button\')); borrarMovimientoCaja(' + fid + '); event.stopPropagation();"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:6px;">delete</span>Eliminar</button></div></div>';
        var accionesWrap = '<div class="caja-acciones-wrap">' + acciones + '</div>';
-       return '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.fecha || '') + '</td><td style="padding:12px; text-align:center;"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.concepto || '') + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + (mov.descripcion || '') + '</td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + formaPagoHtml + '</td><td style="padding:12px; text-align:center;">' + montoHtml + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + obsHtmlEdit + '</td><td style="padding:12px; text-align:center;"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + vencHtml + '</td><td style="padding:12px; text-align:center;">' + accionesWrap + '</td></tr>';
+       var trClass = estaEnEdicion ? 'caja-row-editing' : '';
+       return '<tr' + (trClass ? ' class="' + trClass + '"' : '') + ' style="border-bottom: 1px solid var(--border-color);"><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.fecha || '') + '</td><td style="padding:12px; text-align:center;"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.concepto || '') + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + (mov.descripcion || '') + '</td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + formaPagoHtml + '</td><td style="padding:12px; text-align:center;">' + montoHtml + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + obsHtmlEdit + '</td><td style="padding:12px; text-align:center;"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + vencHtml + '</td><td style="padding:12px; text-align:center;">' + accionesWrap + '</td></tr>';
     }
 
     function renderHistorialMovimientos(data) {
@@ -682,6 +687,12 @@
           document.querySelectorAll('.caja-acciones-menu.open').forEach(function(m) { m.classList.remove('open'); });
        }
     }, true);
+
+    function cancelarEdicionMovimiento(filaIndex) {
+       delete CAMBIOS_PENDIENTES[filaIndex];
+       FILAS_EN_EDICION[filaIndex] = false;
+       renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);
+    }
 
     function toggleEdicionMovimiento(filaIndex) {
        // Verificar si estaba en modo edición (se está desactivando)

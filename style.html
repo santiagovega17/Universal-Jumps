@@ -2034,6 +2034,14 @@
     .caja-acciones-menu button { display: block; width: 100%; padding: 8px 12px; background: none; border: none; color: #f1f5f9; font-size: 12px; text-align: left; cursor: pointer; white-space: nowrap; }
     .caja-acciones-menu button:hover { background: rgba(255,255,255,0.08); }
     .caja-historial-table td:last-child { padding-left: 16px; padding-right: 12px; }
+    /* Fila en edición: que no se corte el desplegable y controles visibles */
+    .caja-historial-table tr.caja-row-editing { position: relative; z-index: 100; }
+    .caja-historial-table tr.caja-row-editing td { overflow: visible; }
+    .caja-historial-table .caja-edit-control { position: relative; z-index: 110; min-height: 32px; }
+    .caja-historial-table .caja-edit-control select { min-width: 140px; }
+    .caja-edit-btn { padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; margin-right: 6px; }
+    .caja-edit-btn-guardar { background: #10b981; color: white; }
+    .caja-edit-btn-cancelar { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); }
     .caja-accordion-cell { border-bottom: 1px solid var(--border-color); }
     .caja-accordion-inline { background: rgba(255,255,255,0.02); border: none; border-radius: 0; overflow: hidden; }
     .caja-accordion-inline .caja-accordion-summary { cursor: pointer; list-style: none; padding: 0; }
