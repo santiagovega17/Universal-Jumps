@@ -538,13 +538,19 @@
           var titulo = (grupo.concepto && grupo.descripcion) ? (grupo.concepto + ' – ' + grupo.descripcion) : (grupo.concepto || grupo.descripcion || 'Sin concepto');
           var n = grupo.movimientos.length;
           var totalStr = formatNumberAr(grupo.total);
-          html += '<details class="caja-accordion"><summary class="caja-accordion-summary">';
-          html += '<span class="caja-accordion-title">' + esc(titulo) + '</span>';
-          html += '<span class="caja-accordion-meta">' + n + ' ' + (n === 1 ? 'movimiento' : 'movimientos') + ' – Total: <strong style="color:' + tipoColorAcc + ';">' + totalStr + '</strong></span>';
-          html += '<span class="material-symbols-outlined caja-accordion-icon">expand_more</span></summary>';
-          html += '<div class="caja-accordion-body">' + tableHeader;
-          grupo.movimientos.forEach(function(mov) { html += buildRowHistorialCaja(mov); });
-          html += '</tbody></table></div></details>';
+          if (n > 1) {
+             html += '<details class="caja-accordion"><summary class="caja-accordion-summary">';
+             html += '<span class="caja-accordion-title">' + esc(titulo) + '</span>';
+             html += '<span class="caja-accordion-meta">' + n + ' movimientos – Total: <strong style="color:' + tipoColorAcc + ';">' + totalStr + '</strong></span>';
+             html += '<span class="material-symbols-outlined caja-accordion-icon">expand_more</span></summary>';
+             html += '<div class="caja-accordion-body">' + tableHeader;
+             grupo.movimientos.forEach(function(mov) { html += buildRowHistorialCaja(mov); });
+             html += '</tbody></table></div></details>';
+          } else {
+             html += '<div class="caja-accordion-single">' + tableHeader;
+             grupo.movimientos.forEach(function(mov) { html += buildRowHistorialCaja(mov); });
+             html += '</tbody></table></div>';
+          }
        });
        html += '</div>';
        if (restantesGrupos > 0) {
@@ -552,7 +558,7 @@
        }
        container.innerHTML = html;
 
-       container.querySelectorAll('.caja-accordion table').forEach(function(tabla) {
+       container.querySelectorAll('.caja-accordion-list table').forEach(function(tabla) {
           tabla.addEventListener('submit', function(e) { e.preventDefault(); e.stopPropagation(); return false; }, true);
           tabla.addEventListener('keydown', function(e) {
              if (e.key === 'Enter' && e.target.hasAttribute('data-fila')) {
