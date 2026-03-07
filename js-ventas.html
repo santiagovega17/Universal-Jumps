@@ -47,8 +47,8 @@
           let cabecera = datos[0];
           for (let i = 1; i < datos.length; i++) {
              if (datos[i][0]) {
-                let filaConId = [...datos[i]];
-                filaConId.push(i + 1);
+               let filaConId = [...datos[i]];
+               if (filaConId.length <= 13) filaConId.push(i + 1);
                 filas.push(filaConId);
              }
           }
@@ -424,12 +424,13 @@
  
        for (let r = 0; r < datos.length; r++) {
           let row = datos[r];
-          let id = row[row.length - 1];
+         let id = row[row.length - 1];
+         let idEsc = String(id).replace(/'/g, "\\'");
           let precio = typeof row[8] === 'number' ? row[8] : parseCurrency(row[8]);
           let total = typeof row[9] === 'number' ? row[9] : parseCurrency(row[9]);
           let totalSinIva = typeof row[10] === 'number' ? row[10] : parseCurrency(row[10]);
           let datosPuros = row.slice(0, row.length - 1);
-          let args = `${id},` + datosPuros.map(d => `'${d.replace(/'/g, "\\'")}'`).join(',');
+         let args = `'${idEsc}',` + datosPuros.map(d => `'${String(d).replace(/'/g, "\\'")}'`).join(',');
  
           let obs = row[11] || '';
           let obsHtml = obs;
@@ -444,7 +445,7 @@
           html += `<tr>
                  <td>${row[0]}</td>
                  <td>${row[1]}</td>
-                 <td>${puedeEditar ? `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} onclick="toggleCheck(this, ${id}, '${nombreVendedor}')">` : `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} disabled>`}</td>
+                <td>${puedeEditar ? `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} onclick="toggleCheck(this, '${idEsc}', '${nombreVendedor}')">` : `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} disabled>`}</td>
                  <td>${row[3]}</td>
                  <td>${row[4]}</td>
                  <td>${row[5]}</td>
@@ -458,7 +459,7 @@
           if (puedeEditar) {
              html += `<td>
                      <button class="action-btn btn-edit" onclick="clickEditar(${args})"><span class="material-symbols-outlined">edit</span></button>
-                     <button class="action-btn btn-del" onclick="clickBorrar(${id}, '${nombreVendedor}')"><span class="material-symbols-outlined">delete</span></button>
+                    <button class="action-btn btn-del" onclick="clickBorrar('${idEsc}', '${nombreVendedor}')"><span class="material-symbols-outlined">delete</span></button>
                  </td>`;
           }
  

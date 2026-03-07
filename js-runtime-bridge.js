@@ -66,6 +66,33 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload || {}),
         }),
+
+      obtenerDatosDeHoja: (nombreHoja) =>
+        requestJson(`/api/ventas?${buildQuery({ action: 'datos-hoja', nombreHoja })}`),
+      guardarVenta: (payload) =>
+        requestJson('/api/ventas?action=guardar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      editarVenta: (payload) =>
+        requestJson('/api/ventas?action=editar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      actualizarCheck: (payload) =>
+        requestJson('/api/ventas?action=check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      borrarVenta: (payload) =>
+        requestJson('/api/ventas?action=borrar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
     };
 
     const fn = routes[methodName];
