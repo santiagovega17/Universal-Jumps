@@ -1634,7 +1634,58 @@
        max-height: 85vh;
        max-width: 600px;
     }
- 
+
+    /* Modal de venta: compacto como caja, max 520px */
+    #modalVenta {
+       padding: 12px 0;
+       align-items: center;
+    }
+    #modalVenta .modal-content {
+       max-height: calc(100vh - 24px);
+       max-width: 520px;
+       width: 95%;
+       padding: 12px;
+       overflow-y: auto;
+    }
+    #modalVenta .form-group-venta-sm,
+    #modalVenta .form-group.form-group-venta-sm {
+       margin-bottom: 8px;
+    }
+    #modalVenta .form-row-venta-sm,
+    #modalVenta .form-row.form-row-venta-sm {
+       display: flex;
+       gap: 10px;
+       margin-bottom: 8px;
+    }
+    #modalVenta .form-row-venta-sm .form-group-venta-sm {
+       flex: 1;
+       margin-bottom: 0;
+    }
+    #modalVenta .form-label-venta-sm {
+       font-size: 11px;
+       margin-bottom: 4px;
+    }
+    #modalVenta .form-input-venta-sm,
+    #modalVenta .form-input.form-input-venta-sm,
+    #modalVenta select.form-input-venta-sm,
+    #modalVenta textarea.form-input-venta-sm {
+       padding: 6px 8px;
+       font-size: 12px;
+    }
+    #modalVenta .btn-submit-venta-sm {
+       width: auto;
+       padding: 8px 16px;
+       font-size: 12px;
+       margin-top: 4px;
+    }
+    #modalVenta .modal-header {
+       margin-bottom: 10px;
+       padding-bottom: 6px;
+    }
+    #modalVenta .modal-title {
+       font-size: 14px;
+    }
+
     /* Modal de caja: compacto, campos pequeños */
     #modalCaja {
        padding: 12px 0;

@@ -180,9 +180,9 @@
          <form id="formVenta" onsubmit="enviarVenta(event)">
             <input type="hidden" name="filaIndex" id="filaIndex" value="">
 
-            <div class="form-group" id="grupoVendedor" style="display:none;">
-               <label class="form-label">Vendedor</label>
-               <select class="form-input" name="vendedor" id="selVendedor">
+            <div class="form-group form-group-venta-sm" id="grupoVendedor" style="display:none;">
+               <label class="form-label form-label-venta-sm">Vendedor</label>
+               <select class="form-input form-input-venta-sm" name="vendedor" id="selVendedor">
                   <option value="Adrian">Adrián</option>
                   <option value="Natalia">Natalia</option>
                   <option value="Maria Laura">María Laura</option>
@@ -193,12 +193,11 @@
                </select>
             </div>
 
-            <div class="form-row">
-               <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input"
-                     name="fecha" id="fechaInput" required>
+            <div class="form-row form-row-venta-sm">
+               <div class="form-group form-group-venta-sm"><label class="form-label form-label-venta-sm">Fecha</label><input type="date" class="form-input form-input-venta-sm" name="fecha" id="fechaInput" required>
                </div>
-               <div class="form-group">
-                  <label class="form-label">Estado</label><select class="form-input" name="estado" id="estadoInput">
+               <div class="form-group form-group-venta-sm">
+                  <label class="form-label form-label-venta-sm">Estado</label><select class="form-input form-input-venta-sm" name="estado" id="estadoInput">
                      <option value="Cobrado">Cobrado</option>
                      <option value="Cta corriente">Cta corriente</option>
                      <option value="Pendiente">Pendiente</option>
@@ -208,11 +207,11 @@
                </div>
             </div>
 
-            <div class="form-row">
-               <div class="form-group">
-                  <label class="form-label">País</label><select class="form-input" name="pais" id="paisInput" required
+            <div class="form-row form-row-venta-sm">
+               <div class="form-group form-group-venta-sm">
+                  <label class="form-label form-label-venta-sm">País</label><select class="form-input form-input-venta-sm" name="pais" id="paisInput" required
                      onchange="actualizarSelectorClientes('TODOS')">
-                     <option value="">Selecciona un país...</option>
+                     <option value="">País...</option>
                      <option value="Argentina">Argentina</option>
                      <option value="Chile">Chile</option>
                      <option value="Mexico">Mexico</option>
@@ -223,25 +222,23 @@
                      <option value="RDM">RDM</option>
                   </select>
                </div>
-               <div class="form-group" style="flex:2;">
-                  <label class="form-label">Cliente</label>
-                  <div style="display: flex; gap: 8px; align-items: flex-end;">
-                     <select class="form-input" name="cliente" id="clienteInput" required style="flex: 1;">
-                        <option value="">Cargando clientes...</option>
+               <div class="form-group form-group-venta-sm" style="flex:2;">
+                  <label class="form-label form-label-venta-sm">Cliente</label>
+                  <div style="display: flex; gap: 6px; align-items: flex-end;">
+                     <select class="form-input form-input-venta-sm" name="cliente" id="clienteInput" required style="flex: 1;">
+                        <option value="">Cargando...</option>
                      </select>
-                     <button type="button" class="btn-submit" onclick="abrirModalClienteDesdeVenta()"
-                        style="padding: 8px; font-size: 18px; white-space: nowrap; flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; margin-left: 8px;">
-                        <span class="material-symbols-outlined"
-                           style="font-size: 20px; vertical-align: middle;">add</span>
+                     <button type="button" class="btn-submit btn-submit-venta-sm" onclick="abrirModalClienteDesdeVenta()"
+                        style="padding: 6px; font-size: 16px; flex-shrink: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
                      </button>
                   </div>
                </div>
             </div>
 
-            <div class="form-row">
-               <div class="form-group">
-                  <label class="form-label">Concepto</label><select class="form-input" name="concepto"
-                     id="conceptoInput" required>
+            <div class="form-row form-row-venta-sm">
+               <div class="form-group form-group-venta-sm">
+                  <label class="form-label form-label-venta-sm">Concepto</label><select class="form-input form-input-venta-sm" name="concepto" id="conceptoInput" required>
                      <option value="Botas">Botas</option>
                      <option value="Cursos">Cursos</option>
                      <option value="Eventos">Eventos</option>
@@ -251,9 +248,8 @@
                      <option value="Torneos">Torneos</option>
                   </select>
                </div>
-               <div class="form-group" style="flex:1.5;">
-                  <label class="form-label">Forma de Pago</label><select class="form-input" name="formaPago"
-                     id="pagoInput">
+               <div class="form-group form-group-venta-sm" style="flex:1.5;">
+                  <label class="form-label form-label-venta-sm">Forma de Pago</label><select class="form-input form-input-venta-sm" name="formaPago" id="pagoInput">
                      <option value="Mercado Pago">Mercado Pago</option>
                      <option value="Transferencia">Transferencia</option>
                      <option value="Efectivo">Efectivo</option>
@@ -270,26 +266,22 @@
                </div>
             </div>
 
-            <div class="form-row">
-               <div class="form-group"><label class="form-label">Cantidad</label><input type="text" class="form-input"
-                     name="cantidad" id="cantInput" oninput="calcularTotal()" required>
+            <div class="form-row form-row-venta-sm">
+               <div class="form-group form-group-venta-sm"><label class="form-label form-label-venta-sm">Cantidad</label><input type="text" class="form-input form-input-venta-sm" name="cantidad" id="cantInput" oninput="calcularTotal()" required>
                </div>
-               <div class="form-group"><label class="form-label">Precio Unit.</label><input type="text"
-                     class="form-input" name="precio" id="precioInput" onkeyup="formatoMoneda(this); calcularTotal();"
+               <div class="form-group form-group-venta-sm"><label class="form-label form-label-venta-sm">Precio</label><input type="text" class="form-input form-input-venta-sm" name="precio" id="precioInput" onkeyup="formatoMoneda(this); calcularTotal();"
                      placeholder="$ 0,00" required>
                </div>
-               <div class="form-group"><label class="form-label">Total</label><input type="text" class="form-input"
-                     id="totalDisplay" value="$ 0,00" disabled
-                     style="background:#0f172a; color:#38bdf8; font-weight:800; text-align:right;">
+               <div class="form-group form-group-venta-sm"><label class="form-label form-label-venta-sm">Total</label><input type="text" class="form-input form-input-venta-sm" id="totalDisplay" value="$ 0,00" disabled
+                     style="background:#0f172a; color:#38bdf8; font-weight:800; font-size:12px; text-align:right;">
                </div>
             </div>
 
-            <div class="form-group">
-               <label class="form-label">Observaciones</label><textarea class="form-input" id="obsInput" rows="2"
-                  style="height:50px;"></textarea>
+            <div class="form-group form-group-venta-sm">
+               <label class="form-label form-label-venta-sm">Observaciones</label><textarea class="form-input form-input-venta-sm" id="obsInput" rows="2" style="height:42px; font-size:12px;"></textarea>
             </div>
 
-            <button type="submit" class="btn-submit" id="btnGuardar">Guardar Venta</button>
+            <button type="submit" class="btn-submit btn-submit-venta-sm" id="btnGuardar">Guardar Venta</button>
          </form>
       </div>
    </div>
