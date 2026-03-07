@@ -5,13 +5,10 @@
   "description": "API serverless para migracion de GAS a Vercel + Supabase.",
   "type": "commonjs",
   "scripts": {
-    "local": "vercel dev",
+    "local": "npx vercel dev",
     "test": "echo \"Sin tests por ahora\"",
     "migrate:dry": "node scripts/migrateSheetsToSupabase.js --dry-run",
     "migrate:run": "node scripts/migrateSheetsToSupabase.js --run --reset --yes"
-  },
-  "devDependencies": {
-    "vercel": "^41.0.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",

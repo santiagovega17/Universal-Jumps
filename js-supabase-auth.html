@@ -1,0 +1,67 @@
+<script>
+(function() {
+   window.SupabaseAuth = {
+      client: null,
+      ready: false,
+      useDemo: false,
+
+      async init() {
+         try {
+            const envRes = await fetch('/api/env-public', { cache: 'no-store' });
+            const env = await envRes.json();
+            if (!envRes.ok || !env || env.error || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+               this.useDemo = true;
+               window.dispatchEvent(new CustomEvent('supabase-auth-ready', { detail: { hasSession: false, useDemo: true } }));
+               return;
+            }
+            const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+            this.client = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+            this.ready = true;
+
+            const { data: { session } } = await this.client.auth.getSession();
+            if (session && session.access_token) {
+               const perfilRes = await fetch('/api/auth/perfil', {
+                  headers: { 'Authorization': 'Bearer ' + session.access_token }
+               });
+               const perfil = await perfilRes.json();
+               if (!perfil.error) {
+                  window.dispatchEvent(new CustomEvent('supabase-auth-ready', { detail: { hasSession: true, perfil } }));
+                  return;
+               }
+            }
+            window.dispatchEvent(new CustomEvent('supabase-auth-ready', { detail: { hasSession: false } }));
+         } catch (e) {
+            console.error('Supabase Auth init:', e);
+            this.useDemo = true;
+            window.dispatchEvent(new CustomEvent('supabase-auth-ready', { detail: { hasSession: false, useDemo: true } }));
+         }
+      },
+
+      getToken() {
+         if (!this.client) return null;
+         const session = this.client.auth.getSession();
+         return session?.then ? session.then(s => s.data?.session?.access_token || null) : null;
+      },
+
+      async signInWithGoogle() {
+         if (!this.client) return;
+         await this.client.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin + window.location.pathname }
+         });
+      },
+
+      async signOut() {
+         if (!this.client) return;
+         await this.client.auth.signOut();
+      }
+   };
+
+   window.__getSupabaseAuthToken = function() {
+      if (!window.SupabaseAuth.client) return Promise.resolve(null);
+      return window.SupabaseAuth.client.auth.getSession().then(function(r) { return r.data?.session?.access_token || null; });
+   };
+
+   setTimeout(function() { window.SupabaseAuth.init(); }, 0);
+})();
+</script>

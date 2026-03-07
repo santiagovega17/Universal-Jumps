@@ -29,7 +29,13 @@
 
   function endpointCall(methodName, args) {
     const routes = {
-      obtenerPerfilUsuario: () => requestJson('/api/auth/perfil'),
+      obtenerPerfilUsuario: async () => {
+        const token = typeof window !== 'undefined' && window.__getSupabaseAuthToken
+          ? await window.__getSupabaseAuthToken()
+          : null;
+        const headers = token ? { Authorization: 'Bearer ' + token } : {};
+        return requestJson('/api/auth/perfil', { headers });
+      },
       obtenerListaVendedores: () => requestJson('/api/usuarios?action=vendedores'),
       obtenerTodosUsuarios: () => requestJson('/api/usuarios?action=todos'),
       actualizarEstadoUsuario: (email, activo) =>

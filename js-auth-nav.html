@@ -1,32 +1,61 @@
 <script>
+    window.addEventListener('supabase-auth-ready', function(ev) {
+       var d = ev && ev.detail;
+       if (d && d.hasSession && d.perfil) {
+          aplicarPerfilYMostrarApp(d.perfil);
+       }
+    });
+ 
+    function aplicarPerfilYMostrarApp(perfil) {
+       USUARIO_ACTUAL = perfil; aplicarPermisos(perfil);
+       document.getElementById('login-screen').style.opacity = '0';
+       setTimeout(function() {
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('app-container').style.display = 'flex';
+          var vEl = document.getElementById('sidebar-version');
+          if (vEl && typeof APP_VERSION !== 'undefined') vEl.textContent = 'v' + APP_VERSION;
+       }, 500);
+       inicializarApp();
+    }
+ 
     function iniciarSesion() {
-       let btn = document.getElementById('btn-entrar');
-       let err = document.getElementById('login-error');
-       let switcher = document.getElementById('account-switcher');
+       var btn = document.getElementById('btn-entrar');
+       var err = document.getElementById('login-error');
+       var switcher = document.getElementById('account-switcher');
        btn.disabled = true; btn.innerText = "Verificando..."; err.style.display = 'none'; switcher.style.display = 'none';
  
-       google.script.run.withSuccessHandler(perfil => {
+       if (window.SupabaseAuth && window.SupabaseAuth.ready && !window.SupabaseAuth.useDemo) {
+          window.SupabaseAuth.signInWithGoogle().then(function() {
+             btn.disabled = false; btn.innerText = "Ingresar";
+          }).catch(function(e) {
+             err.innerText = "Error: " + (e && e.message ? e.message : "No se pudo iniciar sesión"); err.style.display = 'block';
+             btn.disabled = false; btn.innerText = "Ingresar";
+          });
+          return;
+       }
+ 
+       google.script.run.withSuccessHandler(function(perfil) {
           if (perfil.error) {
              btn.disabled = false; btn.innerText = "Ingresar";
              if (perfil.authError) {
                 err.innerText = "Tu usuario no tiene permisos."; err.style.display = 'block';
-                document.getElementById('wrong-email').innerText = perfil.emailDetectado; switcher.style.display = 'block';
+                document.getElementById('wrong-email').innerText = perfil.emailDetectado || ''; switcher.style.display = 'block';
              } else { err.innerText = perfil.mensaje; err.style.display = 'block'; }
           } else {
-             USUARIO_ACTUAL = perfil; aplicarPermisos(perfil);
-             document.getElementById('login-screen').style.opacity = '0';
-             setTimeout(() => {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('app-container').style.display = 'flex';
-                var vEl = document.getElementById('sidebar-version');
-                if (vEl && typeof APP_VERSION !== 'undefined') vEl.textContent = 'v' + APP_VERSION;
-             }, 500);
-             inicializarApp();
+             aplicarPerfilYMostrarApp(perfil);
           }
-       }).withFailureHandler(e => { err.innerText = "Error: " + e; err.style.display = 'block'; btn.disabled = false; }).obtenerPerfilUsuario();
+       }).withFailureHandler(function(e) { err.innerText = "Error: " + e; err.style.display = 'block'; btn.disabled = false; btn.innerText = "Ingresar"; }).obtenerPerfilUsuario();
     }
  
-    function cambiarCuentaGoogle() { window.open("https://accounts.google.com/AccountChooser?service=wise&continue=" + encodeURIComponent(window.location.href), '_top'); }
+    function cambiarCuentaGoogle() {
+       if (window.SupabaseAuth && window.SupabaseAuth.ready && !window.SupabaseAuth.useDemo) {
+          window.SupabaseAuth.signOut().then(function() {
+             window.SupabaseAuth.signInWithGoogle();
+          });
+          return;
+       }
+       window.open("https://accounts.google.com/AccountChooser?service=wise&continue=" + encodeURIComponent(window.location.href), '_top');
+    }
  
     function aplicarPermisos(perfil) {
        document.getElementById('user-display-name').innerText = perfil.email;
