@@ -110,33 +110,7 @@
           return;
        }
  
-       container.innerHTML = `
-          <div class="skeleton-caja" style="margin-top:30px;">
-             <div style="display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin-bottom:40px;">
-                <div class="skeleton-card"></div>
-                <div class="skeleton-card"></div>
-                <div class="skeleton-card"></div>
-                <div class="skeleton-card"></div>
-             </div>
-             <div style="margin-bottom:16px;">
-                <div class="skeleton-line" style="width:280px; height:18px; margin-bottom:16px;"></div>
-                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
-                   <div class="skeleton-card" style="height:140px;"></div>
-                   <div class="skeleton-card" style="height:140px;"></div>
-                   <div class="skeleton-card" style="height:140px;"></div>
-                </div>
-             </div>
-             <div style="margin-top:40px;">
-                <div class="skeleton-line" style="width:220px; height:18px; margin-bottom:16px;"></div>
-                <div class="skeleton-table">
-                   <div class="skeleton-row"></div>
-                   <div class="skeleton-row"></div>
-                   <div class="skeleton-row"></div>
-                   <div class="skeleton-row"></div>
-                   <div class="skeleton-row"></div>
-                </div>
-             </div>
-          </div>`;
+       container.innerHTML = '';
        let t0 = performance.now();
  
        function aplicarDatos(balanceData, mediosData, historialData, fromCache) {
