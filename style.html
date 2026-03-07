@@ -2023,7 +2023,10 @@
     .caja-historial-table-wrap { overflow-x: auto; }
     .caja-accordion-cell { border-bottom: 1px solid var(--border-color); }
     .caja-accordion-inline { background: rgba(255,255,255,0.02); border: none; border-radius: 0; overflow: hidden; }
-    .caja-accordion-inline .caja-accordion-summary { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; list-style: none; flex-wrap: wrap; border-bottom: 1px solid var(--border-color); }
+    .caja-accordion-inline .caja-accordion-summary { cursor: pointer; list-style: none; padding: 0; }
+    .caja-accordion-inline .caja-accordion-summary::-webkit-details-marker { display: none; }
+    .caja-summary-inline-table { margin: 0; }
+    .caja-summary-inline-table td { border: none; }
     .caja-accordion-summary::-webkit-details-marker { display: none; }
     .caja-accordion-title { font-weight: 600; color: #f1f5f9; font-size: 14px; flex: 1 1 auto; }
     .caja-accordion-meta { color: #94a3b8; font-size: 13px; }
