@@ -2024,9 +2024,18 @@
     .caja-historial-table,
     .caja-summary-inline-table,
     .caja-accordion-inner-table { table-layout: fixed; width: 100%; }
-    .caja-accordion-row { background: rgba(0, 0, 0, 0.25); border-left: 3px solid var(--accent, #38bdf8); }
-    .caja-accordion-row .caja-summary-inline-table tr { background: rgba(0, 0, 0, 0.2); }
-    .caja-acciones-wrap { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .caja-accordion-row { background: rgba(0, 0, 0, 0.25); }
+    .caja-accordion-row .caja-summary-inline-table { position: relative; }
+    .caja-accordion-row .caja-summary-inline-table td:first-child { padding-left: 28px; }
+    .caja-accordion-row .caja-summary-inline-table td:first-child::before { content: '▶'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--accent, #38bdf8); font-size: 9px; opacity: 0.9; }
+    .caja-historial-table thead th { text-align: center !important; }
+    .caja-acciones-wrap { display: inline-flex; justify-content: center; align-items: center; gap: 2px; flex-wrap: nowrap; min-width: 40px; }
+    .caja-acciones-dropdown { position: relative; display: inline-block; }
+    .caja-acciones-menu { display: none; position: absolute; right: 0; top: 100%; margin-top: 2px; background: var(--sidebar); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 100; min-width: 140px; padding: 4px 0; }
+    .caja-acciones-menu.open { display: block; }
+    .caja-acciones-menu button { display: block; width: 100%; padding: 8px 12px; background: none; border: none; color: #f1f5f9; font-size: 12px; text-align: left; cursor: pointer; white-space: nowrap; }
+    .caja-acciones-menu button:hover { background: rgba(255,255,255,0.08); }
+    .caja-historial-table td:last-child { padding-left: 16px; padding-right: 12px; }
     .caja-accordion-cell { border-bottom: 1px solid var(--border-color); }
     .caja-accordion-inline { background: rgba(255,255,255,0.02); border: none; border-radius: 0; overflow: hidden; }
     .caja-accordion-inline .caja-accordion-summary { cursor: pointer; list-style: none; padding: 0; }
