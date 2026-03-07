@@ -230,40 +230,22 @@
        else if (hoja === 'MENU_STOCK') { 
           document.getElementById('titulo').innerText = 'STOCK';
           if (selStock) selStock.style.display = 'flex';
-          let vistaStock = document.getElementById('vista-stock');
-          if (vistaStock) vistaStock.style.display = 'none';
           if (document.getElementById('app')) document.getElementById('app').innerHTML = '';
           renderStockMenu(); 
        }
        else if (hoja === 'STOCK') {
           document.getElementById('titulo').innerText = 'STOCK';
-          if (selStock) {
-             selStock.style.display = 'flex';
-          }
-          let vistaStock = document.getElementById('vista-stock');
-          if (vistaStock) vistaStock.style.display = 'none';
-          if (document.getElementById('app') && typeof getSkeletonHTML === 'function') {
-             document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">STOCK</div>${getSkeletonHTML('STOCK')}`;
-          } else if (document.getElementById('app')) {
-             document.getElementById('app').innerHTML = '';
-          }
+          if (selStock) selStock.style.display = 'flex';
+          mostrarEstadoCarga('STOCK', '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'STOCK');
           cargarStock();
        }
        else if (hoja === 'OBJETIVOS') {
-          // Asegurar que vista-stock esté oculta
-          let vistaStock = document.getElementById('vista-stock');
-          if (vistaStock) vistaStock.style.display = 'none';
-          
           selVentas.style.display = 'block';
           document.getElementById('titulo').innerText = 'OBJETIVOS';
           mostrarEstadoCarga('OBJETIVOS', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'OBJETIVOS');
           cargar(selVentas.value);
        }
        else if (hoja === 'CAMBIAR_TRIMESTRE') {
-          // Asegurar que vista-stock esté oculta
-          let vistaStock = document.getElementById('vista-stock');
-          if (vistaStock) vistaStock.style.display = 'none';
-          
           selVentas.style.display = 'block';
           let currentTitle = document.getElementById('titulo').innerText;
           if (currentTitle === 'COMISIONES') {
@@ -287,10 +269,6 @@
           }
        }
        else if (hoja === 'GESTION_USUARIOS') {
-          // Asegurar que vista-stock esté oculta
-          let vistaStock = document.getElementById('vista-stock');
-          if (vistaStock) vistaStock.style.display = 'none';
-          
           document.getElementById('titulo').innerText = 'GESTIONAR USUARIOS';
           mostrarEstadoCarga('GESTIONAR USUARIOS', '<div class="back-nav" onclick="navegar(null, \'MENU_ADMIN\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'USUARIOS');
           google.script.run.withSuccessHandler(res => {
@@ -304,20 +282,12 @@
           }).obtenerTodosUsuarios();
        }
        else if (hoja === 'CAJA') {
-          // Asegurar que vista-stock esté oculta
-          let vistaStock = document.getElementById('vista-stock');
-          if (vistaStock) vistaStock.style.display = 'none';
-          
           selBalance.style.display = 'flex';
           document.getElementById('titulo').innerText = 'BALANCE DE CAJA';
           mostrarEstadoCarga('BALANCE DE CAJA', '<div class="back-nav" onclick="navegar(null, \'MENU_ADMIN\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CAJA');
           renderBalanceCaja();
        }
        else if (hoja === 'CLIENTES') {
-          // Asegurar que vista-stock esté oculta
-          let vistaStock = document.getElementById('vista-stock');
-          if (vistaStock) vistaStock.style.display = 'none';
-          
           document.getElementById('titulo').innerText = 'CLIENTES';
           mostrarEstadoCarga('CLIENTES', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CLIENTES');
           google.script.run.withSuccessHandler(res => {
@@ -343,10 +313,6 @@
           cargar(hoja);
        }
        else {
-          // Asegurar que vista-stock esté oculta
-          let vistaStock = document.getElementById('vista-stock');
-          if (vistaStock) vistaStock.style.display = 'none';
-          
           // Ocultar el FAB global siempre en vistas de vendedor específico (se usa el botón dinámico dentro de renderVendedor)
           if (fabVenta) fabVenta.style.display = 'none';
           let tituloVendedor = 'VENTAS: ' + hoja.toUpperCase();
@@ -361,10 +327,6 @@
  
     // --- MENUS ---
     function renderMainMenu() {
-       // Asegurar que vista-stock esté oculta
-       let vistaStock = document.getElementById('vista-stock');
-       if (vistaStock) vistaStock.style.display = 'none';
-       
        let user = USUARIO_ACTUAL;
        let rol = user ? user.rol : '';
        let html = `<div class="welcome-banner"><div class="welcome-title">Panel Principal</div></div>
@@ -386,10 +348,6 @@
     }
  
     function renderAdminMenu() {
-       // Asegurar que vista-stock esté oculta
-       let vistaStock = document.getElementById('vista-stock');
-       if (vistaStock) vistaStock.style.display = 'none';
-       
        let html = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
           <div class="dash-section-title">ADMINISTRACIÓN</div>
           <div class="home-grid">
@@ -400,9 +358,6 @@
     }
  
     function renderVentasMenu() {
-       // Asegurar que vista-stock esté oculta
-       let vistaStock = document.getElementById('vista-stock');
-       if (vistaStock) vistaStock.style.display = 'none';
        let user = USUARIO_ACTUAL;
        let html = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">VENTAS</div><div class="home-grid">`;
        if (user.rol === 'ADMIN' || user.rol === 'ROOT') {

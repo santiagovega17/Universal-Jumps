@@ -189,18 +189,12 @@
        return new Date(p[2], p[1] - 1, p[0]);
     }
 
-    // Sin skeleton: se muestra solo el color de fondo hasta que carga el contenido
-    function getSkeletonHTML(vista) {
-       return '';
-    }
-
-    // Muestra de inmediato back + título + skeleton según vista (opcional tercer param)
+    // Muestra de inmediato back + título (sin skeleton; fondo hasta que cargue el contenido)
     function mostrarEstadoCarga(titulo, backNav, vista) {
        let backNavHtml = backNav || '';
        document.getElementById('app').innerHTML = `
              ${backNavHtml}
              <div class="dash-section-title">${titulo}</div>
-             ${getSkeletonHTML(vista)}
           `;
     }
 </script>

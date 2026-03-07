@@ -967,24 +967,6 @@
        font-size: 18px;
     }
  
-    #loader {
-       text-align: center;
-       margin-top: 50px;
-       padding: 40px;
-    }
- 
-    #loader::before {
-       content: '';
-       display: block;
-       width: 36px;
-       height: 36px;
-       border: 4px solid rgba(255, 255, 255, 0.1);
-       border-radius: 50%;
-       border-left-color: var(--accent);
-       animation: spin 1s linear infinite;
-       margin: 0 auto 15px;
-    }
- 
     .spinner {
        border: 4px solid rgba(255, 255, 255, 0.1);
        width: 36px;
@@ -1933,57 +1915,6 @@
        .obj-grid-container {
           grid-template-columns: 1fr;
        }
-    }
-
-    /* --- SKELETON LOADING (por vista: Caja, Ventas, Stock, Objetivos, etc.) --- */
-    .skeleton-card,
-    .skeleton-line,
-    .skeleton-table {
-       background: linear-gradient(
-          90deg,
-          rgba(255,255,255,0.06) 0%,
-          rgba(255,255,255,0.12) 50%,
-          rgba(255,255,255,0.06) 100%
-       );
-       background-size: 200% 100%;
-       animation: skeleton-shimmer 1.2s ease-in-out infinite;
-       border-radius: 10px;
-    }
-    .skeleton-card { height: 80px; }
-    .skeleton-table { border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); }
-    .skeleton-row {
-       height: 48px;
-       background: linear-gradient(
-          90deg,
-          rgba(255,255,255,0.04) 0%,
-          rgba(255,255,255,0.08) 50%,
-          rgba(255,255,255,0.04) 100%
-       );
-       background-size: 200% 100%;
-       animation: skeleton-shimmer 1.2s ease-in-out infinite;
-       border-bottom: 1px solid var(--border-color);
-    }
-    .skeleton-row:last-child { border-bottom: none; }
-    .skeleton-tabs {
-       height: 44px;
-       max-width: 600px;
-       border-radius: 10px;
-       background: linear-gradient(
-          90deg,
-          rgba(255,255,255,0.06) 0%,
-          rgba(255,255,255,0.12) 50%,
-          rgba(255,255,255,0.06) 100%
-       );
-       background-size: 200% 100%;
-       animation: skeleton-shimmer 1.2s ease-in-out infinite;
-    }
-    .skeleton-product-card {
-       height: 280px !important;
-       min-height: 280px;
-    }
-    @keyframes skeleton-shimmer {
-       0% { background-position: 200% 0; }
-       100% { background-position: -200% 0; }
     }
 
     /* Toast (mensaje breve de éxito) */

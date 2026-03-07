@@ -1,9 +1,5 @@
 <script>
     function cargar(hoja) {
-       // El estado de carga ya se muestra en navegar(), no es necesario mostrarlo aquí
-       // document.getElementById('loader').style.display = 'block'; 
-       // document.getElementById('app').innerHTML = '';
- 
        if (hoja.includes('OBJETIVOS')) {
           google.script.run.withSuccessHandler(res => {
              NAVEGANDO = false;
