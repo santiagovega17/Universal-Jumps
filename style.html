@@ -121,6 +121,12 @@
     .btn-login:hover {
        opacity: 0.9;
     }
+
+    .btn-login:disabled {
+       opacity: 0.7;
+       cursor: not-allowed;
+       pointer-events: none;
+    }
  
     #login-error {
        color: var(--danger);

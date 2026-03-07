@@ -9,6 +9,11 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
       rel="stylesheet" />
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <style id="critical-auth">
+      html,body{margin:0;min-height:100vh;background:#0f172a;color:#f1f5f9}
+      #login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0f172a}
+      #app-container{display:none}
+   </style>
    <!-- En Vercel no existe includeFile; style/js se inyectan abajo -->
 </head>
 
@@ -17,7 +22,7 @@
    <div id="login-screen">
       <div class="login-box">
          <img src="https://i.postimg.cc/mDrtkkwV/logo-UJ.png" class="login-logo">
-         <button class="btn-login" id="btn-entrar" onclick="iniciarSesion()">Ingresar</button>
+         <button class="btn-login" id="btn-entrar" onclick="iniciarSesion()" disabled>Verificando sesión...</button>
          <div id="login-error"></div>
          <div id="account-switcher" style="display:none; margin-top:20px;">
             <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">Estás conectado como:
@@ -28,7 +33,7 @@
       </div>
    </div>
 
-   <div id="app-container" style="display:flex; width:100%;">
+   <div id="app-container" style="display:none; width:100%;">
       <div id="mobile-overlay" onclick="toggleMenu()"></div>
       <div class="sidebar" id="sidebar">
          <img src="https://i.postimg.cc/mDrtkkwV/logo-UJ.png" onclick="navegar(null, 'HOME')"

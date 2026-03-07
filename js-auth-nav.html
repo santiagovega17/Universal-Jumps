@@ -1,10 +1,17 @@
 <script>
+    (function() {
+       var btn = document.getElementById('btn-entrar');
+       if (btn) { btn.disabled = true; btn.innerText = 'Verificando sesión...'; }
+    })();
+
     window.addEventListener('supabase-auth-ready', function(ev) {
        var d = ev && ev.detail;
+       var btn = document.getElementById('btn-entrar');
        if (d && d.hasSession && d.perfil) {
           aplicarPerfilYMostrarApp(d.perfil);
           return;
        }
+       if (btn) { btn.disabled = false; btn.innerText = (d && d.authError) ? 'Cambiar de Cuenta' : 'Ingresar'; }
        if (d && d.authError) {
           var err = document.getElementById('login-error');
           var switcher = document.getElementById('account-switcher');
@@ -29,6 +36,7 @@
  
     function iniciarSesion() {
        var btn = document.getElementById('btn-entrar');
+       if (!btn || btn.disabled) return;
        var err = document.getElementById('login-error');
        var switcher = document.getElementById('account-switcher');
        btn.disabled = true; btn.innerText = "Verificando..."; err.style.display = 'none'; switcher.style.display = 'none';
