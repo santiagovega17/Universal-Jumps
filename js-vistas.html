@@ -536,8 +536,8 @@
                    Agregar Cliente
                 </button>` : ''}
              </div>
-             <div style="background: var(--sidebar); border-radius: 12px; padding: 20px;">
-                <table style="width: 100%; border-collapse: collapse;">
+             <div class="clientes-table-wrap">
+                <table class="clientes-table">
                    <thead>
                       <tr style="border-bottom: 2px solid var(--border-color);">
                          <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">Nombre</th>
@@ -572,6 +572,15 @@
           } else {
              let tableHtml = '';
              res.data.forEach((cliente, index) => {
+                let dom = cliente.domicilio || '';
+                let domHtml = dom;
+                if (dom.length > 25) {
+                   domHtml = `<div class="obs-container">
+                      <span class="obs-text">${dom}</span>
+                      <span class="view-more-btn">Ver más...</span>
+                      <div class="obs-full">${dom}</div>
+                   </div>`;
+                }
                 tableHtml += `
                       <tr>
                          <td>${cliente.nombre || ''}</td>
@@ -579,7 +588,7 @@
                          <td>${cliente.dni || ''}</td>
                          <td>${cliente.telefono || ''}</td>
                          <td>${cliente.correo || ''}</td>
-                         <td class="col-address text-left">${cliente.domicilio || ''}</td>
+                         <td class="col-address text-left">${domHtml}</td>
                          <td>${cliente.provincia || ''}</td>
                          <td>${cliente.pais || ''}</td>
                          <td style="text-align: center;">

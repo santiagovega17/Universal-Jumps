@@ -1786,6 +1786,25 @@
     tr:hover td {
        z-index: 50;
     }
+
+    /* Tabla de clientes: scroll interno y domicilio acotado */
+    .clientes-table-wrap {
+       max-width: 100%;
+       overflow: auto;
+       background: var(--sidebar);
+       border-radius: 12px;
+       padding: 20px;
+       max-height: min(75vh, 600px);
+    }
+    .clientes-table-wrap .clientes-table {
+       width: 100%;
+       min-width: 800px;
+       border-collapse: collapse;
+       table-layout: fixed;
+    }
+    .clientes-table-wrap .col-address {
+       max-width: 220px;
+    }
  
     /* Asegurar que el scroll lateral sea visible siempre que sea necesario */
     .card-scroll, #historial-content {
