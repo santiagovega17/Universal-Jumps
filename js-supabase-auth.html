@@ -28,6 +28,13 @@
                   window.dispatchEvent(new CustomEvent('supabase-auth-ready', { detail: { hasSession: true, perfil } }));
                   return;
                }
+               if (perfil.authError) {
+                  window.dispatchEvent(new CustomEvent('supabase-auth-ready', {
+                     detail: { hasSession: false, authError: true, mensaje: perfil.mensaje || 'Sin acceso.', emailDetectado: perfil.emailDetectado || '' }
+                  }));
+                  await this.client.auth.signOut();
+                  return;
+               }
             }
             window.dispatchEvent(new CustomEvent('supabase-auth-ready', { detail: { hasSession: false } }));
          } catch (e) {

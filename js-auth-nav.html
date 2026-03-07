@@ -3,6 +3,15 @@
        var d = ev && ev.detail;
        if (d && d.hasSession && d.perfil) {
           aplicarPerfilYMostrarApp(d.perfil);
+          return;
+       }
+       if (d && d.authError) {
+          var err = document.getElementById('login-error');
+          var switcher = document.getElementById('account-switcher');
+          var wrongEmail = document.getElementById('wrong-email');
+          if (err) { err.innerText = d.mensaje || 'Tu usuario no tiene permisos.'; err.style.display = 'block'; }
+          if (switcher) switcher.style.display = 'block';
+          if (wrongEmail && d.emailDetectado) wrongEmail.innerText = d.emailDetectado;
        }
     });
  
