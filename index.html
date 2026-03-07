@@ -10,9 +10,13 @@
       rel="stylesheet" />
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
    <style id="critical-auth">
-      html,body{margin:0;min-height:100vh;background:#0f172a;color:#f1f5f9}
-      #login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0f172a}
+      html,body{margin:0;min-height:100vh;background:#0f172a;color:#f1f5f9;font-family:'Inter',sans-serif}
+      #login-screen{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a}
       #app-container{display:none}
+      .login-box{text-align:center;width:90%;max-width:400px}
+      .login-logo{width:180px;height:auto;margin-bottom:30px;object-fit:contain}
+      .btn-login{background:#38bdf8;color:#0f172a;font-weight:600;padding:12px 25px;border:none;border-radius:8px;font-size:15px;width:100%;letter-spacing:.5px;cursor:pointer}
+      .btn-login:disabled{opacity:.7;cursor:not-allowed;pointer-events:none}
    </style>
    <!-- En Vercel no existe includeFile; style/js se inyectan abajo -->
 </head>
