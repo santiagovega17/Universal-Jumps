@@ -305,24 +305,21 @@
             <input type="hidden" id="cajaFilaIndex">
             <input type="hidden" id="tipoCaja" name="tipoCaja" value="EGRESO">
 
-            <div class="form-row">
-               <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input"
-                     name="fechaCaja" id="fechaCaja" required>
+            <div class="form-row form-row-caja-sm">
+               <div class="form-group form-group-caja-sm"><label class="form-label form-label-caja-sm">Fecha</label><input type="date" class="form-input form-input-caja-sm" name="fechaCaja" id="fechaCaja" required>
                </div>
-               <div class="form-group" style="flex:1.5;">
-                  <label class="form-label">Tipo</label>
-                  <div class="type-toggle">
+               <div class="form-group form-group-caja-sm" style="flex:1;">
+                  <label class="form-label form-label-caja-sm">Tipo</label>
+                  <div class="type-toggle type-toggle-caja-sm">
                      <div id="btn-egreso" class="type-option active-egreso" onclick="setTipoCaja('EGRESO')">Egreso</div>
                      <div id="btn-ingreso" class="type-option" onclick="setTipoCaja('INGRESO')">Ingreso</div>
                   </div>
                </div>
             </div>
 
-            <div class="form-row">
-               <div class="form-group">
-                  <label class="form-label">País</label>
-                  <select class="form-input" name="paisCaja" id="paisCajaSelect" onchange="poblarSelectsCaja()"
-                     required>
+            <div class="form-row form-row-caja-sm">
+               <div class="form-group form-group-caja-sm"><label class="form-label form-label-caja-sm">País</label>
+                  <select class="form-input form-input-caja-sm" name="paisCaja" id="paisCajaSelect" onchange="poblarSelectsCaja()" required>
                      <option value="">Selecciona un país...</option>
                      <option value="ARGENTINA">Argentina</option>
                      <option value="CHILE">Chile</option>
@@ -331,55 +328,51 @@
                      <option value="EEUU">EEUU</option>
                   </select>
                </div>
+               <div class="form-group form-group-caja-sm">
+                  <label class="form-label form-label-caja-sm">Estado</label>
+                  <select class="form-input form-input-caja-sm" name="estadoCaja" id="estadoCaja" onchange="toggleVencimiento()">
+                     <option value="PAGADO">Pagado</option>
+                     <option value="PENDIENTE">Pendiente</option>
+                  </select>
+               </div>
             </div>
 
-            <div class="form-row">
-               <div class="form-group"><label class="form-label">Concepto</label>
-                  <select class="form-input" name="conceptoCaja" id="conceptoCajaSelect"
-                     onchange="actualizarDescripciones()" required>
+            <div class="form-row form-row-caja-sm">
+               <div class="form-group form-group-caja-sm"><label class="form-label form-label-caja-sm">Concepto</label>
+                  <select class="form-input form-input-caja-sm" name="conceptoCaja" id="conceptoCajaSelect" onchange="actualizarDescripciones()" required>
                      <option value="">Selecciona un país primero...</option>
                   </select>
                </div>
-               <div class="form-group"><label class="form-label">Descripción</label>
-                  <select class="form-input" name="descCaja" id="descCajaSelect" required disabled>
+               <div class="form-group form-group-caja-sm"><label class="form-label form-label-caja-sm">Descripción</label>
+                  <select class="form-input form-input-caja-sm" name="descCaja" id="descCajaSelect" required disabled>
                      <option value="">Selecciona Concepto</option>
                   </select>
                </div>
             </div>
 
-            <div class="form-row">
-               <div class="form-group">
-                  <label class="form-label">Estado</label>
-                  <select class="form-input" name="estadoCaja" id="estadoCaja" onchange="toggleVencimiento()">
-                     <option value="PAGADO">Pagado</option>
-                     <option value="PENDIENTE">Pendiente</option>
-                  </select>
-               </div>
-               <div class="form-group" id="group-vencimiento" style="display:none;">
-                  <label class="form-label" style="color:#facc15;">Fecha Vencimiento</label>
-                  <input type="date" class="form-input" name="fechaVencimiento" id="fechaVencimiento">
+            <div class="form-row form-row-caja-sm" id="group-vencimiento" style="display:none;">
+               <div class="form-group form-group-caja-sm">
+                  <label class="form-label form-label-caja-sm" style="color:#facc15;">Fecha Vencimiento</label>
+                  <input type="date" class="form-input form-input-caja-sm" name="fechaVencimiento" id="fechaVencimiento">
                </div>
             </div>
 
-            <div class="form-group">
-               <label class="form-label">Formas de Pago</label>
+            <div class="form-group form-group-caja-sm">
+               <label class="form-label form-label-caja-sm">Formas de Pago</label>
                <div id="pagos-container"></div>
-               <button type="button" class="btn-add-pago" id="btnAddPago" onclick="agregarFilaPago()">+ Agregar otro
-                  método</button>
+               <button type="button" class="btn-add-pago btn-add-pago-caja-sm" id="btnAddPago" onclick="agregarFilaPago()">+ Agregar método</button>
             </div>
 
-            <div class="form-group">
-               <label class="form-label">Observaciones</label><textarea class="form-input" name="obsCaja" id="obsCaja"
-                  rows="2" style="height:50px;"></textarea>
+            <div class="form-group form-group-caja-sm">
+               <label class="form-label form-label-caja-sm">Observaciones</label><textarea class="form-input form-input-caja-sm" name="obsCaja" id="obsCaja" rows="2" style="height:42px; font-size:12px;"></textarea>
             </div>
 
-            <button type="submit" class="btn-submit" id="btnGuardarCaja">Registrar Movimiento</button>
-
-            <div id="caja-modal-acciones-extra" style="display:none; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-               <input type="hidden" id="cajaModalEstado" value="">
-               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                  <button type="button" id="btnCajaMarcarPagado" class="caja-modal-btn caja-modal-btn-marcar" onclick="marcarPagadoDesdeModal()"><span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>Marcar como pagado</button>
-                  <button type="button" class="caja-modal-btn caja-modal-btn-eliminar" onclick="eliminarMovimientoDesdeModal()"><span class="material-symbols-outlined" style="font-size:18px;">delete</span>Eliminar movimiento</button>
+            <div class="caja-modal-botones-row">
+               <button type="submit" class="btn-submit btn-submit-caja-sm" id="btnGuardarCaja">Registrar Movimiento</button>
+               <div id="caja-modal-acciones-extra" style="display:none;" class="caja-modal-acciones-inline">
+                  <input type="hidden" id="cajaModalEstado" value="">
+                  <button type="button" id="btnCajaMarcarPagado" class="caja-modal-btn caja-modal-btn-marcar" onclick="marcarPagadoDesdeModal()"><span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>Marcar pagado</button>
+                  <button type="button" class="caja-modal-btn caja-modal-btn-eliminar" onclick="eliminarMovimientoDesdeModal()"><span class="material-symbols-outlined" style="font-size:16px;">delete</span>Eliminar</button>
                </div>
             </div>
          </form>

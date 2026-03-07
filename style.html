@@ -1635,38 +1635,84 @@
        max-width: 600px;
     }
  
-    /* Modal de caja: entra en el alto con margen arriba/abajo, se expande horizontalmente */
+    /* Modal de caja: compacto, campos pequeños */
     #modalCaja {
-       padding: 20px 0;
+       padding: 12px 0;
        align-items: center;
     }
     #modalCaja .modal-content {
-       max-height: calc(100vh - 40px);
-       max-width: 700px;
+       max-height: calc(100vh - 24px);
+       max-width: 520px;
        width: 95%;
-       padding: 20px;
-       overflow-y: auto;
+       padding: 12px;
+       overflow-y: visible;
     }
-
-    #modalCaja .form-group {
-       margin-bottom: 12px;
+    #modalCaja .form-group-caja-sm,
+    #modalCaja .form-group.form-group-caja-sm {
+       margin-bottom: 8px;
     }
-
-    #modalCaja .form-row {
-       margin-bottom: 10px;
+    #modalCaja .form-row-caja-sm,
+    #modalCaja .form-row.form-row-caja-sm {
+       display: flex;
+       gap: 10px;
+       margin-bottom: 8px;
     }
-
-    /* Acciones extra del modal caja: botones compactos */
-    #caja-modal-acciones-extra .caja-modal-btn {
+    #modalCaja .form-row-caja-sm .form-group-caja-sm {
+       flex: 1;
+       margin-bottom: 0;
+    }
+    #modalCaja .form-label-caja-sm {
+       font-size: 11px;
+       margin-bottom: 4px;
+    }
+    #modalCaja .form-input-caja-sm,
+    #modalCaja .form-input.form-input-caja-sm,
+    #modalCaja select.form-input-caja-sm,
+    #modalCaja #pagos-container .form-input,
+    #modalCaja #pagos-container select {
+       padding: 6px 8px;
+       font-size: 12px;
+    }
+    #modalCaja .type-toggle-caja-sm .type-option {
+       padding: 6px 12px;
+       font-size: 12px;
+    }
+    #modalCaja .btn-add-pago-caja-sm {
+       font-size: 11px;
+       padding: 4px 8px;
+    }
+    .caja-modal-botones-row {
+       display: flex;
+       flex-wrap: wrap;
+       gap: 10px;
+       align-items: center;
+       margin-top: 12px;
+    }
+    #modalCaja .btn-submit-caja-sm {
+       width: auto;
        padding: 8px 16px;
-       font-size: 13px;
+       font-size: 12px;
+       flex: 0 0 auto;
+    }
+    #caja-modal-acciones-extra.caja-modal-acciones-inline {
+       display: none;
+       flex-direction: row;
+       gap: 8px;
+       flex: 0 0 auto;
+    }
+    #caja-modal-acciones-extra.caja-modal-acciones-inline[style*="flex"] {
+       display: flex !important;
+    }
+    #caja-modal-acciones-extra .caja-modal-btn {
+       padding: 6px 12px;
+       font-size: 12px;
        font-weight: 600;
        border-radius: 6px;
        border: none;
        cursor: pointer;
        display: inline-flex;
        align-items: center;
-       gap: 6px;
+       gap: 4px;
     }
     #caja-modal-acciones-extra .caja-modal-btn-marcar {
        background: #10b981;
