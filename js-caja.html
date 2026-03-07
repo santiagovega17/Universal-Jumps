@@ -393,7 +393,7 @@
                       <span style="${esVencido ? 'color:#ef4444; font-weight:bold;' : ''}">${vencInfo}</span>
                    </div>
                 </div>
-                <button class="btn-pay-now" onclick="cambiarEstadoMovimientoCaja(${JSON.stringify(String(p.filaIndex || ''))}, 'PAGADO')">
+                <button class="btn-pay-now" onclick="cambiarEstadoMovimientoCaja(${escIdCaja(p.filaIndex)}, 'PAGADO')">
                    MARCAR PAGADO
                 </button>
              </div>`;
@@ -434,7 +434,7 @@
     }
 
     function escCaja(s) { return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-    function escIdCaja(id) { return JSON.stringify(String(id || '')); }
+    function escIdCaja(id) { var s = String(id || ''); return "'" + s.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'"; }
 
     function buildRowHistorialCaja(mov) {
        var tipoColor = mov.tipo === 'INGRESO' ? '#10b981' : '#ef4444';
@@ -537,8 +537,7 @@
           b.movimientos.forEach(function(m) { var t = parseFecha(m.fecha || ''); if (t && t.getTime() > maxB) maxB = t.getTime(); });
           return maxB - maxA;
        });
-       var gruposVisibles = grupos.slice(0, GRUPOS_CAJA_VISIBLES);
-       var restantesGrupos = Math.max(0, grupos.length - GRUPOS_CAJA_VISIBLES);
+       var gruposVisibles = grupos;
        function esc(s) {
           return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
        }
@@ -593,9 +592,6 @@
           }
        });
        html += '</tbody></table></div>';
-       if (restantesGrupos > 0) {
-          html += '<div class="cargar-mas-wrap"><button type="button" class="btn-submit btn-cargar-mas" onclick="GRUPOS_CAJA_VISIBLES += TAMANO_PAGINA_GRUPOS_CAJA; renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);">Cargar más (' + restantesGrupos + ' grupos)</button></div>';
-       }
        container.innerHTML = html;
 
        container.querySelectorAll('.caja-historial-table-wrap table').forEach(function(tabla) {
@@ -659,10 +655,26 @@
  
     function toggleCajaAccionesMenu(btn) {
        if (!btn) return;
-       var menu = btn.parentElement && btn.parentElement.querySelector('.caja-acciones-menu');
+       var dropdown = btn.closest && btn.closest('.caja-acciones-dropdown');
+       var menu = dropdown && dropdown.querySelector('.caja-acciones-menu');
        var wasOpen = menu && menu.classList.contains('open');
-       document.querySelectorAll('.caja-acciones-menu.open').forEach(function(m) { m.classList.remove('open'); });
-       if (menu && !wasOpen) menu.classList.add('open');
+       document.querySelectorAll('.caja-acciones-menu.open').forEach(function(m) {
+          m.classList.remove('open');
+          m.style.position = '';
+          m.style.top = '';
+          m.style.left = '';
+          m.style.right = '';
+          m.style.minWidth = '';
+       });
+       if (menu && !wasOpen) {
+          var rect = btn.getBoundingClientRect();
+          menu.style.position = 'fixed';
+          menu.style.left = Math.max(8, rect.right - 160) + 'px';
+          menu.style.top = (rect.bottom + 4) + 'px';
+          menu.style.right = 'auto';
+          menu.style.minWidth = '140px';
+          menu.classList.add('open');
+       }
     }
 
     document.addEventListener('click', function(e) {
