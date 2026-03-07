@@ -85,9 +85,9 @@
     var CAJA_CACHE = { key: '', data: null, ts: 0 };
     var CAJA_CACHE_TTL_MS = 30000;
 
-    // Paginación historial caja: mostrar de a 25 y botón "Cargar más"
-    var TAMANO_PAGINA_HISTORIAL_CAJA = 25;
-    var HISTORIAL_CAJA_VISIBLE = 25;
+    // Paginación historial caja: por grupos (acordeones) y botón "Cargar más"
+    var TAMANO_PAGINA_GRUPOS_CAJA = 15;
+    var GRUPOS_CAJA_VISIBLES = 15;
  
     /**
      * Carga balance, medios de pago e historial. Intenta primero un solo endpoint (obtenerDatosCajaCompleto);
@@ -335,7 +335,7 @@
           // Datos ya cargados en paralelo: pintar sin nuevas llamadas
           renderMediosPago(mediosData);
           HISTORIAL_CAJA_COMPLETO = Array.isArray(historialData) ? historialData : [];
-          HISTORIAL_CAJA_VISIBLE = TAMANO_PAGINA_HISTORIAL_CAJA;
+          GRUPOS_CAJA_VISIBLES = TAMANO_PAGINA_GRUPOS_CAJA;
           renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);
           renderPendingWidgetFromHistorial(HISTORIAL_CAJA_COMPLETO);
           if (document.getElementById('filtro-egresos')) filtrarHistorialPorTipo('EGRESO');
@@ -420,7 +420,7 @@
           }
  
           HISTORIAL_CAJA_COMPLETO = res.data || [];
-          HISTORIAL_CAJA_VISIBLE = TAMANO_PAGINA_HISTORIAL_CAJA;
+          GRUPOS_CAJA_VISIBLES = TAMANO_PAGINA_GRUPOS_CAJA;
           renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);
           renderPendingWidgetFromHistorial(HISTORIAL_CAJA_COMPLETO);
        }).withFailureHandler((err) => {
@@ -432,241 +432,144 @@
           }
        }).obtenerHistorialCaja(PAIS_CAJA_ACTUAL, mes, anio);
     }
- 
+
+    function buildRowHistorialCaja(mov) {
+       var tipoColor = mov.tipo === 'INGRESO' ? '#10b981' : '#ef4444';
+       var estadoColor = mov.estado === 'PAGADO' ? '#10b981' : '#facc15';
+       var obs = mov.observaciones || '';
+       var obsHtml = obs.length > 20
+          ? '<div class="obs-container"><span class="obs-text">' + obs + '</span><span class="view-more-btn" onclick="toggleVerMasObs(this); event.stopPropagation();">Ver más...</span><div class="obs-full">' + obs + '</div></div>'
+          : obs;
+       var estaEnEdicion = FILAS_EN_EDICION[mov.filaIndex] === true;
+       var paisMov = mov.pais || PAIS_CAJA_ACTUAL;
+       var mediosPais = (GLOBAL_CONFIG[paisMov] && GLOBAL_CONFIG[paisMov].medios) || [];
+       var formaPagoHtml = '';
+       if (mov.tipo === 'EGRESO' && estaEnEdicion) {
+          var valorFormaPago = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].formaPago !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].formaPago : (mov.formaPago || '');
+          var opcionesMedios = mediosPais.length > 0 ? mediosPais.map(function(medio) { return '<option value="' + medio + '"' + (medio === valorFormaPago ? ' selected' : '') + '>' + medio + '</option>'; }).join('') : '<option value="' + (valorFormaPago || '') + '">' + (valorFormaPago || 'Sin opciones') + '</option>';
+          formaPagoHtml = '<select class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" onchange="editarCampoMovimiento(' + mov.filaIndex + ', \'formaPago\', this.value)" data-fila="' + mov.filaIndex + '">' + opcionesMedios + '</select>';
+       } else if (mov.tipo === 'EGRESO') {
+          formaPagoHtml = '<span style="color:white; font-size:13px;">' + (mov.formaPago || '') + '</span>';
+       } else {
+          formaPagoHtml = mov.formaPago || '';
+       }
+       var montoHtml = '';
+       if (mov.tipo === 'EGRESO' && estaEnEdicion) {
+          var valorMonto = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].monto !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].monto : (mov.monto || 0);
+          montoHtml = '<input type="text" class="form-input" style="width: 100px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block; text-align: center;" value="' + formatNumberAr(valorMonto).replace('ARS', '').trim() + '" onblur="editarCampoMovimiento(' + mov.filaIndex + ', \'monto\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}" data-fila="' + mov.filaIndex + '" autocomplete="off">';
+       } else {
+          montoHtml = '<span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + formatNumberAr(mov.monto || 0) + '</span>';
+       }
+       var obsHtmlEdit = '';
+       if (mov.tipo === 'EGRESO' && estaEnEdicion) {
+          var valorObs = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].observaciones !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].observaciones : obs;
+          obsHtmlEdit = '<input type="text" class="form-input" style="width: 150px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" value="' + (valorObs + '').replace(/"/g, '&quot;') + '" onblur="editarCampoMovimiento(' + mov.filaIndex + ', \'observaciones\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}" data-fila="' + mov.filaIndex + '" autocomplete="off">';
+       } else {
+          obsHtmlEdit = obsHtml;
+       }
+       var vencHtml = '';
+       if (mov.tipo === 'EGRESO' && estaEnEdicion) {
+          var valorVencimiento = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento : (mov.vencimiento ? convertirFechaDDMMYYYYaYYYYMMDD(mov.vencimiento) : '');
+          vencHtml = '<input type="date" class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" value="' + valorVencimiento + '" onblur="editarCampoMovimiento(' + mov.filaIndex + ', \'vencimiento\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}" data-fila="' + mov.filaIndex + '" autocomplete="off" id="vencimiento-input-' + mov.filaIndex + '">';
+       } else if (mov.tipo === 'EGRESO') {
+          vencHtml = '<span style="color:#94a3b8; font-size:13px;">' + (mov.vencimiento || '') + '</span>';
+       } else {
+          vencHtml = mov.vencimiento || '';
+       }
+       var acciones = '';
+       if (mov.tipo === 'EGRESO') {
+          acciones += '<button class="action-btn btn-edit" onclick="toggleEdicionMovimiento(' + (mov.filaIndex || 0) + ')" title="' + (estaEnEdicion ? 'Desactivar edición' : 'Editar') + '" style="margin-right: 8px;"><span class="material-symbols-outlined">' + (estaEnEdicion ? 'close' : 'edit') + '</span></button>';
+          if (mov.estado === 'PENDIENTE') {
+             acciones += '<button class="action-btn" style="background: #10b981; color: white; margin-right: 8px;" onclick="cambiarEstadoMovimientoCaja(' + (mov.filaIndex || 0) + ', \'PAGADO\')" title="Marcar como Pagado"><span class="material-symbols-outlined">check_circle</span></button>';
+          }
+       }
+       acciones += '<button class="action-btn btn-del" onclick="borrarMovimientoCaja(' + (mov.filaIndex || 0) + ')" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>';
+       return '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.fecha || '') + '</td><td style="padding:12px; text-align:center;"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.concepto || '') + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + (mov.descripcion || '') + '</td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + formaPagoHtml + '</td><td style="padding:12px; text-align:center;">' + montoHtml + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + obsHtmlEdit + '</td><td style="padding:12px; text-align:center;"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + vencHtml + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + (mov.pais || '') + '</td><td style="padding:12px; text-align:center;">' + acciones + '</td></tr>';
+    }
+
     function renderHistorialMovimientos(data) {
        let container = document.getElementById('historial-content');
        if (!container) return;
- 
-       // Filtrar por tipo según el filtro activo
+
        let dataFiltrada = data.filter(mov => mov.tipo === FILTRO_TIPO_HISTORIAL);
- 
+
        if (!dataFiltrada || dataFiltrada.length === 0) {
           container.innerHTML = `<div style="padding:30px; text-align:center; color:#94a3b8;">No hay ${FILTRO_TIPO_HISTORIAL.toLowerCase()} registrados</div>`;
           return;
        }
- 
-       // Ordenar: fecha (más reciente primero), luego concepto alfabético, luego descripción alfabética
+
        dataFiltrada.sort((a, b) => {
-          // Ordenar por fecha (más reciente primero)
           let fechaA = parseFecha(a.fecha || '01/01/1900');
           let fechaB = parseFecha(b.fecha || '01/01/1900');
-          if (fechaB.getTime() !== fechaA.getTime()) {
-             return fechaB.getTime() - fechaA.getTime();
-          }
-          
-          // Si la fecha es igual, ordenar por concepto alfabético
+          if (fechaB.getTime() !== fechaA.getTime()) return fechaB.getTime() - fechaA.getTime();
           let conceptoA = (a.concepto || '').toLowerCase();
           let conceptoB = (b.concepto || '').toLowerCase();
-          if (conceptoA !== conceptoB) {
-             return conceptoA.localeCompare(conceptoB);
-          }
-          
-          // Si concepto es igual, ordenar por descripción alfabética
+          if (conceptoA !== conceptoB) return conceptoA.localeCompare(conceptoB);
           let descA = (a.descripcion || '').toLowerCase();
           let descB = (b.descripcion || '').toLowerCase();
           return descA.localeCompare(descB);
        });
 
-       var dataVisibles = dataFiltrada.slice(0, HISTORIAL_CAJA_VISIBLE);
-       var restantesCaja = Math.max(0, dataFiltrada.length - HISTORIAL_CAJA_VISIBLE);
- 
-       let html = '<table style="width:100%; border-collapse: collapse;"><thead><tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color);">';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FECHA</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">TIPO</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">DESCRIPCIÓN</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FORMA DE PAGO</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">MONTO</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">OBSERVACION</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ESTADO</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">VENCIMIENTO</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">PAIS</th>';
-       html += '<th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ACCIONES</th>';
-       html += '</tr></thead><tbody>';
- 
-       dataVisibles.forEach(mov => {
-          let tipoColor = mov.tipo === 'INGRESO' ? '#10b981' : '#ef4444';
-          let estadoColor = mov.estado === 'PAGADO' ? '#10b981' : '#facc15';
- 
-          let obs = mov.observaciones || '';
-          let obsHtml = obs;
-          if (obs.length > 20) {
-             obsHtml = `<div class="obs-container">
-                <span class="obs-text">${obs}</span>
-                <span class="view-more-btn" onclick="toggleVerMasObs(this); event.stopPropagation();">Ver más...</span>
-                <div class="obs-full">${obs}</div>
-             </div>`;
+       var gruposMap = {};
+       dataFiltrada.forEach(function(mov) {
+          var key = (mov.concepto || '') + '|' + (mov.descripcion || '');
+          if (!gruposMap[key]) {
+             gruposMap[key] = { concepto: mov.concepto || '', descripcion: mov.descripcion || '', movimientos: [], total: 0 };
           }
- 
-          // Para EGRESOS, hacer campos editables solo si está en modo edición
-          let estaEnEdicion = FILAS_EN_EDICION[mov.filaIndex] === true;
-          let paisMov = mov.pais || PAIS_CAJA_ACTUAL;
-          let mediosPais = (GLOBAL_CONFIG[paisMov] && GLOBAL_CONFIG[paisMov].medios) || [];
- 
-          let formaPagoHtml = '';
-          if (mov.tipo === 'EGRESO' && estaEnEdicion) {
-             // Si hay cambios pendientes para formaPago, usar ese valor
-             let valorFormaPago = mov.formaPago || '';
-             if (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].formaPago !== undefined) {
-                valorFormaPago = CAMBIOS_PENDIENTES[mov.filaIndex].formaPago;
-             }
-             // Select con medios de pago del país
-             let opcionesMedios = '';
-             if (mediosPais.length > 0) {
-                opcionesMedios = mediosPais.map(medio => 
-                   `<option value="${medio}" ${medio === valorFormaPago ? 'selected' : ''}>${medio}</option>`
-                ).join('');
-             } else {
-                opcionesMedios = `<option value="${valorFormaPago || ''}">${valorFormaPago || 'Sin opciones'}</option>`;
-             }
-             formaPagoHtml = `<select class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" 
-                       onchange="editarCampoMovimiento(${mov.filaIndex}, 'formaPago', this.value)"
-                       data-fila="${mov.filaIndex}">
-                       ${opcionesMedios}
-                    </select>`;
-          } else if (mov.tipo === 'EGRESO') {
-             formaPagoHtml = `<span style="color:white; font-size:13px;">${mov.formaPago || ''}</span>`;
-          } else {
-             formaPagoHtml = mov.formaPago || '';
-          }
- 
-          let montoHtml = '';
-          if (mov.tipo === 'EGRESO' && estaEnEdicion) {
-             // Si hay cambios pendientes para monto, usar ese valor
-             let valorMonto = mov.monto || 0;
-             if (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].monto !== undefined) {
-                valorMonto = CAMBIOS_PENDIENTES[mov.filaIndex].monto;
-             }
-             montoHtml = `<input type="text" class="form-input" style="width: 100px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block; text-align: center;" 
-                       value="${formatNumberAr(valorMonto).replace('ARS', '').trim()}" 
-                       onblur="editarCampoMovimiento(${mov.filaIndex}, 'monto', this.value)"
-                       onkeydown="if(event.key==='Enter'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}"
-                       data-fila="${mov.filaIndex}"
-                       autocomplete="off">`;
-          } else if (mov.tipo === 'EGRESO') {
-             montoHtml = `<span style="color:${tipoColor}; font-weight:600; font-size:13px;">${formatNumberAr(mov.monto || 0)}</span>`;
-          } else {
-             montoHtml = `<span style="color:${tipoColor}; font-weight:600; font-size:13px;">${formatNumberAr(mov.monto || 0)}</span>`;
-          }
- 
-          let obsHtmlEdit = '';
-          if (mov.tipo === 'EGRESO' && estaEnEdicion) {
-             // Si hay cambios pendientes para observaciones, usar ese valor
-             let valorObs = obs;
-             if (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].observaciones !== undefined) {
-                valorObs = CAMBIOS_PENDIENTES[mov.filaIndex].observaciones;
-             }
-             obsHtmlEdit = `<input type="text" class="form-input" style="width: 150px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" 
-                       value="${valorObs.replace(/"/g, '&quot;')}" 
-                       onblur="editarCampoMovimiento(${mov.filaIndex}, 'observaciones', this.value)"
-                       onkeydown="if(event.key==='Enter'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}"
-                       data-fila="${mov.filaIndex}"
-                       autocomplete="off">`;
-          } else if (mov.tipo === 'EGRESO') {
-             obsHtmlEdit = obsHtml;
-          } else {
-             obsHtmlEdit = obsHtml;
-          }
- 
-          let vencHtml = '';
-          if (mov.tipo === 'EGRESO' && estaEnEdicion) {
-             // Si hay cambios pendientes para vencimiento, usar ese valor (ya está en formato YYYY-MM-DD)
-             // Si no, convertir el valor actual de DD/MM/YYYY a YYYY-MM-DD
-             let valorVencimiento = '';
-             if (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento !== undefined) {
-                valorVencimiento = CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento;
-             } else if (mov.vencimiento) {
-                valorVencimiento = convertirFechaDDMMYYYYaYYYYMMDD(mov.vencimiento);
-             }
-             vencHtml = `<input type="date" class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" 
-                       value="${valorVencimiento}" 
-                       onblur="editarCampoMovimiento(${mov.filaIndex}, 'vencimiento', this.value)"
-                       onkeydown="if(event.key==='Enter'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}"
-                       data-fila="${mov.filaIndex}"
-                       autocomplete="off"
-                       id="vencimiento-input-${mov.filaIndex}">`;
-          } else if (mov.tipo === 'EGRESO') {
-             vencHtml = `<span style="color:#94a3b8; font-size:13px;">${mov.vencimiento || ''}</span>`;
-          } else {
-             vencHtml = mov.vencimiento || '';
-          }
- 
-          html += `<tr style="border-bottom: 1px solid var(--border-color);">`;
-          html += `<td style="padding:12px; color:white; font-size:13px; text-align:center;">${mov.fecha || ''}</td>`;
-          html += `<td style="padding:12px; text-align:center;"><span style="color:${tipoColor}; font-weight:600; font-size:13px;">${mov.tipo || ''}</span></td>`;
-          html += `<td style="padding:12px; color:white; font-size:13px; text-align:center;">${mov.concepto || ''}</td>`;
-          html += `<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">${mov.descripcion || ''}</td>`;
-          html += `<td style="padding:12px; color:white; font-size:13px; text-align:center;">${formaPagoHtml}</td>`;
-          html += `<td style="padding:12px; text-align:center;">${montoHtml}</td>`;
-          html += `<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">${obsHtmlEdit}</td>`;
-          html += `<td style="padding:12px; text-align:center;"><span style="color:${estadoColor}; font-weight:600; font-size:13px;">${mov.estado || ''}</span></td>`;
-          html += `<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">${vencHtml}</td>`;
-          html += `<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">${mov.pais || ''}</td>`;
-          html += `<td style="padding:12px; text-align:center;">
-                ${mov.tipo === 'EGRESO' ? `
-                <button class="action-btn btn-edit" onclick="toggleEdicionMovimiento(${mov.filaIndex || 0})" title="${estaEnEdicion ? 'Desactivar edición' : 'Editar'}" style="margin-right: 8px;">
-                   <span class="material-symbols-outlined">${estaEnEdicion ? 'close' : 'edit'}</span>
-                </button>
-                ` : ''}
-                ${mov.estado === 'PENDIENTE' ? `
-                <button class="action-btn" style="background: #10b981; color: white; margin-right: 8px;" onclick="cambiarEstadoMovimientoCaja(${mov.filaIndex || 0}, 'PAGADO')" title="Marcar como Pagado">
-                   <span class="material-symbols-outlined">check_circle</span>
-                </button>
-                ` : ''}
-                <button class="action-btn btn-del" onclick="borrarMovimientoCaja(${mov.filaIndex || 0})" title="Eliminar">
-                   <span class="material-symbols-outlined">delete</span>
-                </button>
-             </td>`;
-          html += `</tr>`;
+          gruposMap[key].movimientos.push(mov);
+          gruposMap[key].total += Number(mov.monto) || 0;
        });
- 
-       html += '</tbody></table>';
-       if (restantesCaja > 0) {
-          html += '<div class="cargar-mas-wrap"><button type="button" class="btn-submit btn-cargar-mas" onclick="HISTORIAL_CAJA_VISIBLE += TAMANO_PAGINA_HISTORIAL_CAJA; renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);">Cargar más (' + restantesCaja + ' restantes)</button></div>';
+       var grupos = Object.keys(gruposMap).map(function(k) { return gruposMap[k]; });
+       grupos.sort(function(a, b) {
+          var fechaA = a.movimientos.length ? parseFecha(a.movimientos[0].fecha || '01/01/1900') : new Date(0);
+          var fechaB = b.movimientos.length ? parseFecha(b.movimientos[0].fecha || '01/01/1900') : new Date(0);
+          return fechaB.getTime() - fechaA.getTime();
+       });
+       var gruposVisibles = grupos.slice(0, GRUPOS_CAJA_VISIBLES);
+       var restantesGrupos = Math.max(0, grupos.length - GRUPOS_CAJA_VISIBLES);
+       function esc(s) {
+          return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+       }
+       var tipoColorAcc = FILTRO_TIPO_HISTORIAL === 'INGRESO' ? '#10b981' : '#ef4444';
+       var tableHeader = '<table style="width:100%; border-collapse: collapse;"><thead><tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color);"><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FECHA</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">TIPO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">DESCRIPCIÓN</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FORMA DE PAGO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">MONTO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">OBSERVACION</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ESTADO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">VENCIMIENTO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">PAIS</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ACCIONES</th></tr></thead><tbody>';
+
+       var html = '<div class="caja-accordion-list">';
+       gruposVisibles.forEach(function(grupo) {
+          var titulo = (grupo.concepto && grupo.descripcion) ? (grupo.concepto + ' – ' + grupo.descripcion) : (grupo.concepto || grupo.descripcion || 'Sin concepto');
+          var n = grupo.movimientos.length;
+          var totalStr = formatNumberAr(grupo.total);
+          html += '<details class="caja-accordion"><summary class="caja-accordion-summary">';
+          html += '<span class="caja-accordion-title">' + esc(titulo) + '</span>';
+          html += '<span class="caja-accordion-meta">' + n + ' ' + (n === 1 ? 'movimiento' : 'movimientos') + ' – Total: <strong style="color:' + tipoColorAcc + ';">' + totalStr + '</strong></span>';
+          html += '<span class="material-symbols-outlined caja-accordion-icon">expand_more</span></summary>';
+          html += '<div class="caja-accordion-body">' + tableHeader;
+          grupo.movimientos.forEach(function(mov) { html += buildRowHistorialCaja(mov); });
+          html += '</tbody></table></div></details>';
+       });
+       html += '</div>';
+       if (restantesGrupos > 0) {
+          html += '<div class="cargar-mas-wrap"><button type="button" class="btn-submit btn-cargar-mas" onclick="GRUPOS_CAJA_VISIBLES += TAMANO_PAGINA_GRUPOS_CAJA; renderHistorialMovimientos(HISTORIAL_CAJA_COMPLETO);">Cargar más (' + restantesGrupos + ' grupos)</button></div>';
        }
        container.innerHTML = html;
- 
-       // Prevenir submits accidentales en la tabla - solo para inputs de edición
-       let tabla = container.querySelector('table');
-       if (tabla) {
-          // Prevenir submit en toda la tabla
-          tabla.addEventListener('submit', function(e) {
-             e.preventDefault();
-             e.stopPropagation();
-             return false;
-          }, true);
-          
-          // Prevenir Enter en inputs de edición (que tienen data-fila)
+
+       container.querySelectorAll('.caja-accordion table').forEach(function(tabla) {
+          tabla.addEventListener('submit', function(e) { e.preventDefault(); e.stopPropagation(); return false; }, true);
           tabla.addEventListener('keydown', function(e) {
              if (e.key === 'Enter' && e.target.hasAttribute('data-fila')) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.target.tagName === 'INPUT' && e.target.type !== 'date') {
-                   e.target.blur();
-                }
+                e.preventDefault(); e.stopPropagation();
+                if (e.target.tagName === 'INPUT' && e.target.type !== 'date') e.target.blur();
                 return false;
              }
           }, true);
-          
-          // Prevenir que el input de fecha pierda el foco mientras se escribe
-          tabla.addEventListener('focusout', function(e) {
-             // Si es un input de fecha y está en modo edición, no hacer nada especial
-             // Solo dejar que el onblur maneje el guardado
-          }, true);
-          
-          // Prevenir eventos que puedan causar que el input de fecha pierda el foco
           tabla.addEventListener('click', function(e) {
-             // Si se hace clic en un input de fecha, no hacer nada que interfiera
-             if (e.target.type === 'date' && e.target.hasAttribute('data-fila')) {
-                e.stopPropagation();
-             }
+             if (e.target.type === 'date' && e.target.hasAttribute('data-fila')) e.stopPropagation();
           }, true);
-       }
+       });
     }
- 
+
     function filtrarHistorialPorTipo(tipo) {
        FILTRO_TIPO_HISTORIAL = tipo;
-       HISTORIAL_CAJA_VISIBLE = TAMANO_PAGINA_HISTORIAL_CAJA;
+       GRUPOS_CAJA_VISIBLES = TAMANO_PAGINA_GRUPOS_CAJA;
        
        // Actualizar estilos de los botones
        document.getElementById('filtro-egresos').classList.remove('active-view');

@@ -2018,4 +2018,16 @@
     .cargar-mas-wrap { text-align: center; padding: 16px; margin-top: 8px; }
     .btn-cargar-mas { background: var(--border-color); color: var(--accent); font-size: 13px; padding: 8px 20px; }
     .btn-cargar-mas:hover { opacity: 0.9; }
+
+    /* Acordeón historial caja (grupos por concepto + descripción) */
+    .caja-accordion-list { display: flex; flex-direction: column; gap: 8px; }
+    .caja-accordion { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+    .caja-accordion-summary { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; list-style: none; flex-wrap: wrap; }
+    .caja-accordion-summary::-webkit-details-marker { display: none; }
+    .caja-accordion-title { font-weight: 600; color: #f1f5f9; font-size: 14px; flex: 1 1 auto; }
+    .caja-accordion-meta { color: #94a3b8; font-size: 13px; }
+    .caja-accordion-icon { font-size: 22px; color: #94a3b8; transition: transform 0.2s ease; flex-shrink: 0; }
+    .caja-accordion[open] .caja-accordion-icon { transform: rotate(180deg); }
+    .caja-accordion-body { padding: 0 16px 16px; border-top: 1px solid var(--border-color); overflow-x: auto; }
+    .caja-accordion-body table { margin-top: 12px; }
  </style>
