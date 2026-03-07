@@ -2021,7 +2021,12 @@
 
     /* Historial caja: una sola tabla, acordeón dentro de la tabla para grupos con >1 movimiento */
     .caja-historial-table-wrap { overflow-x: auto; }
+    .caja-historial-table,
+    .caja-summary-inline-table,
+    .caja-accordion-inner-table { table-layout: fixed; width: 100%; }
+    .caja-accordion-row { background: rgba(255,255,255,0.04); }
     .caja-accordion-cell { border-bottom: 1px solid var(--border-color); }
+    .caja-accordion-inline .caja-accordion-summary .caja-summary-inline-table tr { background: rgba(255,255,255,0.04); }
     .caja-accordion-inline { background: rgba(255,255,255,0.02); border: none; border-radius: 0; overflow: hidden; }
     .caja-accordion-inline .caja-accordion-summary { cursor: pointer; list-style: none; padding: 0; }
     .caja-accordion-inline .caja-accordion-summary::-webkit-details-marker { display: none; }
