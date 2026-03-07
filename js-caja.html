@@ -443,57 +443,13 @@
        var obsHtml = obs.length > 20
           ? '<div class="obs-container"><span class="obs-text">' + obs + '</span><span class="view-more-btn" onclick="toggleVerMasObs(this); event.stopPropagation();">Ver más...</span><div class="obs-full">' + obs + '</div></div>'
           : obs;
-       var estaEnEdicion = FILAS_EN_EDICION[mov.filaIndex] === true;
-       var paisMov = mov.pais || PAIS_CAJA_ACTUAL;
-       var mediosPais = (GLOBAL_CONFIG[paisMov] && GLOBAL_CONFIG[paisMov].medios) || [];
-       var formaPagoHtml = '';
-       if (mov.tipo === 'EGRESO' && estaEnEdicion) {
-          var valorFormaPago = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].formaPago !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].formaPago : (mov.formaPago || '');
-          var opcionesMedios = mediosPais.length > 0 ? mediosPais.map(function(medio) { return '<option value="' + medio + '"' + (medio === valorFormaPago ? ' selected' : '') + '>' + medio + '</option>'; }).join('') : '<option value="' + (valorFormaPago || '') + '">' + (valorFormaPago || 'Sin opciones') + '</option>';
-          formaPagoHtml = '<span class="caja-edit-control"><select class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" onchange="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'formaPago\', this.value)" data-fila="' + escCaja(mov.filaIndex) + '">' + opcionesMedios + '</select></span>';
-       } else if (mov.tipo === 'EGRESO') {
-          formaPagoHtml = '<span style="color:white; font-size:13px;">' + (mov.formaPago || '') + '</span>';
-       } else {
-          formaPagoHtml = mov.formaPago || '';
-       }
-       var montoHtml = '';
-       if (mov.tipo === 'EGRESO' && estaEnEdicion) {
-          var valorMonto = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].monto !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].monto : (mov.monto || 0);
-          montoHtml = '<span class="caja-edit-control"><input type="text" class="form-input" style="width: 100px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block; text-align: center;" value="' + formatNumberAr(valorMonto).replace('ARS', '').trim() + '" onblur="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'monto\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}" data-fila="' + escCaja(mov.filaIndex) + '" autocomplete="off"></span>';
-       } else {
-          montoHtml = '<span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + formatNumberAr(mov.monto || 0) + '</span>';
-       }
-       var obsHtmlEdit = '';
-       if (mov.tipo === 'EGRESO' && estaEnEdicion) {
-          var valorObs = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].observaciones !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].observaciones : (mov.observaciones || '');
-          obsHtmlEdit = '<span class="caja-edit-control"><input type="text" class="form-input caja-obs-input" style="width:100%; min-width:120px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block; box-sizing: border-box;" value="' + escCaja(valorObs) + '" onblur="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'observaciones\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur(); return false;}" data-fila="' + escCaja(mov.filaIndex) + '" autocomplete="off" placeholder="Observación"></span>';
-       } else {
-          obsHtmlEdit = obsHtml;
-       }
-       var vencHtml = '';
-       if (mov.tipo === 'EGRESO' && estaEnEdicion) {
-          var valorVencimiento = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento : (mov.vencimiento ? convertirFechaDDMMYYYYaYYYYMMDD(mov.vencimiento) : '');
-          vencHtml = '<span class="caja-edit-control"><input type="date" class="form-input" style="width: 140px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block;" value="' + valorVencimiento + '" onblur="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'vencimiento\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); event.stopPropagation(); this.blur(); return false;}" data-fila="' + escCaja(mov.filaIndex) + '" autocomplete="off" id="vencimiento-input-' + escCaja(mov.filaIndex) + '"></span>';
-       } else if (mov.tipo === 'EGRESO') {
-          vencHtml = '<span style="color:#94a3b8; font-size:13px;">' + (mov.vencimiento || '') + '</span>';
-       } else {
-          vencHtml = mov.vencimiento || '';
-       }
+       var formaPagoHtml = mov.tipo === 'EGRESO' ? '<span style="color:white; font-size:13px;">' + (mov.formaPago || '') + '</span>' : (mov.formaPago || '');
+       var montoHtml = '<span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + formatNumberAr(mov.monto || 0) + '</span>';
+       var vencHtml = mov.tipo === 'EGRESO' ? '<span style="color:#94a3b8; font-size:13px;">' + (mov.vencimiento || '') + '</span>' : (mov.vencimiento || '');
        var fid = escIdCaja(mov.filaIndex);
-       var acciones = '';
-       if (estaEnEdicion) {
-          acciones += '<button type="button" class="caja-edit-btn caja-edit-btn-guardar" onclick="guardarCambiosPendientes(' + fid + '); event.stopPropagation();" title="Guardar cambios">Guardar</button>';
-          acciones += '<button type="button" class="caja-edit-btn caja-edit-btn-cancelar" onclick="cancelarEdicionMovimiento(' + fid + '); event.stopPropagation();" title="Descartar cambios">Cancelar</button>';
-       }
-       acciones += '<div class="caja-acciones-dropdown"><button type="button" class="action-btn btn-edit" onclick="toggleCajaAccionesMenu(this); event.stopPropagation();" title="Acciones"><span class="material-symbols-outlined">more_vert</span></button>';
-       acciones += '<div class="caja-acciones-menu" data-fila="' + escCaja(mov.filaIndex) + '"><button type="button" onclick="toggleCajaAccionesMenu(this.closest(\'.caja-acciones-dropdown\')?.querySelector(\'button\')); toggleEdicionMovimiento(' + fid + '); event.stopPropagation();"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:6px;">edit</span>Editar</button>';
-       if (mov.tipo === 'EGRESO' && mov.estado === 'PENDIENTE') {
-          acciones += '<button type="button" onclick="toggleCajaAccionesMenu(this.closest(\'.caja-acciones-menu\')?.parentElement?.querySelector(\'button\')); cambiarEstadoMovimientoCaja(' + fid + ', \'PAGADO\'); event.stopPropagation();"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:6px;">check_circle</span>Marcar pagado</button>';
-       }
-       acciones += '<button type="button" onclick="toggleCajaAccionesMenu(this.closest(\'.caja-acciones-menu\')?.parentElement?.querySelector(\'button\')); borrarMovimientoCaja(' + fid + '); event.stopPropagation();"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:6px;">delete</span>Eliminar</button></div></div>';
+       var acciones = '<button type="button" class="action-btn btn-edit" onclick="abrirModalCaja(\'editar\', ' + fid + '); event.stopPropagation();" title="Editar"><span class="material-symbols-outlined">edit</span></button>';
        var accionesWrap = '<div class="caja-acciones-wrap">' + acciones + '</div>';
-       var trClass = estaEnEdicion ? 'caja-row-editing' : '';
-       return '<tr' + (trClass ? ' class="' + trClass + '"' : '') + ' style="border-bottom: 1px solid var(--border-color);"><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.fecha || '') + '</td><td style="padding:12px; text-align:center;"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.concepto || '') + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + (mov.descripcion || '') + '</td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + formaPagoHtml + '</td><td style="padding:12px; text-align:center;">' + montoHtml + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + obsHtmlEdit + '</td><td style="padding:12px; text-align:center;"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + vencHtml + '</td><td style="padding:12px; text-align:center;">' + accionesWrap + '</td></tr>';
+       return '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.fecha || '') + '</td><td style="padding:12px; text-align:center;"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.concepto || '') + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + (mov.descripcion || '') + '</td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + formaPagoHtml + '</td><td style="padding:12px; text-align:center;">' + montoHtml + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + obsHtml + '</td><td style="padding:12px; text-align:center;"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + vencHtml + '</td><td style="padding:12px; text-align:center;">' + accionesWrap + '</td></tr>';
     }
 
     function renderHistorialMovimientos(data) {
@@ -979,6 +935,14 @@
                 document.getElementById('modalTitleCaja').innerText = "EDITAR MOVIMIENTO DE CAJA";
                 document.getElementById('btnGuardarCaja').innerText = "ACTUALIZAR";
                 
+                // Mostrar acciones extra (Marcar pagado / Eliminar) y estado
+                var extraDiv = document.getElementById('caja-modal-acciones-extra');
+                var btnMarcarPagado = document.getElementById('btnCajaMarcarPagado');
+                var estadoInput = document.getElementById('cajaModalEstado');
+                if (extraDiv) extraDiv.style.display = 'block';
+                if (estadoInput) estadoInput.value = mov.estado || '';
+                if (btnMarcarPagado) btnMarcarPagado.style.display = (mov.estado === 'PENDIENTE' ? 'inline-flex' : 'none');
+                
                 // Abrir modal
                 document.getElementById('modalCaja').classList.add('open');
              };
@@ -1041,6 +1005,10 @@
           document.getElementById('modalTitleCaja').innerText = "MOVIMIENTO DE CAJA";
           document.getElementById('btnGuardarCaja').innerText = "REGISTRAR MOVIMIENTO";
  
+          // Ocultar acciones extra en modo crear
+          var extraDiv = document.getElementById('caja-modal-acciones-extra');
+          if (extraDiv) extraDiv.style.display = 'none';
+ 
           // REINICIAR ESTADO
           document.getElementById('estadoCaja').value = 'PAGADO';
           document.getElementById('group-vencimiento').style.display = 'none';
@@ -1057,7 +1025,20 @@
        }
     }
 
- 
+    function marcarPagadoDesdeModal() {
+       var id = document.getElementById('cajaFilaIndex') && document.getElementById('cajaFilaIndex').value;
+       if (!id) return;
+       cerrarModals();
+       cambiarEstadoMovimientoCaja(id, 'PAGADO');
+    }
+
+    function eliminarMovimientoDesdeModal() {
+       var id = document.getElementById('cajaFilaIndex') && document.getElementById('cajaFilaIndex').value;
+       if (!id) return;
+       cerrarModals();
+       borrarMovimientoCaja(id);
+    }
+
     function borrarMovimientoCaja(filaIndex) {
        abrirConfirmacion("¿Eliminar este movimiento permanentemente?", () => {
           google.script.run.withSuccessHandler((res) => {
