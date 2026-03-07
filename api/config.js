@@ -6,6 +6,7 @@ const {
   getMediosPorPais,
   guardarItemConfigService,
   borrarItemConfigService,
+  actualizarCotizacionesDesdeExternas,
 } = require('../lib/configService');
 
 function getBody(req) {
@@ -63,6 +64,10 @@ module.exports = async (req, res) => {
       }
       if (action === 'borrar-item') {
         const result = await borrarItemConfigService(body.tipo, body.nombre, body.pais, body.padre);
+        return res.status(200).json(result);
+      }
+      if (action === 'actualizar-cotizaciones') {
+        const result = await actualizarCotizacionesDesdeExternas();
         return res.status(200).json(result);
       }
       return res.status(400).json({ error: true, mensaje: 'action no soportado en escritura' });

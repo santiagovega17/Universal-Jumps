@@ -57,6 +57,12 @@
           body: JSON.stringify(payload || {}),
         }),
       obtenerCotizacionesBackend: () => requestJson('/api/config?action=cotizaciones'),
+      actualizarCotizacionesDesdeExternas: () =>
+        requestJson('/api/config?action=actualizar-cotizaciones', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        }),
       obtenerConfiguracion: () => requestJson('/api/config?action=caja'),
       obtenerConceptosPorPais: (pais) => requestJson(`/api/config?${buildQuery({ action: 'conceptos', pais })}`),
       obtenerDescripcionesPorPaisConcepto: (pais, concepto) =>

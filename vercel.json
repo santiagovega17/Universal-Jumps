@@ -1,4 +1,10 @@
 {
   "devCommand": "",
-  "rewrites": [{ "source": "/favicon.ico", "destination": "/favicon.svg" }]
+  "rewrites": [{ "source": "/favicon.ico", "destination": "/favicon.svg" }],
+  "crons": [
+    {
+      "path": "/api/cron/actualizar-cotizaciones",
+      "schedule": "0 15 * * *"
+    }
+  ]
 }
