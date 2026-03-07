@@ -431,12 +431,14 @@
              '</tr></thead><tbody>';
  
           movimientos.forEach(mov => {
-             const tipoColor = mov.tipo === 'INGRESO' ? '#22c55e' : '#ef4444';
-             const tipoIcono = mov.tipo === 'INGRESO' ? 'add_circle' : 'remove_circle';
+             const tipoMov = (mov.tipo || '').toUpperCase();
+             const tipoColor = tipoMov === 'INGRESO' ? '#22c55e' : '#ef4444';
+             const tipoIcono = tipoMov === 'INGRESO' ? 'add_circle' : 'remove_circle';
              const cantidad = mov.cantidad;
              const cantidadAbs = Math.abs(cantidad);
-             const marcaTipo = mov.marca + (mov.tipo ? ' - ' + mov.tipo : '') + ' - ' + mov.modelo;
-             const signo = mov.tipo === 'INGRESO' ? '+' : '-';
+             const tipoProd = mov.tipoProducto || mov.tipo || '';
+             const marcaTipo = mov.marca + (tipoProd ? ' - ' + tipoProd : '') + ' - ' + mov.modelo;
+             const signo = tipoMov === 'INGRESO' ? '+' : '-';
              html += '<tr style="border-bottom:1px solid #1e293b;">' +
                 '<td style="padding:12px; text-align:center; color:#f1f5f9; font-size:14px;">' + (mov.fecha || '') + '</td>' +
                 '<td style="padding:12px; text-align:center; color:#f1f5f9; font-size:14px;">' +
@@ -445,7 +447,7 @@
                 '<td style="padding:12px; text-align:center; color:#f1f5f9; font-size:14px;">' + (mov.talle || '') + '</td>' +
                 '<td style="padding:12px; text-align:center;">' +
                 '<span style="display:inline-flex; align-items:center; gap:5px; color:' + tipoColor + '; font-size:13px; font-weight:600;">' +
-                '<span class="material-symbols-outlined" style="font-size:18px;">' + tipoIcono + '</span>' + (mov.tipo || '') + '</span></td>' +
+                '<span class="material-symbols-outlined" style="font-size:18px;">' + tipoIcono + '</span>' + (tipoMov || mov.tipo || '') + '</span></td>' +
                 '<td style="padding:12px; text-align:center; color:' + tipoColor + '; font-size:14px; font-weight:600;">' + signo + cantidadAbs + '</td>' +
                 '<td style="padding:12px; text-align:center; color:#94a3b8; font-size:13px;">' + (mov.observacion || '') + '</td>' +
                 '</tr>';

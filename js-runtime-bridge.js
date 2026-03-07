@@ -170,6 +170,43 @@
       obtenerReporteConsolidado: (anio) =>
         requestJson(`/api/reportes?${buildQuery({ action: 'consolidado', anio })}`),
       obtenerTodasLasComisiones: () => requestJson('/api/reportes?action=comisiones'),
+
+      obtenerStockBotas: (pais) =>
+        requestJson(`/api/stock?${buildQuery({ action: 'stock-botas', pais })}`),
+      obtenerMovimientosStock: (pais) =>
+        requestJson(`/api/stock?${buildQuery({ action: 'movimientos', pais })}`),
+      obtenerMarcasModelos: () =>
+        requestJson('/api/stock?action=marcas-modelos'),
+      crearProductoBota: (payload) =>
+        requestJson('/api/stock?action=crear-producto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      registrarMovimientoStock: (payload) =>
+        requestJson('/api/stock?action=registrar-movimiento', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      guardarMarcaModelo: (payload) =>
+        requestJson('/api/stock?action=guardar-marca-modelo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      eliminarMarcaModelo: (payload) =>
+        requestJson('/api/stock?action=eliminar-marca-modelo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      actualizarEstadoProducto: (payload) =>
+        requestJson('/api/stock?action=actualizar-estado-producto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
     };
 
     const fn = routes[methodName];
