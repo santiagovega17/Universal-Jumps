@@ -45,6 +45,12 @@
        if (typeof setTipoAjuste === 'function') setTipoAjuste('INGRESO');
     }
 
+    /** Toggle "Ver más" al hacer clic (complementa el hover para touch/táctil) */
+    function toggleVerMasObs(el) {
+       var container = el && el.closest ? el.closest('.obs-container') : (el && el.parentElement ? el.parentElement.closest('.obs-container') : null);
+       if (container) container.classList.toggle('ver-mas-activo');
+    }
+
     /**
      * Validación de formularios: recibe array de reglas y devuelve mensaje de error o null si todo es válido.
      * Regla: { id: 'idDelInput', nombre: 'Nombre del campo', requerido: true, min: número, max: número, pattern: 'regex' }

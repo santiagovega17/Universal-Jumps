@@ -1768,7 +1768,8 @@
        z-index: 50;
     }
  
-    .obs-container:hover .obs-full {
+    .obs-container:hover .obs-full,
+    .obs-container.ver-mas-activo .obs-full {
        display: block;
     }
  
@@ -1787,11 +1788,11 @@
        z-index: 50;
     }
 
-    /* Tabla de clientes: scroll interno, columnas acotadas, sin barra horizontal */
+    /* Tabla de clientes: scroll horizontal para nombres/mails completos */
     .clientes-table-wrap {
        width: 100%;
        max-width: 100%;
-       overflow-x: hidden;
+       overflow-x: auto;
        overflow-y: auto;
        background: var(--sidebar);
        border-radius: 12px;
@@ -1799,9 +1800,10 @@
        max-height: min(75vh, 600px);
     }
     .clientes-table-wrap .clientes-table {
-       width: 100%;
+       width: max-content;
+       min-width: 100%;
        border-collapse: collapse;
-       table-layout: fixed;
+       table-layout: auto;
     }
     .clientes-table-wrap .clientes-table th,
     .clientes-table-wrap .clientes-table td {
@@ -1814,27 +1816,26 @@
        text-overflow: ellipsis;
     }
     .clientes-table-wrap .clientes-table td {
-       overflow: hidden;
+       overflow: visible;
     }
-    .clientes-table-wrap .clientes-table td.col-nombre,
-    .clientes-table-wrap .clientes-table td.col-apellido,
     .clientes-table-wrap .clientes-table td.col-dni,
     .clientes-table-wrap .clientes-table td.col-telefono,
     .clientes-table-wrap .clientes-table td.col-provincia,
     .clientes-table-wrap .clientes-table td.col-pais {
-       max-width: 0;
+       max-width: 140px;
+       overflow: hidden;
        text-overflow: ellipsis;
        white-space: nowrap;
     }
-    .clientes-table-wrap .col-nombre { width: 9%; }
-    .clientes-table-wrap .col-apellido { width: 9%; }
-    .clientes-table-wrap .col-dni { width: 7%; }
-    .clientes-table-wrap .col-telefono { width: 9%; }
-    .clientes-table-wrap .col-correo { width: 14%; }
-    .clientes-table-wrap .col-address { width: 22%; }
-    .clientes-table-wrap .col-provincia { width: 10%; }
-    .clientes-table-wrap .col-pais { width: 10%; }
-    .clientes-table-wrap .col-acciones { width: 10%; white-space: nowrap; }
+    .clientes-table-wrap .col-nombre { min-width: 100px; }
+    .clientes-table-wrap .col-apellido { min-width: 100px; }
+    .clientes-table-wrap .col-dni { min-width: 90px; width: 90px; }
+    .clientes-table-wrap .col-telefono { min-width: 110px; }
+    .clientes-table-wrap .col-correo { min-width: 160px; }
+    .clientes-table-wrap .col-address { min-width: 180px; }
+    .clientes-table-wrap .col-provincia { min-width: 100px; }
+    .clientes-table-wrap .col-pais { min-width: 90px; }
+    .clientes-table-wrap .col-acciones { min-width: 88px; white-space: nowrap; }
     .clientes-table-wrap .obs-container-sm { max-width: 120px; min-width: 70px; }
  
     /* Asegurar que el scroll lateral sea visible siempre que sea necesario */

@@ -577,7 +577,7 @@
                 if (dom.length > 25) {
                    domHtml = `<div class="obs-container">
                       <span class="obs-text">${dom}</span>
-                      <span class="view-more-btn">Ver más...</span>
+                      <span class="view-more-btn" onclick="toggleVerMasObs(this); event.stopPropagation();">Ver más...</span>
                       <div class="obs-full">${dom}</div>
                    </div>`;
                 }
@@ -586,7 +586,7 @@
                 if (correo.length > 22) {
                    correoHtml = `<div class="obs-container obs-container-sm">
                       <span class="obs-text">${correo}</span>
-                      <span class="view-more-btn">Ver más...</span>
+                      <span class="view-more-btn" onclick="toggleVerMasObs(this); event.stopPropagation();">Ver más...</span>
                       <div class="obs-full">${correo}</div>
                    </div>`;
                 }
