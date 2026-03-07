@@ -1787,16 +1787,16 @@
        z-index: 50;
     }
 
-    /* Tabla de clientes: scroll interno, columnas acotadas, títulos y Acciones visibles */
+    /* Tabla de clientes: scroll interno, columnas acotadas, sin barra horizontal */
     .clientes-table-wrap {
        width: 100%;
        max-width: 100%;
-       overflow: auto;
+       overflow-x: hidden;
+       overflow-y: auto;
        background: var(--sidebar);
        border-radius: 12px;
-       padding: 16px;
+       padding: 12px;
        max-height: min(75vh, 600px);
-       margin: 0 20px; /* Espacio simétrico izquierda y derecha */
     }
     .clientes-table-wrap .clientes-table {
        width: 100%;
@@ -1826,16 +1826,16 @@
        text-overflow: ellipsis;
        white-space: nowrap;
     }
-    .clientes-table-wrap .col-nombre { width: 10%; }
-    .clientes-table-wrap .col-apellido { width: 10%; }
-    .clientes-table-wrap .col-dni { width: 8%; }
-    .clientes-table-wrap .col-telefono { width: 10%; }
-    .clientes-table-wrap .col-correo { width: 14%; max-width: 140px; }
-    .clientes-table-wrap .col-address { width: 20%; max-width: 200px; }
-    .clientes-table-wrap .col-provincia { width: 9%; }
-    .clientes-table-wrap .col-pais { width: 9%; }
-    .clientes-table-wrap .col-acciones { width: 10%; min-width: 88px; white-space: nowrap; }
-    .clientes-table-wrap .obs-container-sm { max-width: 130px; min-width: 80px; }
+    .clientes-table-wrap .col-nombre { width: 9%; }
+    .clientes-table-wrap .col-apellido { width: 9%; }
+    .clientes-table-wrap .col-dni { width: 7%; }
+    .clientes-table-wrap .col-telefono { width: 9%; }
+    .clientes-table-wrap .col-correo { width: 14%; }
+    .clientes-table-wrap .col-address { width: 22%; }
+    .clientes-table-wrap .col-provincia { width: 10%; }
+    .clientes-table-wrap .col-pais { width: 10%; }
+    .clientes-table-wrap .col-acciones { width: 10%; white-space: nowrap; }
+    .clientes-table-wrap .obs-container-sm { max-width: 120px; min-width: 70px; }
  
     /* Asegurar que el scroll lateral sea visible siempre que sea necesario */
     .card-scroll, #historial-content {
