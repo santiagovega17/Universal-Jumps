@@ -1,6 +1,6 @@
 {
   "devCommand": "",
-  "rewrites": [{ "source": "/favicon.ico", "destination": "/favicon.svg" }],
+  "rewrites": [{ "source": "/favicon.ico", "destination": "/logo.png" }],
   "crons": [
     {
       "path": "/api/cron/actualizar-cotizaciones",
