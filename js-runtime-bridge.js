@@ -31,12 +31,43 @@
     const routes = {
       obtenerPerfilUsuario: () => requestJson('/api/auth/perfil'),
       obtenerListaVendedores: () => requestJson('/api/usuarios?action=vendedores'),
+      obtenerTodosUsuarios: () => requestJson('/api/usuarios?action=todos'),
+      actualizarEstadoUsuario: (email, activo) =>
+        requestJson('/api/usuarios?action=estado', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, activo }),
+        }),
+      crearNuevoUsuario: (payload) =>
+        requestJson('/api/usuarios?action=crear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      actualizarUsuario: (payload) =>
+        requestJson('/api/usuarios?action=actualizar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
       obtenerCotizacionesBackend: () => requestJson('/api/config?action=cotizaciones'),
       obtenerConfiguracion: () => requestJson('/api/config?action=caja'),
       obtenerConceptosPorPais: (pais) => requestJson(`/api/config?${buildQuery({ action: 'conceptos', pais })}`),
       obtenerDescripcionesPorPaisConcepto: (pais, concepto) =>
         requestJson(`/api/config?${buildQuery({ action: 'descripciones', pais, concepto })}`),
       obtenerMediosPorPais: (pais) => requestJson(`/api/config?${buildQuery({ action: 'medios', pais })}`),
+      guardarItemConfig: (tipo, nombre, padre, pais, sentido) =>
+        requestJson('/api/config?action=guardar-item', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo, nombre, padre, pais, sentido }),
+        }),
+      borrarItemConfig: (tipo, nombre, pais, padre) =>
+        requestJson('/api/config?action=borrar-item', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo, nombre, pais, padre }),
+        }),
 
       obtenerBalanceCaja: (pais, mes, anio) =>
         requestJson(`/api/caja?${buildQuery({ action: 'balance', pais, mes, anio })}`),
@@ -93,6 +124,40 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload || {}),
         }),
+
+      obtenerClientesVendedor: (vendedor, pais) =>
+        requestJson(`/api/clientes?${buildQuery({ action: 'list', vendedor, pais })}`),
+      guardarCliente: (payload) =>
+        requestJson('/api/clientes?action=guardar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      borrarClientePorDatos: (payload) =>
+        requestJson('/api/clientes?action=borrar-por-datos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+
+      obtenerObjetivosBackend: (trimestre) =>
+        requestJson(`/api/reportes?${buildQuery({ action: 'objetivos-backend', trimestre })}`),
+      obtenerTodosLosObjetivos: () => requestJson('/api/reportes?action=todos-objetivos'),
+      guardarObjetivosBackend: (trimestre, filas) =>
+        requestJson('/api/reportes?action=guardar-objetivos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trimestre, filas }),
+        }),
+      guardarObjetivoEspecial: (payload) =>
+        requestJson('/api/reportes?action=guardar-objetivo-especial', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
+      obtenerReporteConsolidado: (anio) =>
+        requestJson(`/api/reportes?${buildQuery({ action: 'consolidado', anio })}`),
+      obtenerTodasLasComisiones: () => requestJson('/api/reportes?action=comisiones'),
     };
 
     const fn = routes[methodName];
