@@ -464,6 +464,12 @@
           montoHtml = '<span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + formatNumberAr(mov.monto || 0) + '</span>';
        }
        var obsHtmlEdit = '';
+       if (mov.tipo === 'EGRESO' && estaEnEdicion) {
+          var valorObs = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].observaciones !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].observaciones : (mov.observaciones || '');
+          obsHtmlEdit = '<span class="caja-edit-control"><input type="text" class="form-input caja-obs-input" style="width:100%; min-width:80px; max-width:180px; padding: 4px 8px; font-size: 12px; margin: 0 auto; display: block; box-sizing: border-box;" value="' + escCaja(valorObs) + '" onblur="editarCampoMovimiento(' + escIdCaja(mov.filaIndex) + ', \'observaciones\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur(); return false;}" data-fila="' + escCaja(mov.filaIndex) + '" autocomplete="off" placeholder="Observación"></span>';
+       } else {
+          obsHtmlEdit = obsHtml;
+       }
        var vencHtml = '';
        if (mov.tipo === 'EGRESO' && estaEnEdicion) {
           var valorVencimiento = (CAMBIOS_PENDIENTES[mov.filaIndex] && CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento !== undefined) ? CAMBIOS_PENDIENTES[mov.filaIndex].vencimiento : (mov.vencimiento ? convertirFechaDDMMYYYYaYYYYMMDD(mov.vencimiento) : '');
