@@ -112,67 +112,66 @@
 
        var mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-       // Fondo igual que los meses del header (color sólido equivalente a rgba(148,163,184,0.08) sobre #1e293b)
        var headerBg = '#232f42';
        var rowStyle = 'background:' + headerBg + '; border-bottom: 1px solid var(--border-color);';
-       // sticky: límite lateral, z-index alto, box-shadow para tapar contenido que se desliza, sin cambios en hover
-       var stickyStyle = 'position:sticky; left:0; z-index:10; background:' + headerBg + ' !important; box-shadow: 6px 0 10px 0 rgba(0,0,0,0.5);';
-
-       var html = '';
-       html += '<style>.caja-conso-table .caja-conso-sticky:hover{ background:' + headerBg + ' !important; }</style>';
-       html += '<table class="caja-conso-table" style="width:100%; min-width: 1100px; border-collapse: collapse; table-layout: auto; text-align:center;">';
-       html += '<colgroup>';
-       html += '<col style="width:320px;">'; // CONCEPTO / DESCRIPCIÓN (combinada)
-       for (var c = 0; c < 13; c++) {
-          html += '<col style="width:110px;">'; // 12 meses + total año
-       }
-       html += '</colgroup>';
-       html += '<thead>';
-       html += '<tr style="' + rowStyle + '">';
-       html += '<th class="caja-conso-sticky" style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; ' + stickyStyle + '">CONCEPTO / DESCRIPCIÓN</th>';
-       for (var i = 0; i < 12; i++) {
-          html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; background:' + headerBg + ';">' + mesesCortos[i] + '</th>';
-       }
-       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; background:' + headerBg + ';">TOTAL AÑO</th>';
-       html += '</tr>';
-       html += '</thead>';
-
-       html += '<tbody>';
+       var cellStyle = 'padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap;';
 
        var totalesMes = new Array(12).fill(0);
        var totalAnualGeneral = 0;
 
-       data.items.forEach(function (item, idx) {
+       // Calcular totales por mes
+       data.items.forEach(function (item) {
+          for (var m = 0; m < 12; m++) {
+             var v = (item.meses && typeof item.meses[m] === 'number') ? item.meses[m] : 0;
+             totalesMes[m] += v;
+          }
+       });
+       totalAnualGeneral = totalesMes.reduce(function(s, x) { return s + x; }, 0);
+
+       var html = '';
+       html += '<div style="display:flex; width:100%; overflow:hidden;">';
+       // Panel fijo (concepto/descripción) - nunca se desplaza
+       html += '<div style="flex-shrink:0; width:320px; overflow:hidden; border-right: 1px solid var(--border-color);">';
+       html += '<table style="width:100%; border-collapse: collapse; table-layout: fixed;">';
+       html += '<thead><tr style="' + rowStyle + '"><th style="' + cellStyle + ' font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO / DESCRIPCIÓN</th></tr></thead>';
+       html += '<tbody>';
+       data.items.forEach(function (item) {
           var c = (item.concepto || '').toString().toUpperCase();
           var d = (item.descripcion || '').toString().toUpperCase();
           var conceptoDesc = (c ? '(' + c + ') ' : '') + d;
-          html += '<tr style="' + rowStyle + '">';
-          html += '<td class="caja-conso-sticky" style="padding:8px 10px; font-size:13px; color:#e2e8f0; text-align:center; white-space:nowrap; ' + stickyStyle + '">' + conceptoDesc + '</td>';
+          html += '<tr style="' + rowStyle + '"><td style="' + cellStyle + ' color:#e2e8f0;">' + conceptoDesc + '</td></tr>';
+       });
+       html += '<tr style="' + rowStyle + ' border-top: 2px solid var(--border-color);"><td style="' + cellStyle + ' font-weight:700; color:#e5e7eb; font-size:12px; text-transform:uppercase;">Total general</td></tr>';
+       html += '</tbody></table></div>';
 
+       // Panel desplazable (meses + total)
+       html += '<div style="flex:1; overflow-x:auto; min-width:0;">';
+       html += '<table style="width:100%; min-width: 1100px; border-collapse: collapse; table-layout: auto; text-align:center;">';
+       html += '<thead><tr style="' + rowStyle + '">';
+       for (var i = 0; i < 12; i++) {
+          html += '<th style="' + cellStyle + ' font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; min-width:110px;">' + mesesCortos[i] + '</th>';
+       }
+       html += '<th style="' + cellStyle + ' font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; min-width:110px;">TOTAL AÑO</th></tr></thead>';
+       html += '<tbody>';
+
+       data.items.forEach(function (item) {
           var totalFila = 0;
+          html += '<tr style="' + rowStyle + '">';
           for (var m = 0; m < 12; m++) {
              var val = (item.meses && typeof item.meses[m] === 'number') ? item.meses[m] : 0;
-             totalesMes[m] += val;
              totalFila += val;
-             html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; color:' + (val > 0 ? '#38bdf8' : '#64748b') + ';">' + (val > 0 ? formatNumberAr(val) : '-') + '</td>';
+             html += '<td style="' + cellStyle + ' color:' + (val > 0 ? '#38bdf8' : '#64748b') + ';">' + (val > 0 ? formatNumberAr(val) : '-') + '</td>';
           }
-
-          totalAnualGeneral += totalFila;
-          html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; font-weight:700; color:#22c55e;">' + (totalFila > 0 ? formatNumberAr(totalFila) : '-') + '</td>';
-          html += '</tr>';
+          html += '<td style="' + cellStyle + ' font-weight:700; color:#22c55e;">' + (totalFila > 0 ? formatNumberAr(totalFila) : '-') + '</td></tr>';
        });
 
-       // Fila de totales generales
        html += '<tr style="' + rowStyle + ' border-top: 2px solid var(--border-color);">';
-       html += '<td class="caja-conso-sticky" colspan="1" style="padding:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:#e5e7eb; text-align:center; ' + stickyStyle + '">Total general</td>';
        for (var t = 0; t < 12; t++) {
           var tv = totalesMes[t];
-          html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; font-weight:600; color:#22c55e;">' + (tv > 0 ? formatNumberAr(tv) : '-') + '</td>';
+          html += '<td style="' + cellStyle + ' font-weight:600; color:#22c55e;">' + (tv > 0 ? formatNumberAr(tv) : '-') + '</td>';
        }
-       html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; font-weight:800; color:#22c55e;">' + (totalAnualGeneral > 0 ? formatNumberAr(totalAnualGeneral) : '-') + '</td>';
-       html += '</tr>';
-
-       html += '</tbody></table>';
+       html += '<td style="' + cellStyle + ' font-weight:800; color:#22c55e;">' + (totalAnualGeneral > 0 ? formatNumberAr(totalAnualGeneral) : '-') + '</td></tr>';
+       html += '</tbody></table></div></div>';
 
        container.innerHTML = html;
     }
