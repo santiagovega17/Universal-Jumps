@@ -823,10 +823,38 @@
              if (estadoInput) estadoInput.value = mov.estado || '';
              if (btnMarcarPagado) btnMarcarPagado.style.display = (mov.estado === 'PENDIENTE' ? 'inline-flex' : 'none');
              
-             // Limpiar inmediatamente la sección de pagos para evitar que se vea, aunque sea unos segundos,
-             // el monto/forma de pago del movimiento editado previamente.
+             // Limpiar/establecer de inmediato todos los campos que antes se rellenaban más tarde,
+             // para no mostrar datos del movimiento editado previamente.
              var pagosContainer = document.getElementById('pagos-container');
              if (pagosContainer) pagosContainer.innerHTML = '';
+             document.getElementById('obsCaja').value = mov.observaciones || '';
+             document.getElementById('estadoCaja').value = mov.estado || 'PAGADO';
+             if (mov.tipo === 'EGRESO' && mov.estado === 'PENDIENTE') {
+                document.getElementById('group-vencimiento').style.display = 'block';
+                document.getElementById('fechaVencimiento').required = true;
+                if (mov.vencimiento) {
+                   var partesVenc = mov.vencimiento.split('/');
+                   if (partesVenc.length === 3) {
+                      document.getElementById('fechaVencimiento').value = partesVenc[2] + '-' + partesVenc[1] + '-' + partesVenc[0];
+                   } else {
+                      document.getElementById('fechaVencimiento').value = '';
+                   }
+                } else {
+                   document.getElementById('fechaVencimiento').value = '';
+                }
+             } else {
+                document.getElementById('group-vencimiento').style.display = 'none';
+                document.getElementById('fechaVencimiento').required = false;
+                document.getElementById('fechaVencimiento').value = '';
+             }
+             var selConcepto = document.getElementById('conceptoCajaSelect');
+             if (selConcepto) selConcepto.innerHTML = '<option value="">Cargando...</option>';
+             var descSelect = document.getElementById('descCajaSelect');
+             if (descSelect) {
+                descSelect.innerHTML = '<option value="">Selecciona Concepto</option>';
+                descSelect.disabled = true;
+             }
+             if (typeof toggleVencimiento === 'function') toggleVencimiento();
              
              // Abrir modal de inmediato; concepto y descripción se cargarán en segundo plano
              document.getElementById('modalCaja').classList.add('open');
