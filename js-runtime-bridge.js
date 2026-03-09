@@ -89,6 +89,8 @@
         requestJson(`/api/caja?${buildQuery({ action: 'historial', pais, mes, anio })}`),
       obtenerDatosCajaCompleto: (pais, mes, anio) =>
         requestJson(`/api/caja?${buildQuery({ action: 'datos-completo', pais, mes, anio })}`),
+      obtenerConsolidadoCaja: (pais, anio) =>
+        requestJson(`/api/caja?${buildQuery({ action: 'consolidado', pais, anio })}`),
       obtenerMovimientoCaja: (id) =>
         requestJson(`/api/caja?${buildQuery({ action: 'movimiento-item', id })}`),
       actualizarEstadoMovimientoCaja: (id, nuevoEstado) =>

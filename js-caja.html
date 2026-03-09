@@ -46,7 +46,7 @@
        cargarDatosCajaCompleto();
     }
 
-    // Vista de consolidado anual de caja (stub inicial de UI)
+    // Vista de consolidado anual de caja
     function renderConsolidadoCaja() {
        let anioActual = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : (new Date()).getFullYear();
 
@@ -54,8 +54,10 @@
           <div class="back-nav" onclick="navegar(null, 'CAJA')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
           <div class="dash-section-title">CONSOLIDADO ANUAL DE CAJA</div>
           <div style="margin: 10px 0 20px 0; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-             <div style="color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:0.05em;">AÑO</div>
-             <select id="selAnioConsolidadoCaja" class="filter-select">
+             <div style="color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:0.05em;">PAÍS</div>
+             <div style="color:white; font-size:13px; font-weight:600;">${PAIS_CAJA_ACTUAL}</div>
+             <div style="color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:0.05em; margin-left:16px;">AÑO</div>
+             <select id="selAnioConsolidadoCaja" class="filter-select" onchange="cargarConsolidadoCaja()">
                 <option value="${anioActual - 2}">${anioActual - 2}</option>
                 <option value="${anioActual - 1}">${anioActual - 1}</option>
                 <option value="${anioActual}" selected>${anioActual}</option>
@@ -64,13 +66,104 @@
           </div>
           <div id="consolidado-caja-content" style="background: var(--sidebar); border: 1px solid var(--border-color); border-radius: 10px; padding: 24px; overflow-x:auto;">
              <div style="padding: 20px; text-align: center; color: #94a3b8; font-size:13px;">
-                Aquí se va a mostrar el <strong>consolidado anual</strong> de conceptos y descripciones del Balance de Caja.
+                Cargando consolidado anual de caja...
              </div>
           </div>
        `;
 
        let app = document.getElementById('app');
-       if (app) app.innerHTML = html;
+       if (app) {
+          app.innerHTML = html;
+          cargarConsolidadoCaja();
+       }
+    }
+
+    function cargarConsolidadoCaja() {
+       let container = document.getElementById('consolidado-caja-content');
+       if (!container) return;
+
+       let selAnio = document.getElementById('selAnioConsolidadoCaja');
+       let anio = selAnio ? parseInt(selAnio.value) : (typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : (new Date()).getFullYear());
+
+       container.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size:13px;">Cargando consolidado anual de caja...</div>';
+
+       google.script.run
+          .withSuccessHandler(function (res) {
+             if (res && res.error) {
+                container.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (res.mensaje || 'Error al obtener consolidado de caja') + '</div>';
+                return;
+             }
+             var data = res && res.data ? res.data : res;
+             renderConsolidadoCajaTabla(data);
+          })
+          .withFailureHandler(function (err) {
+             var msg = err && (err.message || err.toString()) || 'Error de conexión';
+             container.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + msg + '</div>';
+          })
+          .obtenerConsolidadoCaja(PAIS_CAJA_ACTUAL, anio);
+    }
+
+    function renderConsolidadoCajaTabla(data) {
+       let container = document.getElementById('consolidado-caja-content');
+       if (!container) return;
+
+       if (!data || !Array.isArray(data.items) || data.items.length === 0) {
+          container.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size:13px;">No hay egresos registrados para el año seleccionado.</div>';
+          return;
+       }
+
+       var mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+       var html = '';
+       html += '<table style="width:100%; min-width: 1000px; border-collapse: collapse; table-layout: fixed;">';
+       html += '<thead>';
+       html += '<tr style="background: rgba(148,163,184,0.08); border-bottom: 1px solid var(--border-color);">';
+       html += '<th style="padding:10px; text-align:left; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO</th>';
+       html += '<th style="padding:10px; text-align:left; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">DESCRIPCIÓN</th>';
+       for (var i = 0; i < 12; i++) {
+          html += '<th style="padding:10px; text-align:right; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">' + mesesCortos[i] + '</th>';
+       }
+       html += '<th style="padding:10px; text-align:right; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">TOTAL AÑO</th>';
+       html += '</tr>';
+       html += '</thead>';
+
+       html += '<tbody>';
+
+       var totalesMes = new Array(12).fill(0);
+       var totalAnualGeneral = 0;
+
+       data.items.forEach(function (item, idx) {
+          var bg = idx % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.8)';
+          html += '<tr style="background:' + bg + '; border-bottom: 1px solid rgba(148,163,184,0.08);">';
+          html += '<td style="padding:8px 10px; font-size:13px; color:white;">' + (item.concepto || '') + '</td>';
+          html += '<td style="padding:8px 10px; font-size:13px; color:#cbd5f5;">' + (item.descripcion || '') + '</td>';
+
+          var totalFila = 0;
+          for (var m = 0; m < 12; m++) {
+             var val = (item.meses && typeof item.meses[m] === 'number') ? item.meses[m] : 0;
+             totalesMes[m] += val;
+             totalFila += val;
+             html += '<td style="padding:8px 10px; font-size:13px; text-align:right; color:' + (val > 0 ? '#facc15' : '#64748b') + ';">' + (val > 0 ? formatNumberAr(val) : '-') + '</td>';
+          }
+
+          totalAnualGeneral += totalFila;
+          html += '<td style="padding:8px 10px; font-size:13px; text-align:right; font-weight:700; color:#38bdf8;">' + (totalFila > 0 ? formatNumberAr(totalFila) : '-') + '</td>';
+          html += '</tr>';
+       });
+
+       // Fila de totales generales
+       html += '<tr style="background: rgba(15,23,42,0.9); border-top: 2px solid var(--border-color);">';
+       html += '<td colspan="2" style="padding:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:#e5e7eb;">Total general</td>';
+       for (var t = 0; t < 12; t++) {
+          var tv = totalesMes[t];
+          html += '<td style="padding:8px 10px; font-size:13px; text-align:right; font-weight:600; color:#f97316;">' + (tv > 0 ? formatNumberAr(tv) : '-') + '</td>';
+       }
+       html += '<td style="padding:8px 10px; font-size:13px; text-align:right; font-weight:800; color:#22c55e;">' + (totalAnualGeneral > 0 ? formatNumberAr(totalAnualGeneral) : '-') + '</td>';
+       html += '</tr>';
+
+       html += '</tbody></table>';
+
+       container.innerHTML = html;
     }
  
     function switchPaisCaja(pais) {

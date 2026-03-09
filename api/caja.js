@@ -2,6 +2,7 @@ const {
   getBalanceCaja,
   getHistorialCaja,
   getMediosPagoCaja,
+  getConsolidadoCaja,
   getMovimientoCajaById,
   updateEstadoMovimientoCaja,
   deleteMovimientoCaja,
@@ -48,6 +49,12 @@ module.exports = async (req, res) => {
 
       if (action === 'medios') {
         const data = await getMediosPagoCaja({ pais, mes, anio });
+        return res.status(200).json({ error: false, data });
+      }
+
+      if (action === 'consolidado') {
+        const anioSolo = toNumber(req.query.anio, 2026);
+        const data = await getConsolidadoCaja({ pais, anio: anioSolo });
         return res.status(200).json({ error: false, data });
       }
 
