@@ -115,7 +115,6 @@
        var headerBg = '#232f42';
        var rowStyle = 'background:' + headerBg + '; border-bottom: 1px solid var(--border-color);';
        var cellStyle = 'padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap;';
-       var conceptoCellStyle = 'padding:8px 10px; font-size:13px; text-align:center; white-space:normal; word-wrap:break-word;';
 
        var totalesMes = new Array(12).fill(0);
        var totalAnualGeneral = 0;
@@ -129,20 +128,31 @@
        });
        totalAnualGeneral = totalesMes.reduce(function(s, x) { return s + x; }, 0);
 
+       // Calcular ancho de columna para mostrar el texto más largo
+       var maxLen = 'CONCEPTO / DESCRIPCIÓN'.length;
+       data.items.forEach(function (item) {
+          var c = (item.concepto || '').toString().toUpperCase();
+          var d = (item.descripcion || '').toString().toUpperCase();
+          var conceptoDesc = (c ? '(' + c + ') ' : '') + d;
+          if (conceptoDesc.length > maxLen) maxLen = conceptoDesc.length;
+       });
+       if ('Total general'.length > maxLen) maxLen = 'Total general'.length;
+       var conceptColWidth = Math.max(320, Math.min(maxLen * 10 + 50, 800));
+
        var html = '';
        html += '<div style="display:flex; width:100%; overflow:hidden;">';
-       // Panel fijo (concepto/descripción) - nunca se desplaza
-       html += '<div style="flex-shrink:0; width:320px; overflow:hidden; border-right: 1px solid var(--border-color);">';
+       // Panel fijo (concepto/descripción) - nunca se desplaza, ancho según el texto más largo
+       html += '<div style="flex-shrink:0; width:' + conceptColWidth + 'px; min-width:' + conceptColWidth + 'px; border-right: 1px solid var(--border-color);">';
        html += '<table style="width:100%; border-collapse: collapse; table-layout: fixed;">';
-       html += '<thead><tr style="' + rowStyle + '"><th style="' + conceptoCellStyle + ' font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO / DESCRIPCIÓN</th></tr></thead>';
+       html += '<thead><tr style="' + rowStyle + '"><th style="' + cellStyle + ' font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO / DESCRIPCIÓN</th></tr></thead>';
        html += '<tbody>';
        data.items.forEach(function (item) {
           var c = (item.concepto || '').toString().toUpperCase();
           var d = (item.descripcion || '').toString().toUpperCase();
           var conceptoDesc = (c ? '(' + c + ') ' : '') + d;
-          html += '<tr style="' + rowStyle + '"><td style="' + conceptoCellStyle + ' color:#e2e8f0;">' + conceptoDesc + '</td></tr>';
+          html += '<tr style="' + rowStyle + '"><td style="' + cellStyle + ' color:#e2e8f0;">' + conceptoDesc + '</td></tr>';
        });
-       html += '<tr style="' + rowStyle + ' border-top: 2px solid var(--border-color);"><td style="' + conceptoCellStyle + ' font-weight:700; color:#e5e7eb; font-size:12px; text-transform:uppercase;">Total general</td></tr>';
+       html += '<tr style="' + rowStyle + ' border-top: 2px solid var(--border-color);"><td style="' + cellStyle + ' font-weight:700; color:#e5e7eb; font-size:12px; text-transform:uppercase;">Total general</td></tr>';
        html += '</tbody></table></div>';
 
        // Panel desplazable (meses + total)
