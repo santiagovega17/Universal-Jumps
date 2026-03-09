@@ -857,13 +857,8 @@
                 // Establecer pagos (forma de pago y monto)
                 document.getElementById('pagos-container').innerHTML = '';
                 if (mov.formaPago && mov.monto) {
-                   agregarFilaPago();
-                   setTimeout(() => {
-                      let selectPago = document.querySelector('#pagos-container select');
-                      let inputMonto = document.querySelector('#pagos-container input[type="text"]');
-                      if (selectPago) selectPago.value = mov.formaPago;
-                      if (inputMonto) inputMonto.value = formatNumberAr(mov.monto).replace('ARS', '').trim();
-                   }, 100);
+                   const montoFormateado = formatNumberAr(mov.monto).replace('ARS', '').trim();
+                   agregarFilaPago(mov.formaPago, montoFormateado);
                 } else {
                    agregarFilaPago();
                 }
