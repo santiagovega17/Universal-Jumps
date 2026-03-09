@@ -823,6 +823,11 @@
              if (estadoInput) estadoInput.value = mov.estado || '';
              if (btnMarcarPagado) btnMarcarPagado.style.display = (mov.estado === 'PENDIENTE' ? 'inline-flex' : 'none');
              
+             // Limpiar inmediatamente la sección de pagos para evitar que se vea, aunque sea unos segundos,
+             // el monto/forma de pago del movimiento editado previamente.
+             var pagosContainer = document.getElementById('pagos-container');
+             if (pagosContainer) pagosContainer.innerHTML = '';
+             
              // Abrir modal de inmediato; concepto y descripción se cargarán en segundo plano
              document.getElementById('modalCaja').classList.add('open');
              
