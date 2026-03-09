@@ -287,6 +287,14 @@
           mostrarEstadoCarga('BALANCE DE CAJA', '<div class="back-nav" onclick="navegar(null, \'MENU_ADMIN\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CAJA');
           renderBalanceCaja();
        }
+       else if (hoja === 'CAJA_CONSOLIDADO') {
+          selBalance.style.display = 'none';
+          document.getElementById('titulo').innerText = 'CONSOLIDADO CAJA';
+          mostrarEstadoCarga('CONSOLIDADO CAJA', '<div class="back-nav" onclick="navegar(null, \'CAJA\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CAJA_CONSOLIDADO');
+          if (typeof renderConsolidadoCaja === 'function') {
+             renderConsolidadoCaja();
+          }
+       }
        else if (hoja === 'CLIENTES') {
           document.getElementById('titulo').innerText = 'CLIENTES';
           mostrarEstadoCarga('CLIENTES', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CLIENTES');

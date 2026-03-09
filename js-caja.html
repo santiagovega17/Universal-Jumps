@@ -45,6 +45,33 @@
        // Cargar balance, medios de pago e historial en paralelo (una sola llamada a historial)
        cargarDatosCajaCompleto();
     }
+
+    // Vista de consolidado anual de caja (stub inicial de UI)
+    function renderConsolidadoCaja() {
+       let anioActual = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : (new Date()).getFullYear();
+
+       let html = `
+          <div class="back-nav" onclick="navegar(null, 'CAJA')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
+          <div class="dash-section-title">CONSOLIDADO ANUAL DE CAJA</div>
+          <div style="margin: 10px 0 20px 0; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+             <div style="color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:0.05em;">AÑO</div>
+             <select id="selAnioConsolidadoCaja" class="filter-select">
+                <option value="${anioActual - 2}">${anioActual - 2}</option>
+                <option value="${anioActual - 1}">${anioActual - 1}</option>
+                <option value="${anioActual}" selected>${anioActual}</option>
+             </select>
+             <div style="flex:1;"></div>
+          </div>
+          <div id="consolidado-caja-content" style="background: var(--sidebar); border: 1px solid var(--border-color); border-radius: 10px; padding: 24px; overflow-x:auto;">
+             <div style="padding: 20px; text-align: center; color: #94a3b8; font-size:13px;">
+                Aquí se va a mostrar el <strong>consolidado anual</strong> de conceptos y descripciones del Balance de Caja.
+             </div>
+          </div>
+       `;
+
+       let app = document.getElementById('app');
+       if (app) app.innerHTML = html;
+    }
  
     function switchPaisCaja(pais) {
        if (typeof APP_STATE !== 'undefined') APP_STATE.set('paisCaja', pais); else PAIS_CAJA_ACTUAL = pais;
@@ -314,9 +341,9 @@
                          <div class="view-option" id="filtro-ingresos" onclick="filtrarHistorialPorTipo('INGRESO')" style="background: transparent; color: #94a3b8;">INGRESOS</div>
                       </div>
                    </div>
-                   <button class="btn-submit" onclick="cargarDatosCajaCompleto(true)" style="padding: 8px 16px; font-size: 13px; width: auto; flex-shrink: 0; margin-right: 10px; background: var(--border-color); color: var(--accent);">
-                      <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">refresh</span>
-                      Actualizar
+                   <button class="btn-submit" onclick="navegar(null, 'CAJA_CONSOLIDADO')" style="padding: 8px 16px; font-size: 13px; width: auto; flex-shrink: 0; margin-right: 10px; background: var(--border-color); color: var(--accent);">
+                      <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">leaderboard</span>
+                      Consolidado
                    </button>
                    <button class="btn-submit" onclick="abrirModalCaja('crear')" style="padding: 8px 16px; font-size: 13px; width: auto; flex-shrink: 0;">
                       <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">add</span>
