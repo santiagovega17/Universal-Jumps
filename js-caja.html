@@ -112,11 +112,15 @@
 
        var mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-       var rowStyle = 'background:#1e293b; border-bottom: 1px solid var(--border-color);';
-       var stickyStyle = 'position:sticky; left:0; z-index:2; background:#1e293b;';
+       // Fondo igual que los meses del header (color sólido equivalente a rgba(148,163,184,0.08) sobre #1e293b)
+       var headerBg = '#232f42';
+       var rowStyle = 'background:' + headerBg + '; border-bottom: 1px solid var(--border-color);';
+       // sticky: límite lateral, z-index alto, box-shadow para tapar contenido que se desliza, sin cambios en hover
+       var stickyStyle = 'position:sticky; left:0; z-index:10; background:' + headerBg + ' !important; box-shadow: 6px 0 10px 0 rgba(0,0,0,0.5);';
 
        var html = '';
-       html += '<table style="width:100%; min-width: 1100px; border-collapse: collapse; table-layout: auto; text-align:center;">';
+       html += '<style>.caja-conso-table .caja-conso-sticky:hover{ background:' + headerBg + ' !important; }</style>';
+       html += '<table class="caja-conso-table" style="width:100%; min-width: 1100px; border-collapse: collapse; table-layout: auto; text-align:center;">';
        html += '<colgroup>';
        html += '<col style="width:320px;">'; // CONCEPTO / DESCRIPCIÓN (combinada)
        for (var c = 0; c < 13; c++) {
@@ -125,11 +129,11 @@
        html += '</colgroup>';
        html += '<thead>';
        html += '<tr style="' + rowStyle + '">';
-       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; ' + stickyStyle + ' z-index:3;">CONCEPTO / DESCRIPCIÓN</th>';
+       html += '<th class="caja-conso-sticky" style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; ' + stickyStyle + '">CONCEPTO / DESCRIPCIÓN</th>';
        for (var i = 0; i < 12; i++) {
-          html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap;">' + mesesCortos[i] + '</th>';
+          html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; background:' + headerBg + ';">' + mesesCortos[i] + '</th>';
        }
-       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap;">TOTAL AÑO</th>';
+       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; background:' + headerBg + ';">TOTAL AÑO</th>';
        html += '</tr>';
        html += '</thead>';
 
@@ -139,9 +143,11 @@
        var totalAnualGeneral = 0;
 
        data.items.forEach(function (item, idx) {
-          var conceptoDesc = (item.concepto || '') + (item.descripcion ? ' – ' + item.descripcion : '');
+          var c = (item.concepto || '').toString().toUpperCase();
+          var d = (item.descripcion || '').toString().toUpperCase();
+          var conceptoDesc = (c ? '(' + c + ') ' : '') + d;
           html += '<tr style="' + rowStyle + '">';
-          html += '<td style="padding:8px 10px; font-size:13px; color:#e2e8f0; text-align:center; white-space:nowrap; ' + stickyStyle + '">' + conceptoDesc + '</td>';
+          html += '<td class="caja-conso-sticky" style="padding:8px 10px; font-size:13px; color:#e2e8f0; text-align:center; white-space:nowrap; ' + stickyStyle + '">' + conceptoDesc + '</td>';
 
           var totalFila = 0;
           for (var m = 0; m < 12; m++) {
@@ -158,7 +164,7 @@
 
        // Fila de totales generales
        html += '<tr style="' + rowStyle + ' border-top: 2px solid var(--border-color);">';
-       html += '<td colspan="1" style="padding:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:#e5e7eb; text-align:center; ' + stickyStyle + ' z-index:3;">Total general</td>';
+       html += '<td class="caja-conso-sticky" colspan="1" style="padding:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:#e5e7eb; text-align:center; ' + stickyStyle + '">Total general</td>';
        for (var t = 0; t < 12; t++) {
           var tv = totalesMes[t];
           html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; font-weight:600; color:#22c55e;">' + (tv > 0 ? formatNumberAr(tv) : '-') + '</td>';
