@@ -19,3 +19,8 @@ dist/
 Thumbs.db
 .vercel
 .env*.local
+
+# Credenciales Google (nunca subir)
+docs/gen-lang-client-0693765207-43f19f5056d2.json
+docs/*credentials*.json
+docs/gen-lang-client*.json

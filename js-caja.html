@@ -475,88 +475,12 @@
           return descA.localeCompare(descB);
        });
 
-       var gruposMap = {};
-       dataFiltrada.forEach(function(mov) {
-          var key = (mov.concepto || '') + '|' + (mov.descripcion || '');
-          if (!gruposMap[key]) {
-             gruposMap[key] = { concepto: mov.concepto || '', descripcion: mov.descripcion || '', movimientos: [], total: 0 };
-          }
-          gruposMap[key].movimientos.push(mov);
-          gruposMap[key].total += Number(mov.monto) || 0;
-       });
-       var grupos = Object.keys(gruposMap).map(function(k) { return gruposMap[k]; });
-       grupos.forEach(function(g) {
-          g.movimientos.sort(function(a, b) {
-             var da = parseFecha(a.fecha || '01/01/1900');
-             var db = parseFecha(b.fecha || '01/01/1900');
-             if (db.getTime() !== da.getTime()) return db.getTime() - da.getTime();
-             var ca = (a.concepto || '').toLowerCase();
-             var cb = (b.concepto || '').toLowerCase();
-             if (ca !== cb) return ca.localeCompare(cb);
-             var descA = (a.descripcion || '').toLowerCase();
-             var descB = (b.descripcion || '').toLowerCase();
-             return descA.localeCompare(descB);
-          });
-       });
-       grupos.sort(function(a, b) {
-          var maxA = 0, maxB = 0;
-          a.movimientos.forEach(function(m) { var t = parseFecha(m.fecha || ''); if (t && t.getTime() > maxA) maxA = t.getTime(); });
-          b.movimientos.forEach(function(m) { var t = parseFecha(m.fecha || ''); if (t && t.getTime() > maxB) maxB = t.getTime(); });
-          return maxB - maxA;
-       });
-       var gruposVisibles = grupos;
-       function esc(s) {
-          return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-       }
-       var tipoColorAcc = FILTRO_TIPO_HISTORIAL === 'INGRESO' ? '#10b981' : '#ef4444';
        var colgroup = '<colgroup><col style="width:8%"><col style="width:6%"><col style="width:10%"><col style="width:18%"><col style="width:10%"><col style="width:10%"><col style="width:14%"><col style="width:7%"><col style="width:7%"><col style="width:10%"></colgroup>';
        var thRow = '<tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color);"><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FECHA</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">TIPO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">DESCRIPCIÓN</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FORMA DE PAGO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">MONTO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">OBSERVACION</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ESTADO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">VENCIMIENTO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ACCIONES</th></tr>';
 
        var html = '<div class="caja-historial-table-wrap"><table class="caja-historial-table" style="width:100%; min-width: 1100px; border-collapse: collapse; table-layout: fixed;">' + colgroup + '<thead>' + thRow + '</thead><tbody>';
-       gruposVisibles.forEach(function(grupo) {
-          var titulo = (grupo.concepto && grupo.descripcion) ? (grupo.concepto + ' – ' + grupo.descripcion) : (grupo.concepto || grupo.descripcion || 'Sin concepto');
-          var n = grupo.movimientos.length;
-          var totalStr = formatNumberAr(grupo.total);
-          if (n > 1) {
-             var movs = grupo.movimientos;
-             var ultimaFecha = '';
-             var maxT = 0;
-             for (var i = 0; i < movs.length; i++) {
-                var dt = parseFecha(movs[i].fecha || '');
-                if (dt && dt.getTime() > maxT) { maxT = dt.getTime(); ultimaFecha = movs[i].fecha || ''; }
-             }
-             var formasUnicas = {};
-             movs.forEach(function(m) { var f = (m.formaPago || '').toString().trim(); if (f) formasUnicas[f] = true; });
-             var formaPagoResumen = Object.keys(formasUnicas).length === 1 ? Object.keys(formasUnicas)[0] : (Object.keys(formasUnicas).length > 1 ? 'VARIAS' : '');
-             var algunPendiente = movs.some(function(m) { return (m.estado || '').toString().toUpperCase() === 'PENDIENTE'; });
-             var estadoResumen = algunPendiente ? 'PENDIENTE' : 'PAGADO';
-             var estadoResumenColor = algunPendiente ? '#facc15' : '#10b981';
-             var vencimientos = [];
-             movs.forEach(function(m) {
-                var v = (m.vencimiento || '').toString().trim();
-                if (v) { var d = parseFecha(v); if (d) vencimientos.push({ str: v, t: d.getTime() }); }
-             });
-             vencimientos.sort(function(a, b) { return a.t - b.t; });
-             var vencimientoProximo = vencimientos.length > 0 ? vencimientos[0].str : '';
-             html += '<tr class="caja-accordion-row"><td colspan="10" class="caja-accordion-cell" style="padding:0; vertical-align:top; border-bottom: 1px solid var(--border-color);">';
-             html += '<details class="caja-accordion caja-accordion-inline"><summary class="caja-accordion-summary">';
-             html += '<table class="caja-summary-inline-table" style="width:100%; border-collapse: collapse; table-layout: fixed;">' + colgroup + '<tr style="border-bottom: 1px solid var(--border-color);">';
-             html += '<td style="padding:12px; color:white; font-size:13px; text-align:center;">' + esc(ultimaFecha) + '</td>';
-             html += '<td style="padding:12px; text-align:center;"><span style="color:' + tipoColorAcc + '; font-weight:600; font-size:13px;">' + esc(movs[0].tipo || '') + '</span></td>';
-             html += '<td style="padding:12px; color:white; font-size:13px; text-align:center;">' + esc(grupo.concepto) + '</td>';
-             html += '<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + esc(grupo.descripcion) + '</td>';
-             html += '<td style="padding:12px; color:white; font-size:13px; text-align:center;">' + esc(formaPagoResumen) + '</td>';
-             html += '<td style="padding:12px; text-align:center;"><span style="color:' + tipoColorAcc + '; font-weight:600; font-size:13px;">' + totalStr + '</span></td>';
-             html += '<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;"></td>';
-             html += '<td style="padding:12px; text-align:center;"><span style="color:' + estadoResumenColor + '; font-weight:600; font-size:13px;">' + estadoResumen + '</span></td>';
-             html += '<td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + esc(vencimientoProximo) + '</td>';
-             html += '<td style="padding:12px; text-align:center;"><span class="material-symbols-outlined caja-accordion-icon" style="font-size:22px; color:#94a3b8;">expand_more</span></td></tr></table>';
-             html += '</summary><div class="caja-accordion-body"><table class="caja-accordion-inner-table" style="width:100%; border-collapse: collapse; table-layout: fixed;">' + colgroup + '<tbody>';
-             grupo.movimientos.forEach(function(mov) { html += buildRowHistorialCaja(mov); });
-             html += '</tbody></table></div></details></td></tr>';
-          } else {
-             grupo.movimientos.forEach(function(mov) { html += buildRowHistorialCaja(mov); });
-          }
+       dataFiltrada.forEach(function(mov) {
+          html += buildRowHistorialCaja(mov);
        });
        html += '</tbody></table></div>';
        container.innerHTML = html;
