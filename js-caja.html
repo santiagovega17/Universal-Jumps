@@ -137,7 +137,7 @@
           if (conceptoDesc.length > maxLen) maxLen = conceptoDesc.length;
        });
        if ('Total general'.length > maxLen) maxLen = 'Total general'.length;
-       var conceptColWidth = Math.max(280, Math.min(maxLen * 10 + 10, 760));
+       var conceptColWidth = Math.max(260, Math.min(maxLen * 10 - 10, 740));
 
        var html = '';
        html += '<div style="display:flex; width:100%; overflow:hidden;">';
