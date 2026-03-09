@@ -112,19 +112,20 @@
 
        var mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
+       var rowStyle = 'background:#1e293b; border-bottom: 1px solid var(--border-color);';
+       var stickyStyle = 'position:sticky; left:0; z-index:2; background:#1e293b;';
+
        var html = '';
        html += '<table style="width:100%; min-width: 1100px; border-collapse: collapse; table-layout: auto; text-align:center;">';
        html += '<colgroup>';
-       html += '<col style="width:220px;">'; // CONCEPTO
-       html += '<col style="width:260px;">'; // DESCRIPCIÓN
+       html += '<col style="width:320px;">'; // CONCEPTO / DESCRIPCIÓN (combinada)
        for (var c = 0; c < 13; c++) {
           html += '<col style="width:110px;">'; // 12 meses + total año
        }
        html += '</colgroup>';
        html += '<thead>';
-       html += '<tr style="background: rgba(148,163,184,0.08); border-bottom: 1px solid var(--border-color);">';
-       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; position:sticky; left:0; z-index:3; background:var(--sidebar);">CONCEPTO</th>';
-       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; position:sticky; left:220px; z-index:3; background:var(--sidebar);">DESCRIPCIÓN</th>';
+       html += '<tr style="' + rowStyle + '">';
+       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap; ' + stickyStyle + ' z-index:3;">CONCEPTO / DESCRIPCIÓN</th>';
        for (var i = 0; i < 12; i++) {
           html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap;">' + mesesCortos[i] + '</th>';
        }
@@ -138,10 +139,9 @@
        var totalAnualGeneral = 0;
 
        data.items.forEach(function (item, idx) {
-          var bg = idx % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.8)';
-          html += '<tr style="background:' + bg + '; border-bottom: 1px solid rgba(148,163,184,0.08);">';
-          html += '<td style="padding:8px 10px; font-size:13px; color:white; text-align:center; white-space:nowrap; position:sticky; left:0; z-index:2; background:' + bg + ';">' + (item.concepto || '') + '</td>';
-          html += '<td style="padding:8px 10px; font-size:13px; color:#cbd5f5; text-align:center; white-space:nowrap; position:sticky; left:220px; z-index:2; background:' + bg + ';">' + (item.descripcion || '') + '</td>';
+          var conceptoDesc = (item.concepto || '') + (item.descripcion ? ' – ' + item.descripcion : '');
+          html += '<tr style="' + rowStyle + '">';
+          html += '<td style="padding:8px 10px; font-size:13px; color:#e2e8f0; text-align:center; white-space:nowrap; ' + stickyStyle + '">' + conceptoDesc + '</td>';
 
           var totalFila = 0;
           for (var m = 0; m < 12; m++) {
@@ -157,8 +157,8 @@
        });
 
        // Fila de totales generales
-       html += '<tr style="background: rgba(15,23,42,0.9); border-top: 2px solid var(--border-color);">';
-       html += '<td colspan="2" style="padding:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:#e5e7eb; text-align:center;">Total general</td>';
+       html += '<tr style="' + rowStyle + ' border-top: 2px solid var(--border-color);">';
+       html += '<td colspan="1" style="padding:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:#e5e7eb; text-align:center; ' + stickyStyle + ' z-index:3;">Total general</td>';
        for (var t = 0; t < 12; t++) {
           var tv = totalesMes[t];
           html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; font-weight:600; color:#22c55e;">' + (tv > 0 ? formatNumberAr(tv) : '-') + '</td>';
