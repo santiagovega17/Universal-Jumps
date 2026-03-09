@@ -932,7 +932,8 @@
           document.getElementById('fechaVencimiento').value = '';
  
           document.getElementById('pagos-container').innerHTML = '';
-          agregarFilaPago();
+          // Crear fila de pago vacía sin disparar carga remota de medios (se actualizarán al seleccionar país)
+          agregarFilaPago('', '', []);
  
           // Poblar conceptos y medios de pago del país actual
           poblarSelectsCaja();
@@ -1006,9 +1007,9 @@
     function agregarFilaPago(valorDefecto = '', montoDefecto = '', mediosArray = null) {
        let container = document.getElementById('pagos-container');
        let medios = mediosArray || [];
- 
-       // Si no se proporciona array de medios, obtener del país seleccionado
-       if (!mediosArray || mediosArray.length === 0) {
+
+       // Si NO se proporciona array de medios (mediosArray === null), obtener del país seleccionado
+       if (mediosArray === null) {
           let selPais = document.getElementById('paisCajaSelect');
           if (selPais && selPais.value) {
              // Si hay país seleccionado, obtener medios
@@ -1023,7 +1024,7 @@
              return;
           }
        }
- 
+
        crearFilaPagoHTML(container, valorDefecto, montoDefecto, medios);
     }
  
@@ -1105,17 +1106,41 @@
     }
  
     function actualizarMediosPagoCaja(pais) {
-       // Limpiar el contenedor de pagos y agregar nueva fila con medios del país
+       // Actualizar medios de pago según el país.
+       // En modo creación se limpia el contenedor y se crea una fila nueva.
+       // En modo edición NO se agregan filas nuevas automáticamente (solo se actualizan las existentes).
        let container = document.getElementById('pagos-container');
        if (!container) return;
- 
-       container.innerHTML = '';
- 
+
+       let inputFila = document.getElementById('cajaFilaIndex');
+       let estaEditando = !!(inputFila && inputFila.value);
+
+       if (!estaEditando) {
+          // Solo en modo creación limpiamos el contenedor aquí
+          container.innerHTML = '';
+       }
+
        google.script.run.withSuccessHandler((res) => {
-          if (!res.error && res.data && res.data.length > 0) {
-             agregarFilaPago('', '', res.data);
+          let medios = (!res.error && res.data && res.data.length > 0) ? res.data : [];
+
+          if (!estaEditando) {
+             // Modo creación: crear una fila nueva con los medios recibidos
+             agregarFilaPago('', '', medios);
           } else {
-             agregarFilaPago('', '', []);
+             // Modo edición: actualizar opciones de los selects existentes sin agregar filas nuevas
+             let selects = container.querySelectorAll('select');
+             selects.forEach((sel) => {
+                let valorActual = sel.value;
+                if (medios.length > 0) {
+                   sel.innerHTML = medios.map(m => `<option value="${m}">${m}</option>`).join('');
+                } else {
+                   sel.innerHTML = '<option value="">No hay medios de pago</option>';
+                }
+                // Intentar mantener la selección original si sigue existiendo
+                if (medios.indexOf(valorActual) >= 0) {
+                   sel.value = valorActual;
+                }
+             });
           }
        }).obtenerMediosPorPais(pais);
     }
