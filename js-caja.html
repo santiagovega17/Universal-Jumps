@@ -813,7 +813,20 @@
              // Establecer tipo
              document.getElementById('tipoCaja').value = mov.tipo || 'EGRESO';
              
-             // Función auxiliar para establecer el resto de los campos
+             // Título, botón y acciones extra (para que el modal se vea en modo edición al abrir)
+             document.getElementById('modalTitleCaja').innerText = "EDITAR MOVIMIENTO DE CAJA";
+             document.getElementById('btnGuardarCaja').innerText = "ACTUALIZAR";
+             var extraDiv = document.getElementById('caja-modal-acciones-extra');
+             var btnMarcarPagado = document.getElementById('btnCajaMarcarPagado');
+             var estadoInput = document.getElementById('cajaModalEstado');
+             if (extraDiv) extraDiv.style.display = 'flex';
+             if (estadoInput) estadoInput.value = mov.estado || '';
+             if (btnMarcarPagado) btnMarcarPagado.style.display = (mov.estado === 'PENDIENTE' ? 'inline-flex' : 'none');
+             
+             // Abrir modal de inmediato; concepto y descripción se cargarán en segundo plano
+             document.getElementById('modalCaja').classList.add('open');
+             
+             // Función auxiliar para establecer el resto de los campos (sin abrir modal de nuevo)
              let establecerRestoCamposModal = (mov) => {
                 // Establecer estado y manejar vencimiento
                 document.getElementById('estadoCaja').value = mov.estado || 'PAGADO';
@@ -854,29 +867,13 @@
                 } else {
                    agregarFilaPago();
                 }
-                
-                // Actualizar título y botón
-                document.getElementById('modalTitleCaja').innerText = "EDITAR MOVIMIENTO DE CAJA";
-                document.getElementById('btnGuardarCaja').innerText = "ACTUALIZAR";
-                
-                // Mostrar acciones extra (Marcar pagado / Eliminar) y estado
-                var extraDiv = document.getElementById('caja-modal-acciones-extra');
-                var btnMarcarPagado = document.getElementById('btnCajaMarcarPagado');
-                var estadoInput = document.getElementById('cajaModalEstado');
-                if (extraDiv) extraDiv.style.display = 'flex';
-                if (estadoInput) estadoInput.value = mov.estado || '';
-                if (btnMarcarPagado) btnMarcarPagado.style.display = (mov.estado === 'PENDIENTE' ? 'inline-flex' : 'none');
-                
-                // Abrir modal
-                document.getElementById('modalCaja').classList.add('open');
              };
              
-             // Establecer país primero (necesario para cargar conceptos)
+             // Establecer país y cargar conceptos/descripciones en segundo plano
              let selPais = document.getElementById('paisCajaSelect');
              if (selPais && mov.pais) {
                 selPais.value = mov.pais;
                 
-                // Esperar a que se carguen los conceptos antes de continuar usando callback
                 poblarSelectsCaja(() => {
                    // Una vez que los conceptos están cargados, establecer el concepto
                    let selConcepto = document.getElementById('conceptoCajaSelect');
