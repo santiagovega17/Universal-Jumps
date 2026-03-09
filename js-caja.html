@@ -53,13 +53,11 @@
        let html = `
           <div class="back-nav" onclick="navegar(null, 'CAJA')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
           <div class="dash-section-title">CONSOLIDADO ANUAL DE CAJA</div>
-          <div style="margin: 10px 0 20px 0; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <div style="margin: 10px 0 20px 0; display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center;">
              <div style="color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:0.05em;">PAÍS</div>
              <div style="color:white; font-size:13px; font-weight:600;">${PAIS_CAJA_ACTUAL}</div>
              <div style="color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:0.05em; margin-left:16px;">AÑO</div>
              <select id="selAnioConsolidadoCaja" class="filter-select" onchange="cargarConsolidadoCaja()">
-                <option value="${anioActual - 2}">${anioActual - 2}</option>
-                <option value="${anioActual - 1}">${anioActual - 1}</option>
                 <option value="${anioActual}" selected>${anioActual}</option>
              </select>
              <div style="flex:1;"></div>
@@ -115,15 +113,15 @@
        var mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
        var html = '';
-       html += '<table style="width:100%; min-width: 1000px; border-collapse: collapse; table-layout: fixed;">';
+       html += '<table style="width:100%; min-width: 1100px; border-collapse: collapse; table-layout: auto; text-align:center;">';
        html += '<thead>';
        html += '<tr style="background: rgba(148,163,184,0.08); border-bottom: 1px solid var(--border-color);">';
-       html += '<th style="padding:10px; text-align:left; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO</th>';
-       html += '<th style="padding:10px; text-align:left; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">DESCRIPCIÓN</th>';
+       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap;">CONCEPTO</th>';
+       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap;">DESCRIPCIÓN</th>';
        for (var i = 0; i < 12; i++) {
-          html += '<th style="padding:10px; text-align:right; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">' + mesesCortos[i] + '</th>';
+          html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap;">' + mesesCortos[i] + '</th>';
        }
-       html += '<th style="padding:10px; text-align:right; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">TOTAL AÑO</th>';
+       html += '<th style="padding:10px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; white-space:nowrap;">TOTAL AÑO</th>';
        html += '</tr>';
        html += '</thead>';
 
@@ -135,30 +133,30 @@
        data.items.forEach(function (item, idx) {
           var bg = idx % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.8)';
           html += '<tr style="background:' + bg + '; border-bottom: 1px solid rgba(148,163,184,0.08);">';
-          html += '<td style="padding:8px 10px; font-size:13px; color:white;">' + (item.concepto || '') + '</td>';
-          html += '<td style="padding:8px 10px; font-size:13px; color:#cbd5f5;">' + (item.descripcion || '') + '</td>';
+          html += '<td style="padding:8px 10px; font-size:13px; color:white; text-align:center; white-space:nowrap;">' + (item.concepto || '') + '</td>';
+          html += '<td style="padding:8px 10px; font-size:13px; color:#cbd5f5; text-align:center; white-space:nowrap;">' + (item.descripcion || '') + '</td>';
 
           var totalFila = 0;
           for (var m = 0; m < 12; m++) {
              var val = (item.meses && typeof item.meses[m] === 'number') ? item.meses[m] : 0;
              totalesMes[m] += val;
              totalFila += val;
-             html += '<td style="padding:8px 10px; font-size:13px; text-align:right; color:' + (val > 0 ? '#facc15' : '#64748b') + ';">' + (val > 0 ? formatNumberAr(val) : '-') + '</td>';
+             html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; color:' + (val > 0 ? '#38bdf8' : '#64748b') + ';">' + (val > 0 ? formatNumberAr(val) : '-') + '</td>';
           }
 
           totalAnualGeneral += totalFila;
-          html += '<td style="padding:8px 10px; font-size:13px; text-align:right; font-weight:700; color:#38bdf8;">' + (totalFila > 0 ? formatNumberAr(totalFila) : '-') + '</td>';
+          html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; font-weight:700; color:#22c55e;">' + (totalFila > 0 ? formatNumberAr(totalFila) : '-') + '</td>';
           html += '</tr>';
        });
 
        // Fila de totales generales
        html += '<tr style="background: rgba(15,23,42,0.9); border-top: 2px solid var(--border-color);">';
-       html += '<td colspan="2" style="padding:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:#e5e7eb;">Total general</td>';
+       html += '<td colspan="2" style="padding:10px; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:#e5e7eb; text-align:center;">Total general</td>';
        for (var t = 0; t < 12; t++) {
           var tv = totalesMes[t];
-          html += '<td style="padding:8px 10px; font-size:13px; text-align:right; font-weight:600; color:#f97316;">' + (tv > 0 ? formatNumberAr(tv) : '-') + '</td>';
+          html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; font-weight:600; color:#22c55e;">' + (tv > 0 ? formatNumberAr(tv) : '-') + '</td>';
        }
-       html += '<td style="padding:8px 10px; font-size:13px; text-align:right; font-weight:800; color:#22c55e;">' + (totalAnualGeneral > 0 ? formatNumberAr(totalAnualGeneral) : '-') + '</td>';
+       html += '<td style="padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap; font-weight:800; color:#22c55e;">' + (totalAnualGeneral > 0 ? formatNumberAr(totalAnualGeneral) : '-') + '</td>';
        html += '</tr>';
 
        html += '</tbody></table>';
