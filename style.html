@@ -215,7 +215,7 @@
        align-items: center;
        gap: 4px;
        flex: 1;
-       overflow-x: auto;
+       overflow: visible;
     }
  
     .top-nav-item {
@@ -280,9 +280,10 @@
     }
  
     .top-nav-dropdown:hover .top-nav-dropdown-content {
-       max-height: 400px;
+       max-height: 70vh;
        opacity: 1;
        visibility: visible;
+       overflow: visible;
     }
  
     .top-nav-right {
@@ -2184,10 +2185,10 @@
        }
  
        .top-nav-menu.open {
-          max-height: 80vh;
+          max-height: none;
           opacity: 1;
           visibility: visible;
-          overflow-y: auto;
+          overflow: visible;
        }
  
        .top-nav-menu .top-nav-item {
@@ -2227,8 +2228,9 @@
        }
  
        .top-nav-menu.open .top-nav-dropdown-content.open {
-          max-height: 500px;
+          max-height: 2000px;
           opacity: 1;
+          overflow: visible;
        }
  
        .header {
