@@ -64,11 +64,19 @@
                      Administración <span class="menu-arrow material-symbols-outlined">expand_more</span>
                   </button>
                   <div id="admin-section" class="top-nav-dropdown-content submenu open">
-                     <div class="menu-item" onclick="navegar(this, 'CAJA')">
-                        <span class="material-symbols-outlined">account_balance_wallet</span> Balance de Caja
+                     <div class="menu-item-card" onclick="navegar(this, 'CAJA')">
+                        <span class="menu-item-icon material-symbols-outlined">account_balance_wallet</span>
+                        <div class="menu-item-card-body">
+                           <span class="menu-item-title">Balance de Caja</span>
+                           <span class="menu-item-desc">Ingresos y egresos por país</span>
+                        </div>
                      </div>
-                     <div class="menu-item" onclick="navegar(this, 'GESTION_USUARIOS')">
-                        <span class="material-symbols-outlined">groups</span> Gestionar Usuarios
+                     <div class="menu-item-card" onclick="navegar(this, 'GESTION_USUARIOS')">
+                        <span class="menu-item-icon material-symbols-outlined">groups</span>
+                        <div class="menu-item-card-body">
+                           <span class="menu-item-title">Gestionar Usuarios</span>
+                           <span class="menu-item-desc">Usuarios y permisos del sistema</span>
+                        </div>
                      </div>
                   </div>
                </div>
@@ -78,8 +86,12 @@
                      Inventario <span class="menu-arrow material-symbols-outlined">expand_more</span>
                   </button>
                   <div id="inventario-section" class="top-nav-dropdown-content submenu open">
-                     <div class="menu-item" onclick="navegar(this, 'STOCK')">
-                        <span class="material-symbols-outlined">inventory_2</span> Stock de Botas
+                     <div class="menu-item-card" onclick="navegar(this, 'STOCK')">
+                        <span class="menu-item-icon material-symbols-outlined">inventory_2</span>
+                        <div class="menu-item-card-body">
+                           <span class="menu-item-title">Stock de Botas</span>
+                           <span class="menu-item-desc">Inventario por marca, tipo y talle</span>
+                        </div>
                      </div>
                   </div>
                </div>
@@ -90,17 +102,33 @@
                   </button>
                   <div id="ventas-section" class="top-nav-dropdown-content submenu open">
                      <div class="menu-sublabel">General</div>
-                     <div class="menu-item" id="menu-consolidado" onclick="navegar(this, 'CONSOLIDADO')">
-                        <span class="material-symbols-outlined">leaderboard</span> Consolidado
+                     <div class="menu-item-card" id="menu-consolidado" onclick="navegar(this, 'CONSOLIDADO')">
+                        <span class="menu-item-icon material-symbols-outlined">leaderboard</span>
+                        <div class="menu-item-card-body">
+                           <span class="menu-item-title">Consolidado</span>
+                           <span class="menu-item-desc">Resumen de ventas por período</span>
+                        </div>
                      </div>
-                     <div class="menu-item" id="menu-comisiones" onclick="navegar(this, '%')">
-                        <span class="material-symbols-outlined">trending_up</span> Comisiones (%)
+                     <div class="menu-item-card" id="menu-comisiones" onclick="navegar(this, '%')">
+                        <span class="menu-item-icon material-symbols-outlined">trending_up</span>
+                        <div class="menu-item-card-body">
+                           <span class="menu-item-title">Comisiones</span>
+                           <span class="menu-item-desc">Porcentajes por vendedor</span>
+                        </div>
                      </div>
-                     <div class="menu-item" id="btnObjetivos" onclick="navegar(this, 'OBJETIVOS')">
-                        <span class="material-symbols-outlined">track_changes</span> Objetivos
+                     <div class="menu-item-card" id="btnObjetivos" onclick="navegar(this, 'OBJETIVOS')">
+                        <span class="menu-item-icon material-symbols-outlined">track_changes</span>
+                        <div class="menu-item-card-body">
+                           <span class="menu-item-title">Objetivos</span>
+                           <span class="menu-item-desc">Metas trimestrales</span>
+                        </div>
                      </div>
-                     <div class="menu-item" id="menu-clientes" onclick="navegar(this, 'CLIENTES')">
-                        <span class="material-symbols-outlined">contacts</span> Clientes
+                     <div class="menu-item-card" id="menu-clientes" onclick="navegar(this, 'CLIENTES')">
+                        <span class="menu-item-icon material-symbols-outlined">contacts</span>
+                        <div class="menu-item-card-body">
+                           <span class="menu-item-title">Clientes</span>
+                           <span class="menu-item-desc">Base de datos de clientes</span>
+                        </div>
                      </div>
                      <div class="menu-sublabel" id="cat-vendedores">Vendedores</div>
                      <div id="vendor-list-container"></div>
