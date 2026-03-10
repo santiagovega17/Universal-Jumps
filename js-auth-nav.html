@@ -120,9 +120,8 @@
           activosOrdenados.forEach(v => {
              let idNombre = v.nombre.replace(/\s/g, '');
              let icono = v.nombre === 'Universal Jumps' ? 'storefront' : 'person';
-             html += `<div class="menu-item-card vendor-item vendor-active" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
-                   <span class="menu-item-icon material-symbols-outlined">${icono}</span>
-                   <div class="menu-item-card-body"><span class="menu-item-title">${v.nombre}</span></div>
+             html += `<div class="menu-item vendor-item vendor-active" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
+                   <span class="material-symbols-outlined">${icono}</span> ${v.nombre}
                 </div>`;
           });
  
@@ -135,9 +134,8 @@
              inactivosOrdenados.forEach(v => {
                 let idNombre = v.nombre.replace(/\s/g, '');
                 let icono = v.nombre === 'Universal Jumps' ? 'storefront' : 'person';
-                html += `<div class="menu-item-card vendor-item vendor-inactive" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
-                      <span class="menu-item-icon material-symbols-outlined">${icono}</span>
-                      <div class="menu-item-card-body"><span class="menu-item-title">${v.nombre}</span></div>
+                html += `<div class="menu-item vendor-item vendor-inactive" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
+                      <span class="material-symbols-outlined">${icono}</span> ${v.nombre}
                    </div>`;
              });
           }
@@ -234,7 +232,7 @@
        }
        if (typeof debugLog === 'function') debugLog('NAV', 'Navegando', { hoja: hoja });
  
-       document.querySelectorAll('.menu-item, .menu-item-card').forEach(i => i.classList.remove('active'));
+       document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
        if (el) { el.classList.add('active'); }
  
        let selVentas = document.getElementById('selTrimestreHeader');
