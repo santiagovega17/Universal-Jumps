@@ -190,8 +190,15 @@
        dropdowns.forEach(function (dd) {
           dd.addEventListener('mouseenter', function () {
              if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
-             dropdowns.forEach(function (d) { d.classList.remove('nav-dropdown-open'); });
+             dropdowns.forEach(function (d) {
+                if (d !== dd && d.classList.contains('nav-dropdown-open')) {
+                   d.classList.add('nav-dropdown-close-now');
+                }
+                d.classList.remove('nav-dropdown-open');
+             });
+             dd.classList.remove('nav-dropdown-close-now');
              dd.classList.add('nav-dropdown-open');
+             dropdowns.forEach(function (d) { d.classList.remove('nav-dropdown-close-now'); });
           });
           dd.addEventListener('mouseleave', function () {
              var self = dd;
