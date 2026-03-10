@@ -187,23 +187,33 @@
        if (window.innerWidth <= 768) return;
        var dropdowns = document.querySelectorAll('.top-nav-dropdown');
        var closeTimer = null;
+       function setArrowState(dd, open) {
+          var btn = dd && dd.querySelector('.top-nav-dropdown-trigger');
+          if (btn) {
+             if (open) btn.classList.add('nav-arrow-open'); else btn.classList.remove('nav-arrow-open');
+          }
+       }
        dropdowns.forEach(function (dd) {
           dd.addEventListener('mouseenter', function () {
              if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
              dropdowns.forEach(function (d) {
                 if (d !== dd && d.classList.contains('nav-dropdown-open')) {
                    d.classList.add('nav-dropdown-close-now');
+                   setArrowState(d, false);
                 }
                 d.classList.remove('nav-dropdown-open');
+                setArrowState(d, false);
              });
              dd.classList.remove('nav-dropdown-close-now');
              dd.classList.add('nav-dropdown-open');
+             setArrowState(dd, true);
              dropdowns.forEach(function (d) { d.classList.remove('nav-dropdown-close-now'); });
           });
           dd.addEventListener('mouseleave', function () {
              var self = dd;
              closeTimer = setTimeout(function () {
                 self.classList.remove('nav-dropdown-open');
+                setArrowState(self, false);
                 closeTimer = null;
              }, 120);
           });
