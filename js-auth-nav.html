@@ -148,8 +148,10 @@
     }
  
     function inicializarApp() {
-       document.getElementById('fechaInput').valueAsDate = new Date();
-       document.getElementById('fechaCaja').valueAsDate = new Date();
+       var fi = document.getElementById('fechaInput');
+       var fc = document.getElementById('fechaCaja');
+       if (fi && typeof getFechaHoyISO === 'function') fi.value = getFechaHoyISO();
+       if (fc && typeof getFechaHoyISO === 'function') fc.value = getFechaHoyISO();
  
        google.script.run.withSuccessHandler(res => {
           if (!res.error) COTIZACIONES = res.data;
@@ -177,7 +179,28 @@
        document.getElementById('selTrimestreHeader').value = obj;
  
        if (typeof poblarAnioConsolidado === 'function') poblarAnioConsolidado();
+       initNavDropdowns();
        navegar(null, 'HOME');
+    }
+ 
+    function initNavDropdowns() {
+       if (window.innerWidth <= 768) return;
+       var dropdowns = document.querySelectorAll('.top-nav-dropdown');
+       var closeTimer = null;
+       dropdowns.forEach(function (dd) {
+          dd.addEventListener('mouseenter', function () {
+             if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+             dropdowns.forEach(function (d) { d.classList.remove('nav-dropdown-open'); });
+             dd.classList.add('nav-dropdown-open');
+          });
+          dd.addEventListener('mouseleave', function () {
+             var self = dd;
+             closeTimer = setTimeout(function () {
+                self.classList.remove('nav-dropdown-open');
+                closeTimer = null;
+             }, 120);
+          });
+       });
     }
  
  

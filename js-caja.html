@@ -1082,7 +1082,7 @@
           // Modo creación: resetear formulario
           form.reset();
           document.getElementById('cajaFilaIndex').value = '';
-          document.getElementById('fechaCaja').valueAsDate = new Date();
+          if (typeof getFechaHoyISO === 'function') document.getElementById('fechaCaja').value = getFechaHoyISO();
           document.getElementById('obsCaja').value = '';
  
           // Resetear selector de país y conceptos
@@ -1631,7 +1631,7 @@
              document.getElementById('conceptoCajaSelect').innerHTML = '<option value="">Selecciona...</option>';
              document.getElementById('descCajaSelect').innerHTML = '<option value="">Selecciona Concepto</option>';
              document.getElementById('descCajaSelect').disabled = true;
-             document.getElementById('fechaCaja').valueAsDate = new Date();
+             if (typeof getFechaHoyISO === 'function') document.getElementById('fechaCaja').value = getFechaHoyISO();
  
              if (typeof mostrarToast === 'function') mostrarToast('Movimiento registrado correctamente');
              cargarDatosCajaCompleto();

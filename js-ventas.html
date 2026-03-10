@@ -520,7 +520,7 @@
        } else {
           title.innerText = "AGREGAR VENTA";
           btn.innerText = "GUARDAR";
-          document.getElementById('fechaInput').valueAsDate = new Date();
+          if (typeof getFechaHoyISO === 'function') document.getElementById('fechaInput').value = getFechaHoyISO();
           if (vendedorParaClientes) {
              setTimeout(() => actualizarSelectorClientes(vendedorParaClientes), 100);
           }

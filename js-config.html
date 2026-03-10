@@ -38,6 +38,12 @@
     let accionPendiente = null;
     let NAVEGANDO = false; // Flag para prevenir navegación múltiple
 
+    /** Retorna la fecha de hoy en formato YYYY-MM-DD (zona local). Uso en inputs type="date" para evitar problemas de timezone. */
+    function getFechaHoyISO() {
+       var d = new Date();
+       return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
     /** Objeto de estado mínimo: lectura/escritura centralizada (get/set) y sincronización con variables globales. */
     var APP_STATE = {
        _data: {
