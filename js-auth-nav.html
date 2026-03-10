@@ -79,7 +79,8 @@
        document.getElementById('user-display-role').innerText = perfil.rol + (perfil.hoja !== 'TODAS' ? ` (${perfil.hoja})` : '');
  
        if (perfil.rol === 'VENDEDOR') {
-          document.querySelector('[onclick="toggleSection(\'admin-section\')"]').parentNode.style.display = 'none';
+          var adminGroup = document.getElementById('nav-admin-group');
+          if (adminGroup) adminGroup.style.display = 'none';
           document.getElementById('menu-consolidado').style.display = 'none';
           document.getElementById('menu-comisiones').style.display = 'none';
           let sublabels = document.querySelectorAll('.menu-sublabel');
@@ -88,8 +89,8 @@
           // Clientes siempre visible para vendedores
           if (document.getElementById('menu-clientes')) document.getElementById('menu-clientes').style.display = 'block';
        } else if (perfil.rol === 'VENDEDORGRAL') {
-          // VENDEDORGRAL puede ver todo pero no tiene acceso a admin
-          document.querySelector('[onclick="toggleSection(\'admin-section\')"]').parentNode.style.display = 'none';
+          var adminGroup = document.getElementById('nav-admin-group');
+          if (adminGroup) adminGroup.style.display = 'none';
           // Ocultar consolidado y comisiones para VENDEDORGRAL
           if (document.getElementById('menu-consolidado')) document.getElementById('menu-consolidado').style.display = 'none';
           if (document.getElementById('menu-comisiones')) document.getElementById('menu-comisiones').style.display = 'none';
@@ -181,14 +182,24 @@
  
  
  
-    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('mobile-overlay').classList.toggle('active'); }
+    function toggleMenu() {
+       var menu = document.getElementById('top-nav-menu');
+       var overlay = document.getElementById('mobile-overlay');
+       if (menu) menu.classList.toggle('open');
+       if (overlay) overlay.classList.toggle('active');
+    }
  
     function navegar(el, hoja) {
        // Prevenir navegación múltiple
        if (NAVEGANDO) return;
        NAVEGANDO = true;
  
-       if (window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobile-overlay').classList.remove('active'); }
+       if (window.innerWidth <= 768) {
+          var m = document.getElementById('top-nav-menu');
+          var o = document.getElementById('mobile-overlay');
+          if (m) m.classList.remove('open');
+          if (o) o.classList.remove('active');
+       }
        if (typeof debugLog === 'function') debugLog('NAV', 'Navegando', { hoja: hoja });
  
        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
