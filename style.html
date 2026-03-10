@@ -22,7 +22,7 @@
     input,
     select,
     textarea {
-       font-family: 'Inter', sans-serif;
+       font-family: 'Plus Jakarta Sans', sans-serif;
     }
  
     body {
@@ -58,7 +58,7 @@
     }
  
     ::-webkit-scrollbar-thumb:hover {
-       background: #475569;
+       background: rgba(56, 189, 248, 0.5);
     }
  
     input[type=number]::-webkit-inner-spin-button,
@@ -473,7 +473,7 @@
        font-size: 13px;
        cursor: pointer;
        outline: none;
-       font-family: 'Inter';
+       font-family: 'Plus Jakarta Sans', sans-serif;
     }
  
     .header-select:focus {
@@ -542,11 +542,13 @@
        text-align: center;
        position: relative;
        overflow: hidden;
-       transition: border-color 0.2s;
+       transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
  
     .home-card:hover {
-       border-color: var(--accent);
+       border-color: rgba(56, 189, 248, 0.5);
+       transform: scale(1.02);
+       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(56, 189, 248, 0.2);
     }
  
     .home-card.main-cat {
@@ -556,7 +558,9 @@
  
     .home-card.main-cat:hover {
        background: var(--sidebar);
-       border-color: var(--accent);
+       border-color: rgba(56, 189, 248, 0.5);
+       transform: scale(1.02);
+       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(56, 189, 248, 0.2);
     }
  
     .home-icon {
@@ -599,11 +603,14 @@
        font-weight: 500;
        font-size: 13px;
        width: fit-content;
-       transition: 0.2s;
+       padding: 6px 0 6px 12px;
+       border-left: 3px solid transparent;
+       transition: all 0.25s ease;
     }
  
     .back-nav:hover {
        color: var(--accent);
+       border-left-color: var(--accent);
     }
  
     .back-nav .material-symbols-outlined {
@@ -1084,11 +1091,16 @@
        font-weight: 800;
        padding: 12px 24px;
        border: none;
-       border-radius: 6px;
+       border-radius: 8px;
        cursor: pointer;
        font-size: 14px;
        width: 100%;
-       transition: 0.2s;
+       transition: all 0.25s ease;
+       box-shadow: 0 2px 8px rgba(56, 189, 248, 0.2);
+    }
+    .btn-submit:hover {
+       box-shadow: 0 4px 16px rgba(56, 189, 248, 0.4);
+       filter: brightness(1.08);
     }
  
     .action-btn {
@@ -1156,53 +1168,27 @@
        color: var(--bg);
        width: auto;
        height: auto;
-       border-radius: 8px;
+       border-radius: 10px;
        border: none;
-       padding: 10px 16px;
+       padding: 12px 20px;
        font-weight: 700;
        font-size: 13px;
        cursor: pointer;
        display: inline-flex;
        align-items: center;
-       gap: 6px;
-       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-       transition: 0.2s;
+       gap: 8px;
+       box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+       transition: all 0.25s ease;
        z-index: 100;
     }
  
     .fab:hover {
-       opacity: 0.9;
-       transform: translateY(-2px);
+       transform: translateY(-3px) scale(1.02);
+       box-shadow: 0 8px 24px rgba(56, 189, 248, 0.45);
     }
  
     .fab .material-symbols-outlined {
        font-size: 18px;
-    }
- 
-    .fab-old {
-       position: absolute;
-       bottom: 30px;
-       right: 30px;
-       width: 60px;
-       height: 60px;
-       background-color: var(--accent);
-       border-radius: 50%;
-       box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
-       display: none;
-       align-items: center;
-       justify-content: center;
-       cursor: pointer;
-       transition: transform 0.2s;
-       z-index: 100;
-       font-size: 30px;
-       color: var(--bg);
-       font-weight: bold;
-       border: none;
-    }
- 
-    .fab:hover {
-       transform: scale(1.1);
-       background-color: #7dd3fc;
     }
  
     /* TABLAS (SOLO HISTORIAL) */
@@ -1263,6 +1249,10 @@
        background: var(--sidebar);
     }
  
+    tbody tr:hover td {
+       background: rgba(56, 189, 248, 0.05);
+    }
+ 
     /* FORMULARIOS */
     .form-label {
        display: block;
@@ -1284,10 +1274,16 @@
        font-size: 14px;
        outline: none;
        box-sizing: border-box;
+       transition: border-color 0.2s, box-shadow 0.2s;
     }
- 
+    .form-input:hover,
+    .form-select:hover,
+    textarea.form-input:hover {
+       border-color: #64748b;
+    }
     .form-input:focus {
        border-color: var(--accent);
+       box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
     }
  
     .form-row {
@@ -1750,7 +1746,7 @@
        width: 100%;
        height: 100%;
        background: rgba(0, 0, 0, 0.7);
-       backdrop-filter: blur(5px);
+       backdrop-filter: blur(8px);
        z-index: 9999;
        display: none;
        align-items: center;
@@ -1768,7 +1764,7 @@
        background: #1e293b;
        width: 95%;
        max-width: 500px;
-       border-radius: 12px;
+       border-radius: 14px;
        padding: 20px;
        border: 1px solid rgba(255, 255, 255, 0.1);
        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
@@ -1933,8 +1929,8 @@
        justify-content: space-between;
        align-items: center;
        margin-bottom: 12px;
-       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-       padding-bottom: 8px;
+       border-bottom: 2px solid rgba(56, 189, 248, 0.25);
+       padding-bottom: 10px;
     }
  
     .modal-title {
@@ -2334,9 +2330,10 @@
        transform: translateX(-50%) translateY(80px);
        background: var(--sidebar);
        color: #f1f5f9;
-       padding: 12px 24px;
-       border-radius: 8px;
-       box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+       padding: 14px 24px 14px 48px;
+       border-radius: 10px;
+       border-left: 4px solid var(--accent);
+       box-shadow: 0 4px 24px rgba(0,0,0,0.5);
        z-index: 10002;
        font-size: 14px;
        font-weight: 500;
@@ -2344,7 +2341,17 @@
        transition: transform 0.25s ease, opacity 0.25s ease;
        pointer-events: none;
        max-width: 90%;
-       text-align: center;
+       text-align: left;
+    }
+    .toast::before {
+       content: "✓";
+       position: absolute;
+       left: 16px;
+       top: 50%;
+       transform: translateY(-50%);
+       color: var(--accent);
+       font-weight: 800;
+       font-size: 18px;
     }
     .toast.show {
        transform: translateX(-50%) translateY(0);
