@@ -639,6 +639,11 @@
                    DATOS_FORMULARIO_VENTA = null; // Limpiar datos guardados
                 }
                 if (HOJA_ACTUAL) {
+                   if (typeof VENTAS_CACHE !== 'undefined') {
+                      VENTAS_CACHE.vendedor = '';
+                      VENTAS_CACHE.data = null;
+                      VENTAS_CACHE.ts = 0;
+                   }
                    cargar(HOJA_ACTUAL);
                 }
              }
@@ -655,7 +660,14 @@
     function clickBorrar(id, v) {
        abrirConfirmacion("¿Eliminar esta venta permanentemente?", () => {
           google.script.run
-             .withSuccessHandler(() => cargar(HOJA_ACTUAL))
+             .withSuccessHandler(() => {
+                if (typeof VENTAS_CACHE !== 'undefined') {
+                   VENTAS_CACHE.vendedor = '';
+                   VENTAS_CACHE.data = null;
+                   VENTAS_CACHE.ts = 0;
+                }
+                cargar(HOJA_ACTUAL);
+             })
              .withFailureHandler(function () {
                 mostrarAlerta('Error de conexión. Revisa tu red e intenta de nuevo.');
              })
