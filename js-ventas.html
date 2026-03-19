@@ -478,6 +478,62 @@
        if (selVendedor && selVendedor.options && selVendedor.options[0]) return selVendedor.options[0].value;
        return 'Adrian';
     }
+    function poblarSelectVendedoresVenta(vendedorSugerido, incluirInactivoActual, onDone) {
+       var sel = document.getElementById('selVendedor');
+       var sugerido = (vendedorSugerido || '').toString().trim();
+       if (!sel) {
+          if (typeof onDone === 'function') onDone(sugerido || '');
+          return;
+       }
+
+       google.script.run.withSuccessHandler(function (res) {
+          var activos = Array.isArray(res && res.activos) ? res.activos : [];
+          var inactivos = Array.isArray(res && res.inactivos) ? res.inactivos : [];
+
+          activos.sort(function (a, b) { return (a.nombre || '').localeCompare((b.nombre || '')); });
+          inactivos.sort(function (a, b) { return (a.nombre || '').localeCompare((b.nombre || '')); });
+
+          sel.innerHTML = '';
+          activos.forEach(function (v) {
+             var opt = document.createElement('option');
+             opt.value = (v && v.nombre ? v.nombre : '').toString();
+             opt.textContent = opt.value;
+             sel.appendChild(opt);
+          });
+
+          if (incluirInactivoActual && sugerido) {
+             var existeEnActivos = activos.some(function (v) {
+                return ((v && v.nombre) || '').toString().trim().toUpperCase() === sugerido.toUpperCase();
+             });
+             if (!existeEnActivos) {
+                var inactivoMatch = inactivos.find(function (v) {
+                   return ((v && v.nombre) || '').toString().trim().toUpperCase() === sugerido.toUpperCase();
+                });
+                if (inactivoMatch) {
+                   var optInactivo = document.createElement('option');
+                   optInactivo.value = inactivoMatch.nombre;
+                   optInactivo.textContent = inactivoMatch.nombre + ' (inactivo)';
+                   sel.appendChild(optInactivo);
+                }
+             }
+          }
+
+          if (!sel.options.length) {
+             var empty = document.createElement('option');
+             empty.value = '';
+             empty.textContent = 'Sin vendedores activos';
+             sel.appendChild(empty);
+          }
+
+          if (sugerido) sel.value = sugerido;
+          if (!sel.value && sel.options.length) sel.selectedIndex = 0;
+
+          if (typeof onDone === 'function') onDone(sel.value || '');
+       }).withFailureHandler(function () {
+          if (sugerido) sel.value = sugerido;
+          if (typeof onDone === 'function') onDone(sel.value || sugerido || '');
+       }).obtenerListaVendedores();
+    }
     function abrirModalVenta() {
        var raw = HOJA_ACTUAL || (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) || 'Adrian';
        var vendedorNombre = esVendedorValido(raw) ? raw : 'Adrian';
@@ -485,47 +541,49 @@
     }
     function abrirModal(modo, datos, id, vendedorNombre) {
        document.getElementById('formVenta').reset(); document.getElementById('filaIndex').value = '';
-       var vendedorFinal = vendedorParaGuardar(vendedorNombre || HOJA_ACTUAL || (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja), document.getElementById('selVendedor'));
-       document.getElementById('selVendedor').value = vendedorFinal;
+       var vendedorBase = vendedorNombre || HOJA_ACTUAL || (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja);
+       var vendedorSugerido = esVendedorValido(vendedorBase) ? vendedorBase : '';
        var grupoVendedor = document.getElementById('grupoVendedor');
        if (grupoVendedor) {
           var r = (USUARIO_ACTUAL && USUARIO_ACTUAL.rol || '').toString().toUpperCase();
           grupoVendedor.style.display = (r === 'ADMIN' || r === 'ROOT') ? 'block' : 'none';
        }
        let title = document.getElementById('modalTitle'); let btn = document.getElementById('btnGuardar');
- 
-       // Determinar qué vendedor usar para cargar clientes
-       let vendedorParaClientes = '';
-       if (USUARIO_ACTUAL) {
-          if (USUARIO_ACTUAL.rol === 'VENDEDOR') {
-             vendedorParaClientes = USUARIO_ACTUAL.hoja;
-          } else if (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT') {
-             vendedorParaClientes = vendedorFinal;
+
+       poblarSelectVendedoresVenta(vendedorSugerido, modo === 'editar', function (vendedorFinal) {
+          // Determinar qué vendedor usar para cargar clientes
+          let vendedorParaClientes = '';
+          if (USUARIO_ACTUAL) {
+             if (USUARIO_ACTUAL.rol === 'VENDEDOR') {
+                vendedorParaClientes = USUARIO_ACTUAL.hoja;
+             } else if (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT') {
+                vendedorParaClientes = vendedorFinal;
+             }
           }
-       }
- 
-       if (modo === 'editar') {
-          title.innerText = "EDITAR"; btn.innerText = "ACTUALIZAR"; document.getElementById('filaIndex').value = id;
-          let f = datos[0].split('/'); document.getElementById('fechaInput').value = `${f[2]}-${f[1]}-${f[0]}`;
-          document.getElementById('estadoInput').value = datos[1]; document.getElementById('paisInput').value = datos[3];
-          document.getElementById('clienteInput').value = datos[4]; document.getElementById('conceptoInput').value = datos[5];
-          document.getElementById('pagoInput').value = datos[6]; document.getElementById('cantInput').value = datos[7];
-          let precioRaw = datos[8].toString().replace(/[$.]/g, '').replace(',', '.');
-          document.getElementById('precioInput').value = formatNumberAr(precioRaw).replace('ARS', '').trim();
-          if (datos[11]) document.getElementById('obsInput').value = datos[11];
-          calcularTotal();
-          if (vendedorParaClientes) {
-             setTimeout(() => actualizarSelectorClientes(vendedorParaClientes), 100);
+
+          if (modo === 'editar') {
+             title.innerText = "EDITAR"; btn.innerText = "ACTUALIZAR"; document.getElementById('filaIndex').value = id;
+             let f = datos[0].split('/'); document.getElementById('fechaInput').value = `${f[2]}-${f[1]}-${f[0]}`;
+             document.getElementById('estadoInput').value = datos[1]; document.getElementById('paisInput').value = datos[3];
+             document.getElementById('clienteInput').value = datos[4]; document.getElementById('conceptoInput').value = datos[5];
+             document.getElementById('pagoInput').value = datos[6]; document.getElementById('cantInput').value = datos[7];
+             let precioRaw = datos[8].toString().replace(/[$.]/g, '').replace(',', '.');
+             document.getElementById('precioInput').value = formatNumberAr(precioRaw).replace('ARS', '').trim();
+             if (datos[11]) document.getElementById('obsInput').value = datos[11];
+             calcularTotal();
+             if (vendedorParaClientes) {
+                setTimeout(() => actualizarSelectorClientes(vendedorParaClientes), 100);
+             }
+          } else {
+             title.innerText = "AGREGAR VENTA";
+             btn.innerText = "GUARDAR";
+             if (typeof getFechaHoyISO === 'function') document.getElementById('fechaInput').value = getFechaHoyISO();
+             if (vendedorParaClientes) {
+                setTimeout(() => actualizarSelectorClientes(vendedorParaClientes), 100);
+             }
           }
-       } else {
-          title.innerText = "AGREGAR VENTA";
-          btn.innerText = "GUARDAR";
-          if (typeof getFechaHoyISO === 'function') document.getElementById('fechaInput').value = getFechaHoyISO();
-          if (vendedorParaClientes) {
-             setTimeout(() => actualizarSelectorClientes(vendedorParaClientes), 100);
-          }
-       }
-       document.getElementById('modalVenta').classList.add('open');
+          document.getElementById('modalVenta').classList.add('open');
+       });
     }
 
     function enviarVenta(e) {
