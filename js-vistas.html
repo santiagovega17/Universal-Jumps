@@ -782,17 +782,39 @@
        let form = document.getElementById('formCliente');
        let btn = document.getElementById('btnGuardarCliente');
 
-       // Validación: nombre, apellido y opcionalmente correo con formato
+       // Validación: todos los campos obligatorios
        if (typeof validarCampos === 'function') {
           var reglasCliente = [
              { id: 'clienteNombre', nombre: 'Nombre', requerido: true, mensaje: 'El nombre es obligatorio.' },
-             { id: 'clienteApellido', nombre: 'Apellido', requerido: true, mensaje: 'El apellido es obligatorio.' }
+             { id: 'clienteApellido', nombre: 'Apellido', requerido: true, mensaje: 'El apellido es obligatorio.' },
+             { id: 'clienteDni', nombre: 'DNI', requerido: true, mensaje: 'El DNI es obligatorio.' },
+             { id: 'clienteTelefono', nombre: 'Teléfono', requerido: true, mensaje: 'El teléfono es obligatorio.' },
+             { id: 'clienteCorreo', nombre: 'Correo', requerido: true, pattern: '^[^@]+@[^@]+\\.[^@]+$', mensaje: 'El correo es obligatorio y debe tener un formato válido.' },
+             { id: 'clienteDomicilio', nombre: 'Domicilio', requerido: true, mensaje: 'El domicilio es obligatorio.' },
+             { id: 'clienteProvincia', nombre: 'Provincia', requerido: true, mensaje: 'La provincia es obligatoria.' },
+             { id: 'clientePais', nombre: 'País', requerido: true, mensaje: 'El país es obligatorio.' }
           ];
-          var correoVal = document.getElementById('clienteCorreo') ? document.getElementById('clienteCorreo').value.trim() : '';
-          if (correoVal) reglasCliente.push({ id: 'clienteCorreo', nombre: 'Correo', pattern: '^[^@]+@[^@]+\\.[^@]+$', mensaje: 'El correo no tiene un formato válido.' });
           var err = validarCampos(reglasCliente);
           if (err) {
              mostrarAlerta(err);
+             return;
+          }
+       } else {
+          // Fallback mínimo si validarCampos no existe
+          var nombre = (document.getElementById('clienteNombre')?.value || '').trim();
+          var apellido = (document.getElementById('clienteApellido')?.value || '').trim();
+          var dni = (document.getElementById('clienteDni')?.value || '').trim();
+          var tel = (document.getElementById('clienteTelefono')?.value || '').trim();
+          var correo = (document.getElementById('clienteCorreo')?.value || '').trim();
+          var dom = (document.getElementById('clienteDomicilio')?.value || '').trim();
+          var prov = (document.getElementById('clienteProvincia')?.value || '').trim();
+          var pais = (document.getElementById('clientePais')?.value || '').trim();
+          if (!nombre || !apellido || !dni || !tel || !correo || !dom || !prov || !pais) {
+             mostrarAlerta('Completa todos los campos del cliente.');
+             return;
+          }
+          if (!/^[^@]+@[^@]+\.[^@]+$/.test(correo)) {
+             mostrarAlerta('El correo no tiene un formato válido.');
              return;
           }
        }
