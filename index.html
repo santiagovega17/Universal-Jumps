@@ -227,7 +227,7 @@
                </div>
                <div class="form-group form-group-venta-sm" style="flex:2;">
                   <label class="form-label form-label-venta-sm" for="clienteComboText">Cliente</label>
-                  <div style="display: flex; gap: 6px; align-items: flex-start;">
+                  <div class="cliente-combobox-row">
                      <div class="cliente-combobox" style="position: relative; flex: 1; min-width: 0;">
                         <input type="text" class="form-input form-input-venta-sm cliente-combobox-input" id="clienteComboText"
                            placeholder="Escribí para buscar cliente..." autocomplete="off" disabled
@@ -235,9 +235,9 @@
                         <input type="hidden" name="cliente" id="clienteInput" value="">
                         <div id="clienteComboPanel" class="cliente-combobox-panel" role="listbox" hidden></div>
                      </div>
-                     <button type="button" class="btn-submit btn-submit-venta-sm" onclick="abrirModalClienteDesdeVenta()"
-                        style="padding: 6px; font-size: 16px; flex-shrink: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+                     <button type="button" class="btn-submit btn-submit-venta-sm cliente-combobox-add-btn" onclick="abrirModalClienteDesdeVenta()"
+                        title="Nuevo cliente">
+                        <span class="material-symbols-outlined cliente-combobox-add-icon">add</span>
                      </button>
                   </div>
                </div>

@@ -645,22 +645,34 @@
        return nombreCompleto;
     }
 
+    function ordenarClientesVentaAlfabeticamente(lista) {
+       if (!lista || !lista.length) return [];
+       return lista.slice().sort(function (a, b) {
+          return nombreCompletoClienteVenta(a).localeCompare(nombreCompletoClienteVenta(b), 'es', { sensitivity: 'base' });
+       });
+    }
+
     function filtrarClientesVentaPorTexto(lista, q) {
        if (!lista || !lista.length) return [];
        q = (q || '').trim().toLowerCase();
-       if (!q) return lista.slice();
-       var qTel = q.replace(/\s/g, '');
-       var normalize = function (s) {
-          return (s || '').toString().toLowerCase();
-       };
-       return lista.filter(function (c) {
-          var nc = normalize(nombreCompletoClienteVenta(c));
-          if (nc.indexOf(q) !== -1) return true;
-          if (normalize(c.dni).indexOf(q) !== -1) return true;
-          if (qTel && normalize(c.telefono).replace(/\s/g, '').indexOf(qTel) !== -1) return true;
-          if (normalize(c.correo).indexOf(q) !== -1) return true;
-          return false;
-       });
+       var out;
+       if (!q) {
+          out = lista.slice();
+       } else {
+          var qTel = q.replace(/\s/g, '');
+          var normalize = function (s) {
+             return (s || '').toString().toLowerCase();
+          };
+          out = lista.filter(function (c) {
+             var nc = normalize(nombreCompletoClienteVenta(c));
+             if (nc.indexOf(q) !== -1) return true;
+             if (normalize(c.dni).indexOf(q) !== -1) return true;
+             if (qTel && normalize(c.telefono).replace(/\s/g, '').indexOf(qTel) !== -1) return true;
+             if (normalize(c.correo).indexOf(q) !== -1) return true;
+             return false;
+          });
+       }
+       return ordenarClientesVentaAlfabeticamente(out);
     }
 
     function setClienteVentaCombo(nombreCompleto) {
@@ -1156,7 +1168,7 @@
              return;
           }
  
-          var data = (res.data && res.data.length > 0) ? res.data : [];
+          var data = (res.data && res.data.length > 0) ? ordenarClientesVentaAlfabeticamente(res.data) : [];
           CLIENTES_LISTA_VENTA_CACHE = data;
  
           if (!data.length) {
