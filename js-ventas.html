@@ -5,7 +5,9 @@
     // --- VENTAS Y VENDEDOR ---
 
     var TAMANO_PAGINA_VENTAS = 25;
-    var VENTAS_HISTORIAL_VISIBLE = 25;
+    /** Filas del historial mostradas; se amplía de a CARGA_HISTORIAL_VENTAS con "Ver más". */
+    var VENTAS_HISTORIAL_LIMITE_MOSTRAR = 10;
+    var CARGA_HISTORIAL_VENTAS = 10;
     var VENTAS_HISTORIAL_VENDEDOR = '';
 
     /** Respaldo si el backend no responde o la tabla está vacía */
@@ -138,7 +140,11 @@
           .obtenerFormasPagoVenta();
     }
 
-    function aplicarFiltrosHistorial(sellerName) {
+    function aplicarFiltrosHistorial(sellerName, opts) {
+       opts = opts || {};
+       if (!opts.preserveLimite) {
+          VENTAS_HISTORIAL_LIMITE_MOSTRAR = CARGA_HISTORIAL_VENTAS;
+       }
        VENTAS_HISTORIAL_VENDEDOR = sellerName || VENTAS_HISTORIAL_VENDEDOR;
        var nombreVendedor = sellerName || VENTAS_HISTORIAL_VENDEDOR;
 
@@ -159,12 +165,25 @@
           let matchPago = (pago === "" || row[6].toUpperCase().includes(pago));
           return matchMes && matchAnio && matchEstado && matchPais && matchConcepto && matchPago;
        });
-       var html = construirTablaHistorialAcciones(filtrados, nombreVendedor);
+       filtrados.sort(function (a, b) {
+          return parseFecha(b[0]) - parseFecha(a[0]);
+       });
+       var visibles = filtrados.slice(0, VENTAS_HISTORIAL_LIMITE_MOSTRAR);
+       var html = construirTablaHistorialAcciones(visibles, nombreVendedor);
+       var restantes = filtrados.length - visibles.length;
+       if (restantes > 0) {
+          html += '<div class="ventas-historial-ver-mas-wrap"><button type="button" class="btn-submit ventas-historial-ver-mas" onclick="cargarMasHistorialVentas()">Ver más <span class="ventas-historial-ver-mas-meta">(' + restantes + ' más)</span></button></div>';
+       }
        var cont = document.getElementById('contenedorHistorial');
        if (cont) {
           cont.innerHTML = html;
           bindVentasHistorialMiniLogos(cont);
        }
+    }
+
+    function cargarMasHistorialVentas() {
+       VENTAS_HISTORIAL_LIMITE_MOSTRAR += CARGA_HISTORIAL_VENTAS;
+       aplicarFiltrosHistorial(VENTAS_HISTORIAL_VENDEDOR, { preserveLimite: true });
     }
  
 
@@ -526,8 +545,7 @@
 
     function historialTh(label, extraClass) {
        var cls = 'ventas-historial-th' + (extraClass ? ' ' + extraClass : '');
-       return '<th class="' + cls + '"><span class="ventas-historial-th-inner">' + label +
-          '<span class="material-symbols-outlined ventas-historial-th-sort" aria-hidden="true">swap_vert</span></span></th>';
+       return '<th class="' + cls + '"><span class="ventas-historial-th-inner">' + label + '</span></th>';
     }
 
     function historialEstadoBadgeHtml(estadoRaw) {
@@ -546,18 +564,7 @@
 
     function historialPaisCellHtml(paisRaw) {
        var p = (paisRaw || '').toString();
-       var u = p.toUpperCase();
-       var emoji = '🏳️';
-       if (u.indexOf('ARGENTINA') >= 0) emoji = '🇦🇷';
-       else if (u.indexOf('CHILE') >= 0) emoji = '🇨🇱';
-       else if (u.indexOf('MEXICO') >= 0 || u.indexOf('MÉXICO') >= 0) emoji = '🇲🇽';
-       else if (u.indexOf('ESPAÑA') >= 0 || u.indexOf('ESPANA') >= 0) emoji = '🇪🇸';
-       else if (u.indexOf('BRASIL') >= 0) emoji = '🇧🇷';
-       else if (u.indexOf('URUGUAY') >= 0) emoji = '🇺🇾';
-       else if (u.indexOf('EEUU') >= 0 || u.indexOf('USA') >= 0 || u.indexOf('ESTADOS') >= 0) emoji = '🇺🇸';
-       else if (u.indexOf('RDM') >= 0) emoji = '🌐';
-       return '<span class="ventas-historial-pais"><span class="ventas-historial-pais-flag" aria-hidden="true">' + emoji +
-          '</span><span class="ventas-historial-pais-txt">' + escapeHtmlText(p) + '</span></span>';
+       return '<span class="ventas-historial-pais-solo">' + escapeHtmlText(p) + '</span>';
     }
 
     function historialFormaPagoCellHtml(nombrePago) {
@@ -620,7 +627,7 @@
        html += historialTh('PRECIO', 'col-sm ventas-h-col-num');
        html += historialTh('TOTAL', 'col-sm ventas-h-col-num');
        html += historialTh('TOTAL (SIN IVA)', 'col-sm ventas-h-col-num');
-       html += historialTh('OBSERVACIONES', 'col-lg ventas-h-col-obs text-left');
+       html += historialTh('OBSERVACIONES', 'col-lg ventas-h-col-obs');
        if (puedeEditar) html += historialTh('ACC', 'col-min ventas-h-col-acc');
        html += '</tr></thead><tbody>';
  
@@ -652,12 +659,12 @@
                  <td class="ventas-h-col-num">${formatNumberAr(precio)}</td>
                  <td class="ventas-h-col-num">${formatNumberAr(total)}</td>
                  <td class="ventas-h-col-num">${formatNumberAr(totalSinIva)}</td>
-                 <td class="ventas-h-col-obs text-left"><span class="ventas-historial-obs-ellipsis" title="${obsTitle}">${obsEsc}</span></td>`;
+                 <td class="ventas-h-col-obs"><span class="ventas-historial-obs-ellipsis" title="${obsTitle}">${obsEsc}</span></td>`;
  
           if (puedeEditar) {
              html += `<td class="ventas-h-col-acc">
                      <div class="ventas-historial-acc-row">
-                     <button type="button" class="ventas-historial-link-detalles" onclick="clickEditar(${args})">Ver detalles<span class="material-symbols-outlined ventas-historial-ic-link">open_in_new</span></button>
+                     <button type="button" class="action-btn btn-edit ventas-historial-btn-edit" title="Editar" aria-label="Editar" onclick="clickEditar(${args})"><span class="material-symbols-outlined">edit</span></button>
                      <button type="button" class="ventas-historial-btn-icon-del" title="Eliminar" aria-label="Eliminar" onclick="clickBorrar('${idEsc}', '${nombreVendedorEsc}')"><span class="material-symbols-outlined">delete</span></button>
                      </div>
                  </td>`;

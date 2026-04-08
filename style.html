@@ -1234,24 +1234,12 @@
        justify-content: center;
        gap: 4px;
     }
-    .ventas-historial-table thead th.ventas-historial-th.text-left {
-       text-align: left;
-    }
-    .ventas-historial-table thead th.ventas-historial-th.text-left .ventas-historial-th-inner {
-       justify-content: flex-start;
-       width: 100%;
-    }
-    .ventas-historial-th-sort {
-       font-size: 14px !important;
-       font-weight: 400 !important;
-       opacity: 0.4;
-       margin-left: 2px;
-    }
     .ventas-historial-table tbody td {
        padding: 8px 8px !important;
        vertical-align: middle !important;
        border-bottom: 1px solid #1e293b;
        font-size: 12px;
+       text-align: left !important;
     }
     .ventas-historial-table tbody tr:nth-child(odd) td {
        background: #0f172a !important;
@@ -1268,15 +1256,15 @@
        font-variant-numeric: tabular-nums;
     }
     .ventas-h-col-num {
-       text-align: right !important;
+       text-align: left !important;
        font-variant-numeric: tabular-nums;
        color: #e2e8f0;
     }
     .ventas-h-col-estado {
-       text-align: center !important;
+       text-align: left !important;
     }
     .ventas-historial-col-check {
-       text-align: center !important;
+       text-align: left !important;
     }
     .ventas-historial-check {
        width: 16px;
@@ -1334,25 +1322,7 @@
        color: #94a3b8;
        border: 1px solid #475569;
     }
-    .ventas-historial-pais {
-       display: inline-flex;
-       align-items: center;
-       gap: 6px;
-       justify-content: flex-start;
-    }
-    .ventas-historial-pais-flag {
-       font-size: 16px;
-       line-height: 1;
-       width: 22px;
-       height: 22px;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       border-radius: 50%;
-       background: #334155;
-       flex-shrink: 0;
-    }
-    .ventas-historial-pais-txt {
+    .ventas-historial-pais-solo {
        color: #e2e8f0;
        text-align: left;
     }
@@ -1429,31 +1399,30 @@
     .ventas-historial-acc-row {
        display: flex;
        align-items: center;
-       gap: 8px;
-       justify-content: flex-end;
+       gap: 6px;
+       justify-content: flex-start;
        flex-wrap: nowrap;
     }
-    .ventas-historial-link-detalles {
-       display: inline-flex;
-       align-items: center;
-       gap: 4px;
-       background: none;
-       border: none;
-       padding: 0;
-       font: inherit;
-       font-size: 11px;
-       font-weight: 600;
-       color: #38bdf8;
-       cursor: pointer;
-       white-space: nowrap;
+    .ventas-historial-btn-edit.action-btn {
+       padding: 6px 8px;
+       min-width: 0;
     }
-    .ventas-historial-link-detalles:hover {
-       color: #7dd3fc;
-       text-decoration: underline;
+    .ventas-historial-btn-edit .material-symbols-outlined {
+       font-size: 18px;
     }
-    .ventas-historial-ic-link {
-       font-size: 14px !important;
-       font-weight: 400 !important;
+    .ventas-historial-ver-mas-wrap {
+       display: flex;
+       justify-content: center;
+       padding: 16px 12px 8px;
+    }
+    .ventas-historial-ver-mas {
+       width: auto;
+       padding: 8px 20px;
+       font-size: 13px;
+    }
+    .ventas-historial-ver-mas-meta {
+       font-weight: 500;
+       opacity: 0.9;
     }
     .ventas-historial-btn-icon-del {
        display: inline-flex;
