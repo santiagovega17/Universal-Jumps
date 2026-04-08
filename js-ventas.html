@@ -565,7 +565,10 @@
              title.innerText = "EDITAR"; btn.innerText = "ACTUALIZAR"; document.getElementById('filaIndex').value = id;
              let f = datos[0].split('/'); document.getElementById('fechaInput').value = `${f[2]}-${f[1]}-${f[0]}`;
              document.getElementById('estadoInput').value = datos[1]; document.getElementById('paisInput').value = datos[3];
-             document.getElementById('clienteInput').value = datos[4]; document.getElementById('conceptoInput').value = datos[5];
+             document.getElementById('clienteInput').value = datos[4];
+             var clienteCombo = document.getElementById('clienteComboText');
+             if (clienteCombo) clienteCombo.value = datos[4];
+             document.getElementById('conceptoInput').value = datos[5];
              document.getElementById('pagoInput').value = datos[6]; document.getElementById('cantInput').value = datos[7];
              let precioRaw = datos[8].toString().replace(/[$.]/g, '').replace(',', '.');
              document.getElementById('precioInput').value = formatNumberAr(precioRaw).replace('ARS', '').trim();

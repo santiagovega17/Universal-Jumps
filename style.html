@@ -1833,6 +1833,43 @@
        padding: 6px 8px;
        font-size: 12px;
     }
+    #modalVenta .cliente-combobox-input {
+       width: 100%;
+       box-sizing: border-box;
+    }
+    #modalVenta .cliente-combobox-panel {
+       position: absolute;
+       left: 0;
+       right: 0;
+       top: 100%;
+       margin-top: 2px;
+       max-height: 220px;
+       overflow-y: auto;
+       z-index: 50;
+       background: #1e293b;
+       border: 1px solid #334155;
+       border-radius: 8px;
+       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+    #modalVenta .cliente-combobox-option {
+       padding: 8px 10px;
+       font-size: 12px;
+       cursor: pointer;
+       color: #f1f5f9;
+       border-bottom: 1px solid #334155;
+    }
+    #modalVenta .cliente-combobox-option:last-child {
+       border-bottom: none;
+    }
+    #modalVenta .cliente-combobox-option:hover,
+    #modalVenta .cliente-combobox-option.is-active {
+       background: #334155;
+    }
+    #modalVenta .cliente-combobox-msg {
+       padding: 8px 10px;
+       font-size: 12px;
+       color: #94a3b8;
+    }
     #modalVenta .btn-submit-venta-sm {
        width: auto;
        padding: 8px 16px;

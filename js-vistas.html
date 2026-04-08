@@ -633,8 +633,11 @@
     }
  
     let CLIENTES_ACTUALES = [];
-    /** Clientes del país actual en el modal de venta (para el buscador del selector). */
+    /** Clientes del país actual en el modal de venta (autocompletado). */
     let CLIENTES_LISTA_VENTA_CACHE = [];
+    /** Lista filtrada mostrada en el panel (para flechas / Enter). */
+    let CLIENTE_COMBO_FILTRADA_ACTUAL = [];
+    let CLIENTE_COMBO_HIGHLIGHT_INDEX = -1;
 
     function nombreCompletoClienteVenta(cliente) {
        let nombreCompleto = `${cliente.nombre} ${cliente.apellido}`.trim();
@@ -642,56 +645,209 @@
        return nombreCompleto;
     }
 
-    function poblarOpcionesClienteVenta(selectCliente, clientes, valorPreservar) {
-       selectCliente.innerHTML = '<option value="">Selecciona un cliente...</option>';
-       if (!clientes || !clientes.length) return;
-       clientes.forEach(cliente => {
-          let nombreCompleto = nombreCompletoClienteVenta(cliente);
-          let opt = document.createElement('option');
-          opt.value = nombreCompleto;
-          opt.innerText = nombreCompleto;
-          opt.dataset.dni = cliente.dni || '';
-          opt.dataset.telefono = cliente.telefono || '';
-          opt.dataset.correo = cliente.correo || '';
-          selectCliente.appendChild(opt);
+    function filtrarClientesVentaPorTexto(lista, q) {
+       if (!lista || !lista.length) return [];
+       q = (q || '').trim().toLowerCase();
+       if (!q) return lista.slice();
+       var qTel = q.replace(/\s/g, '');
+       var normalize = function (s) {
+          return (s || '').toString().toLowerCase();
+       };
+       return lista.filter(function (c) {
+          var nc = normalize(nombreCompletoClienteVenta(c));
+          if (nc.indexOf(q) !== -1) return true;
+          if (normalize(c.dni).indexOf(q) !== -1) return true;
+          if (qTel && normalize(c.telefono).replace(/\s/g, '').indexOf(qTel) !== -1) return true;
+          if (normalize(c.correo).indexOf(q) !== -1) return true;
+          return false;
        });
-       if (valorPreservar && clientes.some(c => nombreCompletoClienteVenta(c) === valorPreservar)) {
-          selectCliente.value = valorPreservar;
+    }
+
+    function setClienteVentaCombo(nombreCompleto) {
+       var h = document.getElementById('clienteInput');
+       var t = document.getElementById('clienteComboText');
+       nombreCompleto = (nombreCompleto || '').trim();
+       if (h) h.value = nombreCompleto;
+       if (t) t.value = nombreCompleto;
+    }
+
+    function limpiarClienteVentaCombo() {
+       setClienteVentaCombo('');
+    }
+
+    function cerrarPanelClienteCombo() {
+       var panel = document.getElementById('clienteComboPanel');
+       var textEl = document.getElementById('clienteComboText');
+       CLIENTE_COMBO_FILTRADA_ACTUAL = [];
+       CLIENTE_COMBO_HIGHLIGHT_INDEX = -1;
+       if (panel) {
+          panel.innerHTML = '';
+          panel.hidden = true;
+       }
+       if (textEl) textEl.setAttribute('aria-expanded', 'false');
+    }
+
+    function aplicarHighlightClienteCombo() {
+       var panel = document.getElementById('clienteComboPanel');
+       if (!panel || panel.hidden) return;
+       var opts = panel.querySelectorAll('.cliente-combobox-option');
+       opts.forEach(function (el, i) {
+          el.classList.toggle('is-active', i === CLIENTE_COMBO_HIGHLIGHT_INDEX);
+       });
+       if (CLIENTE_COMBO_HIGHLIGHT_INDEX >= 0 && opts[CLIENTE_COMBO_HIGHLIGHT_INDEX]) {
+          opts[CLIENTE_COMBO_HIGHLIGHT_INDEX].scrollIntoView({ block: 'nearest' });
        }
     }
 
-    function aplicarFiltroBuscadorClientesVenta() {
-       let selectCliente = document.getElementById('clienteInput');
-       let buscar = document.getElementById('clienteBuscarInput');
-       if (!selectCliente || selectCliente.tagName !== 'SELECT' || !buscar) return;
-       let lista = CLIENTES_LISTA_VENTA_CACHE;
-       if (!lista.length) return;
-       let q = (buscar.value || '').trim().toLowerCase();
-       let normalize = function (s) {
-          return (s || '').toString().toLowerCase();
-       };
-       let prev = (selectCliente.value || '').trim();
-       let filtrada = lista;
-       if (q) {
-          let qTel = q.replace(/\s/g, '');
-          filtrada = lista.filter(function (c) {
-             let nc = normalize(nombreCompletoClienteVenta(c));
-             if (nc.indexOf(q) !== -1) return true;
-             if (normalize(c.dni).indexOf(q) !== -1) return true;
-             if (qTel && normalize(c.telefono).replace(/\s/g, '').indexOf(qTel) !== -1) return true;
-             if (normalize(c.correo).indexOf(q) !== -1) return true;
-             return false;
-          });
-       }
-       if (q && (!filtrada || filtrada.length === 0)) {
-          selectCliente.innerHTML = '<option value="">Sin resultados</option>';
+    function renderClienteComboPanel(filtrados) {
+       var panel = document.getElementById('clienteComboPanel');
+       var textEl = document.getElementById('clienteComboText');
+       if (!panel) return;
+       panel.innerHTML = '';
+       CLIENTE_COMBO_HIGHLIGHT_INDEX = -1;
+       if (textEl) textEl.setAttribute('aria-expanded', 'true');
+       if (!filtrados || !filtrados.length) {
+          CLIENTE_COMBO_FILTRADA_ACTUAL = [];
+          var msg = document.createElement('div');
+          msg.className = 'cliente-combobox-msg';
+          msg.textContent = 'Sin resultados';
+          panel.appendChild(msg);
+          panel.hidden = false;
           return;
        }
-       let preserve = '';
-       if (prev && filtrada.some(function (c) { return nombreCompletoClienteVenta(c) === prev; })) {
-          preserve = prev;
+       CLIENTE_COMBO_FILTRADA_ACTUAL = filtrados.slice();
+       filtrados.forEach(function (c, idx) {
+          var nc = nombreCompletoClienteVenta(c);
+          var row = document.createElement('div');
+          row.className = 'cliente-combobox-option';
+          row.setAttribute('role', 'option');
+          row.textContent = nc;
+          row.addEventListener('mouseenter', function () {
+             CLIENTE_COMBO_HIGHLIGHT_INDEX = idx;
+             aplicarHighlightClienteCombo();
+          });
+          row.addEventListener('mousedown', function (ev) {
+             ev.preventDefault();
+             seleccionarClienteComboVenta(c);
+          });
+          panel.appendChild(row);
+       });
+       panel.hidden = false;
+    }
+
+    function seleccionarClienteComboVenta(cliente) {
+       setClienteVentaCombo(nombreCompletoClienteVenta(cliente));
+       cerrarPanelClienteCombo();
+    }
+
+    function syncClienteComboDesdeTexto() {
+       var hidden = document.getElementById('clienteInput');
+       var text = document.getElementById('clienteComboText');
+       if (!hidden || !text) return;
+       var t = (text.value || '').trim();
+       if (!t) {
+          hidden.value = '';
+          return;
        }
-       poblarOpcionesClienteVenta(selectCliente, filtrada, preserve);
+       var lower = t.toLowerCase();
+       var lista = CLIENTES_LISTA_VENTA_CACHE;
+       for (var i = 0; i < lista.length; i++) {
+          var nc = nombreCompletoClienteVenta(lista[i]);
+          if (nc.toLowerCase() === lower) {
+             hidden.value = nc;
+             text.value = nc;
+             return;
+          }
+       }
+       hidden.value = '';
+    }
+
+    function actualizarPanelClienteComboDesdeInput() {
+       var textEl = document.getElementById('clienteComboText');
+       if (!textEl || textEl.disabled) return;
+       var q = textEl.value || '';
+       var filtrados = filtrarClientesVentaPorTexto(CLIENTES_LISTA_VENTA_CACHE, q);
+       renderClienteComboPanel(filtrados);
+    }
+
+    function initClienteComboVenta() {
+       var textEl = document.getElementById('clienteComboText');
+       if (!textEl || textEl.dataset.comboInit) return;
+       textEl.dataset.comboInit = '1';
+
+       textEl.addEventListener('input', function () {
+          syncClienteComboDesdeTexto();
+          actualizarPanelClienteComboDesdeInput();
+       });
+       textEl.addEventListener('focus', function () {
+          if (textEl.disabled || !CLIENTES_LISTA_VENTA_CACHE.length) return;
+          actualizarPanelClienteComboDesdeInput();
+       });
+       textEl.addEventListener('blur', function () {
+          setTimeout(function () {
+             cerrarPanelClienteCombo();
+             syncClienteComboDesdeTexto();
+          }, 200);
+       });
+       textEl.addEventListener('keydown', function (ev) {
+          var panel = document.getElementById('clienteComboPanel');
+          var panelAbierto = panel && !panel.hidden && CLIENTE_COMBO_FILTRADA_ACTUAL.length > 0;
+
+          if (ev.key === 'Escape') {
+             cerrarPanelClienteCombo();
+             ev.preventDefault();
+             return;
+          }
+
+          if (ev.key === 'ArrowDown') {
+             if (textEl.disabled || !CLIENTES_LISTA_VENTA_CACHE.length) return;
+             ev.preventDefault();
+             if (!panelAbierto) {
+                actualizarPanelClienteComboDesdeInput();
+                if (!CLIENTE_COMBO_FILTRADA_ACTUAL.length) return;
+                CLIENTE_COMBO_HIGHLIGHT_INDEX = 0;
+             } else if (CLIENTE_COMBO_HIGHLIGHT_INDEX < 0) {
+                CLIENTE_COMBO_HIGHLIGHT_INDEX = 0;
+             } else {
+                CLIENTE_COMBO_HIGHLIGHT_INDEX = Math.min(
+                   CLIENTE_COMBO_HIGHLIGHT_INDEX + 1,
+                   CLIENTE_COMBO_FILTRADA_ACTUAL.length - 1
+                );
+             }
+             aplicarHighlightClienteCombo();
+             return;
+          }
+
+          if (ev.key === 'ArrowUp') {
+             if (!panelAbierto) return;
+             ev.preventDefault();
+             if (CLIENTE_COMBO_HIGHLIGHT_INDEX <= 0) {
+                CLIENTE_COMBO_HIGHLIGHT_INDEX = -1;
+                aplicarHighlightClienteCombo();
+                return;
+             }
+             CLIENTE_COMBO_HIGHLIGHT_INDEX -= 1;
+             aplicarHighlightClienteCombo();
+             return;
+          }
+
+          if (ev.key === 'Enter') {
+             if (
+                panelAbierto &&
+                CLIENTE_COMBO_HIGHLIGHT_INDEX >= 0 &&
+                CLIENTE_COMBO_FILTRADA_ACTUAL[CLIENTE_COMBO_HIGHLIGHT_INDEX]
+             ) {
+                ev.preventDefault();
+                seleccionarClienteComboVenta(CLIENTE_COMBO_FILTRADA_ACTUAL[CLIENTE_COMBO_HIGHLIGHT_INDEX]);
+             }
+          }
+       });
+       document.addEventListener('mousedown', function onDocMouseClienteCombo(e) {
+          if (e.target && e.target.closest && e.target.closest('.cliente-combobox')) return;
+          if (!document.getElementById('clienteComboPanel') || document.getElementById('clienteComboPanel').hidden) return;
+          cerrarPanelClienteCombo();
+          syncClienteComboDesdeTexto();
+       });
     }
  
     function abrirModalCliente(modo, index) {
@@ -822,10 +978,7 @@
        // Restaurar cliente después de que se actualice el selector
        if (DATOS_FORMULARIO_VENTA.cliente) {
           setTimeout(() => {
-             let clienteInput = document.getElementById('clienteInput');
-             if (clienteInput) {
-                clienteInput.value = DATOS_FORMULARIO_VENTA.cliente;
-             }
+             setClienteVentaCombo(DATOS_FORMULARIO_VENTA.cliente);
           }, 600);
        }
  
@@ -923,13 +1076,10 @@
                    restaurarDatosFormularioVenta();
  
                    // Seleccionar el cliente recién creado
-                   let clienteSelect = document.getElementById('clienteInput');
                    let paisSelect = document.getElementById('paisInput');
-                   if (clienteSelect && paisSelect && paisSelect.value) {
+                   if (paisSelect && paisSelect.value) {
                       let nombreCompleto = `${datos.nombre} ${datos.apellido}`.trim();
-                      if (clienteSelect.querySelector(`option[value="${nombreCompleto}"]`)) {
-                         clienteSelect.value = nombreCompleto;
-                      }
+                      setClienteVentaCombo(nombreCompleto);
                    }
  
                    // Abrir el modal de venta
@@ -966,70 +1116,68 @@
        });
     }
  
-    // NUEVA FUNCIÓN: Actualizar selector de clientes en formulario de venta
+    // NUEVA FUNCIÓN: Actualizar selector de clientes en formulario de venta (combobox)
     function actualizarSelectorClientes(vendedor) {
-       let selectCliente = document.getElementById('clienteInput');
-       let paisSelect = document.getElementById('paisInput');
-       let buscar = document.getElementById('clienteBuscarInput');
+       var clienteHidden = document.getElementById('clienteInput');
+       var comboText = document.getElementById('clienteComboText');
+       var paisSelect = document.getElementById('paisInput');
  
-       if (!selectCliente) {
-          console.error('No se encontró el elemento clienteInput');
-          return;
-       }
-       if (selectCliente.tagName !== 'SELECT') {
-          console.error('clienteInput no es un elemento SELECT');
+       if (!clienteHidden || !comboText) {
+          console.error('No se encontró clienteInput / clienteComboText');
           return;
        }
  
-       let paisSeleccionado = paisSelect ? paisSelect.value : '';
+       var paisSeleccionado = paisSelect ? paisSelect.value : '';
+       var valorPreservar = ((clienteHidden.value || '').trim() || (comboText.value || '').trim());
  
        CLIENTES_LISTA_VENTA_CACHE = [];
-       if (buscar) {
-          buscar.value = '';
-          buscar.disabled = true;
-       }
+       cerrarPanelClienteCombo();
  
        if (!paisSeleccionado || paisSeleccionado === '') {
-          selectCliente.innerHTML = '<option value="">Selecciona un país primero...</option>';
-          selectCliente.disabled = true;
+          limpiarClienteVentaCombo();
+          comboText.disabled = true;
+          comboText.placeholder = 'Seleccioná un país primero...';
           return;
        }
  
-       selectCliente.innerHTML = '<option value="">Cargando clientes...</option>';
-       selectCliente.disabled = true;
+       comboText.disabled = true;
+       comboText.placeholder = 'Cargando clientes...';
+       limpiarClienteVentaCombo();
  
        google.script.run.withSuccessHandler(res => {
-          selectCliente.disabled = false;
-          if (buscar) buscar.disabled = false;
+          comboText.disabled = false;
+          comboText.placeholder = 'Escribí para buscar cliente...';
           if (res.error) {
-             selectCliente.innerHTML = '<option value="">Error al cargar clientes</option>';
              CLIENTES_LISTA_VENTA_CACHE = [];
-             if (buscar) {
-                buscar.disabled = true;
-                buscar.value = '';
-             }
+             limpiarClienteVentaCombo();
+             comboText.disabled = true;
+             comboText.placeholder = 'Error al cargar clientes';
              console.error('Error al obtener clientes:', res.mensaje);
              return;
           }
  
-          let data = (res.data && res.data.length > 0) ? res.data : [];
+          var data = (res.data && res.data.length > 0) ? res.data : [];
           CLIENTES_LISTA_VENTA_CACHE = data;
  
           if (!data.length) {
-             selectCliente.innerHTML = '<option value="">No hay clientes agregados en ese país</option>';
-             if (buscar) buscar.disabled = true;
+             limpiarClienteVentaCombo();
+             comboText.disabled = true;
+             comboText.placeholder = 'No hay clientes en ese país';
              return;
           }
  
-          poblarOpcionesClienteVenta(selectCliente, data, '');
-       }).withFailureHandler(err => {
-          selectCliente.disabled = false;
-          CLIENTES_LISTA_VENTA_CACHE = [];
-          if (buscar) {
-             buscar.disabled = true;
-             buscar.value = '';
+          if (valorPreservar && data.some(function (c) {
+             return nombreCompletoClienteVenta(c) === valorPreservar;
+          })) {
+             setClienteVentaCombo(valorPreservar);
+          } else {
+             limpiarClienteVentaCombo();
           }
-          selectCliente.innerHTML = '<option value="">Error al cargar clientes</option>';
+       }).withFailureHandler(err => {
+          CLIENTES_LISTA_VENTA_CACHE = [];
+          limpiarClienteVentaCombo();
+          comboText.disabled = true;
+          comboText.placeholder = 'Error al cargar clientes';
           console.error('Error al obtener clientes:', err);
        }).obtenerClientesVendedor(vendedor, paisSeleccionado);
     }
@@ -1646,5 +1794,7 @@
           alert("Error: " + err);
        });
     }
+
+    initClienteComboVenta();
  
 </script>

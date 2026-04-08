@@ -226,14 +226,15 @@
                   </select>
                </div>
                <div class="form-group form-group-venta-sm" style="flex:2;">
-                  <label class="form-label form-label-venta-sm">Cliente</label>
-                  <input type="search" class="form-input form-input-venta-sm" id="clienteBuscarInput"
-                     placeholder="Buscar por nombre, DNI, teléfono o correo..." autocomplete="off" disabled
-                     style="width: 100%; margin-bottom: 6px; box-sizing: border-box;">
-                  <div style="display: flex; gap: 6px; align-items: flex-end;">
-                     <select class="form-input form-input-venta-sm" name="cliente" id="clienteInput" required style="flex: 1;">
-                        <option value="">Cargando...</option>
-                     </select>
+                  <label class="form-label form-label-venta-sm" for="clienteComboText">Cliente</label>
+                  <div style="display: flex; gap: 6px; align-items: flex-start;">
+                     <div class="cliente-combobox" style="position: relative; flex: 1; min-width: 0;">
+                        <input type="text" class="form-input form-input-venta-sm cliente-combobox-input" id="clienteComboText"
+                           placeholder="Escribí para buscar cliente..." autocomplete="off" disabled
+                           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="clienteComboPanel">
+                        <input type="hidden" name="cliente" id="clienteInput" value="">
+                        <div id="clienteComboPanel" class="cliente-combobox-panel" role="listbox" hidden></div>
+                     </div>
                      <button type="button" class="btn-submit btn-submit-venta-sm" onclick="abrirModalClienteDesdeVenta()"
                         style="padding: 6px; font-size: 16px; flex-shrink: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
                         <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
