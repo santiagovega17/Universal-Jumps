@@ -911,7 +911,7 @@
     function renderConfiguracionVentas() {
        var back = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>';
        var titulo = '<div class="dash-section-title">CONFIGURACIÓN</div>';
-       document.getElementById('app').innerHTML = back + titulo + '<div id="config-formas-pago-body" class="formas-pago-config-body">Cargando...</div>';
+       document.getElementById('app').innerHTML = back + titulo + '<div id="config-formas-pago-body" class="formas-pago-config-body"><div class="formas-pago-config-loading"><span>Cargando...</span></div></div>';
 
        google.script.run
           .withSuccessHandler(function (res) {
@@ -953,7 +953,7 @@
              bindFormaPagoLogoImgFallbacks(wrap);
           })
           .withFailureHandler(function () {
-             document.getElementById('config-formas-pago-body').innerHTML = '<p style="color:#ef4444;">No se pudieron cargar los medios de pago. Revisá la conexión o la migración de base de datos.</p>';
+             document.getElementById('config-formas-pago-body').innerHTML = '<div class="formas-pago-config-loading formas-pago-config-loading--error"><p>No se pudieron cargar los medios de pago. Revisá la conexión o la migración de base de datos.</p></div>';
           })
           .obtenerFormasPagoVenta();
     }
