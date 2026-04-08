@@ -102,8 +102,15 @@
 
     function aplicarOpcionesFormasPagoVenta(selectEl, nombres, valorPreferido) {
        if (!selectEl) return;
+       var esFiltroHistorialPago = selectEl.id === 'fPago';
        var vprev = valorPreferido !== undefined && valorPreferido !== null ? String(valorPreferido).trim() : String(selectEl.value || '').trim();
        selectEl.innerHTML = '';
+       if (esFiltroHistorialPago) {
+          var optTodos = document.createElement('option');
+          optTodos.value = '';
+          optTodos.textContent = 'Pago...';
+          selectEl.appendChild(optTodos);
+       }
        nombres.forEach(function (nombre) {
           var opt = document.createElement('option');
           opt.value = nombre;
@@ -117,7 +124,9 @@
           selectEl.appendChild(o);
           return;
        }
-       if (vprev && Array.prototype.some.call(selectEl.options, function (o) { return o.value === vprev; })) {
+       if (esFiltroHistorialPago && (!vprev || vprev === '')) {
+          selectEl.value = '';
+       } else if (vprev && Array.prototype.some.call(selectEl.options, function (o) { return o.value === vprev; })) {
           selectEl.value = vprev;
        }
     }
