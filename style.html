@@ -1964,34 +1964,47 @@
        border-color: #475569;
        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
     }
-    .formas-pago-card-icon {
-       width: 56px;
-       height: 56px;
-       border-radius: 12px;
-       background: linear-gradient(145deg, #334155, #1e293b);
+    .formas-pago-card-logo {
+       width: 100%;
+       max-width: 200px;
+       min-height: 44px;
+       margin-bottom: 16px;
        display: flex;
        align-items: center;
        justify-content: center;
+    }
+    .formas-pago-card-logo-img {
+       width: auto;
+       max-width: 100%;
+       object-fit: contain;
+       display: block;
+    }
+    .formas-pago-card-logo-img--simpleicons {
+       max-height: 36px;
+       filter: brightness(0) invert(1);
+       opacity: 0.94;
+    }
+    .formas-pago-card-logo-img--brand {
+       max-height: 32px;
+    }
+    .formas-pago-card-logo--icon {
+       width: 56px;
+       height: 56px;
+       max-width: none;
+       border-radius: 12px;
+       background: linear-gradient(145deg, #334155, #1e293b);
        margin-bottom: 14px;
     }
-    .formas-pago-card-icon .material-symbols-outlined {
+    .formas-pago-card-logo--icon .material-symbols-outlined {
        font-size: 30px;
-       color: #38bdf8;
+       color: #e2e8f0;
     }
     .formas-pago-card-title {
        font-size: 16px;
        font-weight: 700;
        color: #f8fafc;
-       margin-bottom: 8px;
+       margin-bottom: 14px;
        line-height: 1.3;
-    }
-    .formas-pago-card-desc {
-       margin: 0 0 16px 0;
-       font-size: 13px;
-       color: #94a3b8;
-       line-height: 1.45;
-       flex: 1;
-       min-height: 2.9em;
     }
     .formas-pago-card-status {
        display: inline-flex;

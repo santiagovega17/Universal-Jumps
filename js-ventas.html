@@ -14,20 +14,27 @@
        'Banco Bci (CL)', 'Dólar App (MX)', 'Banco Sadabell (ESP)', 'Banco Itaú (URU)'
     ];
 
-    /** Icono (Material Symbols), descripción corta y si muestra estado "configuración pendiente" (estética tipo integración). */
+    /**
+     * logoSlug: icono de marca vía Simple Icons (CDN), color claro para fondo oscuro.
+     * icon: Material Symbols si no hay marca en el catálogo.
+     * pendiente: muestra estado "CONFIGURACIÓN PENDIENTE" (integraciones).
+     */
     var METADATA_FORMA_PAGO_VENTA = {
-       'Mercado Pago': { icon: 'payments', desc: 'Pagos en línea con tarjetas y saldo en cuenta.', pendiente: false },
-       'Transferencia': { icon: 'account_balance', desc: 'Datos para cobros por transferencia bancaria.', pendiente: false },
-       'Efectivo': { icon: 'attach_money', desc: 'Cobros en caja física.', pendiente: false },
-       'Cta corriente': { icon: 'request_quote', desc: 'Pagos diferidos para clientes con cuenta corriente.', pendiente: false },
-       'Mercado Libre': { icon: 'shopping_bag', desc: 'Integración con ventas en Mercado Libre.', pendiente: true },
-       'Amazon': { icon: 'shopping_cart', desc: 'Pagos rápidos y seguros vía Amazon.', pendiente: false },
-       'Prisma': { icon: 'credit_card', desc: 'Procesamiento con Prisma.', pendiente: false },
-       'Paypal': { icon: 'currency_exchange', desc: 'Pagos con cuenta PayPal.', pendiente: false },
-       'Banco Bci (CL)': { icon: 'account_balance', desc: 'Transferencias y cobros Banco Bci (Chile).', pendiente: false },
-       'Dólar App (MX)': { icon: 'attach_money', desc: 'Cobros con Dólar App (México).', pendiente: false },
-       'Banco Sadabell (ESP)': { icon: 'account_balance', desc: 'Operaciones Banco Sabadell (España).', pendiente: false },
-       'Banco Itaú (URU)': { icon: 'account_balance', desc: 'Operaciones Banco Itaú (Uruguay).', pendiente: false }
+       'Mercado Pago': { logoSlug: 'mercadopago', pendiente: false },
+       'Transferencia': { icon: 'account_balance', pendiente: false },
+       'Efectivo': { icon: 'payments', pendiente: false },
+       'Cta corriente': { icon: 'credit_card', pendiente: false },
+       'Mercado Libre': {
+          logoUrl: 'https://http2.mlstatic.com/frontend-assets/ml-web-navigation/ui-navigation/6.6.73/mercadolibre/logo__large_plus@2x.png',
+          pendiente: true
+       },
+       'Amazon': { logoSlug: 'amazonpay', pendiente: false },
+       'Prisma': { icon: 'credit_card', pendiente: false },
+       'Paypal': { logoSlug: 'paypal', pendiente: false },
+       'Banco Bci (CL)': { icon: 'account_balance', pendiente: false },
+       'Dólar App (MX)': { icon: 'attach_money', pendiente: false },
+       'Banco Sadabell (ESP)': { icon: 'account_balance', pendiente: false },
+       'Banco Itaú (URU)': { icon: 'account_balance', pendiente: false }
     };
 
     function getFormaPagoCardMeta(nombre) {
@@ -46,7 +53,7 @@
        if (lower.indexOf('dólar app') >= 0 || lower.indexOf('dolar app') >= 0) return METADATA_FORMA_PAGO_VENTA['Dólar App (MX)'];
        if (lower.indexOf('sabadell') >= 0 || lower.indexOf('sadabell') >= 0) return METADATA_FORMA_PAGO_VENTA['Banco Sadabell (ESP)'];
        if (lower.indexOf('itaú') >= 0 || lower.indexOf('itau') >= 0) return METADATA_FORMA_PAGO_VENTA['Banco Itaú (URU)'];
-       return { icon: 'credit_score', desc: 'Medio de pago disponible en el formulario de ventas y reportes.', pendiente: false };
+       return { icon: 'credit_score', pendiente: false };
     }
 
     function nombresFormasPagoDesdeRespuesta(res) {
@@ -844,6 +851,27 @@
           .replace(/>/g, '&gt;');
     }
 
+    /** Versión fijada de Simple Icons (SVG en jsDelivr); filtro CSS las deja claras sobre fondo oscuro. */
+    var SIMPLE_ICONS_SVG_CDN = 'https://cdn.jsdelivr.net/npm/simple-icons@13.16.0/icons/';
+
+    /** Logo: URL propia, SVG Simple Icons, o icono Material. */
+    function formaPagoCardLogoHtml(meta) {
+       var u = meta && meta.logoUrl;
+       if (u) {
+          return '<div class="formas-pago-card-logo" aria-hidden="true">' +
+             '<img class="formas-pago-card-logo-img formas-pago-card-logo-img--brand" src="' + escapeHtmlAttr(u) + '" alt="" loading="lazy" /></div>';
+       }
+       var slug = meta && meta.logoSlug;
+       if (slug) {
+          var url = SIMPLE_ICONS_SVG_CDN + encodeURIComponent(slug) + '.svg';
+          return '<div class="formas-pago-card-logo" aria-hidden="true">' +
+             '<img class="formas-pago-card-logo-img formas-pago-card-logo-img--simpleicons" src="' + escapeHtmlAttr(url) + '" alt="" loading="lazy" /></div>';
+       }
+       var ic = (meta && meta.icon) ? meta.icon : 'credit_score';
+       return '<div class="formas-pago-card-logo formas-pago-card-logo--icon" aria-hidden="true">' +
+          '<span class="material-symbols-outlined">' + ic + '</span></div>';
+    }
+
     function renderConfiguracionVentas() {
        var back = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>';
        var titulo = '<div class="dash-section-title">CONFIGURACIÓN</div>';
@@ -886,9 +914,8 @@
                    ? 'No se puede eliminar: ya hay ventas o caja con este medio.'
                    : (!tieneId ? 'Ejecutá la migración SQL en Supabase para poder eliminar.' : 'Eliminar medio de pago');
                 grid += '<div class="formas-pago-card">' +
-                   '<div class="formas-pago-card-icon"><span class="material-symbols-outlined">' + meta.icon + '</span></div>' +
+                   formaPagoCardLogoHtml(meta) +
                    '<div class="formas-pago-card-title">' + escapeHtmlText(nombre) + '</div>' +
-                   '<p class="formas-pago-card-desc">' + escapeHtmlText(meta.desc) + '</p>' +
                    '<div class="formas-pago-card-status ' + statusClass + '">' +
                    '<span class="formas-pago-card-dot ' + dotClass + '"></span>' + statusText + '</div>' +
                    '<div class="formas-pago-card-actions">' +
