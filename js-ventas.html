@@ -937,6 +937,7 @@
                    ? 'No se puede eliminar: ya hay ventas o caja con este medio.'
                    : (!tieneId ? 'Ejecutá la migración SQL en Supabase para poder eliminar.' : 'Eliminar medio de pago');
                 grid += '<div class="formas-pago-card">' +
+                   '<div class="formas-pago-card-row">' +
                    formaPagoCardLogoHtml(meta, nombre) +
                    '<div class="formas-pago-card-title">' + escapeHtmlText(nombre) + '</div>' +
                    '<div class="formas-pago-card-actions">' +
@@ -944,7 +945,7 @@
                    (delDisabled ? ' disabled aria-disabled="true"' : '') +
                    ' data-id="' + escapeHtmlAttr(id) + '" data-nombre="' + escapeHtmlAttr(nombre) + '"' +
                    ' title="' + escapeHtmlAttr(delTitle) + '" onclick="clickEliminarFormaPagoVenta(this)">' +
-                   '<span class="material-symbols-outlined">delete</span>Eliminar</button></div></div>';
+                   '<span class="material-symbols-outlined">delete</span>Eliminar</button></div></div></div>';
              });
              grid += '</div>';
              var wrap = document.getElementById('config-formas-pago-body');
