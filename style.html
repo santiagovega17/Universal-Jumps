@@ -1208,6 +1208,277 @@
     }
  
     /* TABLAS (SOLO HISTORIAL) */
+    /* Historial de ventas — compacto, zebra, badges (alineado a dashboard oscuro) */
+    table.ventas-historial-table {
+       width: 100%;
+       min-width: 1100px;
+       border-collapse: separate;
+       border-spacing: 0;
+       font-size: 12px;
+    }
+    .ventas-historial-table thead th.ventas-historial-th {
+       background: #1e293b !important;
+       color: #f1f5f9 !important;
+       font-weight: 700;
+       font-size: 10px;
+       letter-spacing: 0.06em;
+       padding: 10px 8px;
+       text-align: center;
+       vertical-align: middle;
+       border-bottom: 1px solid #334155;
+       white-space: nowrap;
+    }
+    .ventas-historial-th-inner {
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+       gap: 4px;
+    }
+    .ventas-historial-table thead th.ventas-historial-th.text-left {
+       text-align: left;
+    }
+    .ventas-historial-table thead th.ventas-historial-th.text-left .ventas-historial-th-inner {
+       justify-content: flex-start;
+       width: 100%;
+    }
+    .ventas-historial-th-sort {
+       font-size: 14px !important;
+       font-weight: 400 !important;
+       opacity: 0.4;
+       margin-left: 2px;
+    }
+    .ventas-historial-table tbody td {
+       padding: 8px 8px !important;
+       vertical-align: middle !important;
+       border-bottom: 1px solid #1e293b;
+       font-size: 12px;
+    }
+    .ventas-historial-table tbody tr:nth-child(odd) td {
+       background: #0f172a !important;
+    }
+    .ventas-historial-table tbody tr:nth-child(even) td {
+       background: #141c2d !important;
+    }
+    .ventas-historial-table tbody tr:hover td {
+       background: #1e293b !important;
+    }
+    .ventas-h-col-fecha {
+       text-align: left !important;
+       color: #cbd5e1;
+       font-variant-numeric: tabular-nums;
+    }
+    .ventas-h-col-num {
+       text-align: right !important;
+       font-variant-numeric: tabular-nums;
+       color: #e2e8f0;
+    }
+    .ventas-h-col-estado {
+       text-align: center !important;
+    }
+    .ventas-historial-col-check {
+       text-align: center !important;
+    }
+    .ventas-historial-check {
+       width: 16px;
+       height: 16px;
+       accent-color: #38bdf8;
+       cursor: pointer;
+    }
+    .ventas-historial-check:disabled {
+       cursor: default;
+       opacity: 0.7;
+    }
+    .ventas-badge {
+       display: inline-flex;
+       align-items: center;
+       gap: 4px;
+       padding: 3px 8px;
+       border-radius: 999px;
+       font-size: 10px;
+       font-weight: 700;
+       letter-spacing: 0.04em;
+       text-transform: uppercase;
+       white-space: nowrap;
+    }
+    .ventas-badge-ic {
+       font-size: 14px !important;
+       font-weight: 400 !important;
+    }
+    .ventas-badge--cobrado {
+       background: rgba(34, 197, 94, 0.18);
+       color: #86efac;
+       border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+    .ventas-badge--pendiente {
+       background: rgba(234, 179, 8, 0.15);
+       color: #fde047;
+       border: 1px solid rgba(234, 179, 8, 0.35);
+    }
+    .ventas-badge--prevendido {
+       background: rgba(56, 189, 248, 0.12);
+       color: #7dd3fc;
+       border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .ventas-badge--senado {
+       background: rgba(168, 85, 247, 0.15);
+       color: #d8b4fe;
+       border: 1px solid rgba(168, 85, 247, 0.35);
+    }
+    .ventas-badge--ctacte {
+       background: rgba(148, 163, 184, 0.15);
+       color: #cbd5e1;
+       border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+    .ventas-badge--neutral {
+       background: rgba(71, 85, 105, 0.25);
+       color: #94a3b8;
+       border: 1px solid #475569;
+    }
+    .ventas-historial-pais {
+       display: inline-flex;
+       align-items: center;
+       gap: 6px;
+       justify-content: flex-start;
+    }
+    .ventas-historial-pais-flag {
+       font-size: 16px;
+       line-height: 1;
+       width: 22px;
+       height: 22px;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       border-radius: 50%;
+       background: #334155;
+       flex-shrink: 0;
+    }
+    .ventas-historial-pais-txt {
+       color: #e2e8f0;
+       text-align: left;
+    }
+    .ventas-historial-cliente {
+       display: inline-flex;
+       align-items: center;
+       gap: 6px;
+       max-width: 100%;
+       min-width: 0;
+    }
+    .ventas-historial-cliente-ic {
+       font-size: 16px !important;
+       color: #64748b;
+       flex-shrink: 0;
+    }
+    .ventas-historial-cliente-txt {
+       overflow: hidden;
+       text-overflow: ellipsis;
+       white-space: nowrap;
+       text-align: left;
+       color: #f1f5f9;
+       max-width: 180px;
+    }
+    .ventas-historial-clip {
+       display: block;
+       max-width: 140px;
+       overflow: hidden;
+       text-overflow: ellipsis;
+       white-space: nowrap;
+       text-align: left;
+       color: #cbd5e1;
+    }
+    .ventas-historial-fp {
+       display: inline-flex;
+       align-items: center;
+       gap: 6px;
+       min-width: 0;
+       max-width: 100%;
+    }
+    .ventas-historial-fp-img {
+       width: auto;
+       height: 18px;
+       max-width: 56px;
+       object-fit: contain;
+       flex-shrink: 0;
+       display: block;
+    }
+    .ventas-historial-fp-img--si {
+       filter: brightness(0) invert(1);
+       opacity: 0.9;
+       max-height: 16px;
+    }
+    .ventas-historial-fp-icon {
+       font-size: 18px !important;
+       color: #94a3b8;
+       flex-shrink: 0;
+    }
+    .ventas-historial-fp-txt {
+       overflow: hidden;
+       text-overflow: ellipsis;
+       white-space: nowrap;
+       text-align: left;
+       color: #e2e8f0;
+       max-width: 120px;
+    }
+    .ventas-historial-obs-ellipsis {
+       display: block;
+       max-width: 200px;
+       overflow: hidden;
+       text-overflow: ellipsis;
+       white-space: nowrap;
+       color: #94a3b8;
+    }
+    .ventas-historial-acc-row {
+       display: flex;
+       align-items: center;
+       gap: 8px;
+       justify-content: flex-end;
+       flex-wrap: nowrap;
+    }
+    .ventas-historial-link-detalles {
+       display: inline-flex;
+       align-items: center;
+       gap: 4px;
+       background: none;
+       border: none;
+       padding: 0;
+       font: inherit;
+       font-size: 11px;
+       font-weight: 600;
+       color: #38bdf8;
+       cursor: pointer;
+       white-space: nowrap;
+    }
+    .ventas-historial-link-detalles:hover {
+       color: #7dd3fc;
+       text-decoration: underline;
+    }
+    .ventas-historial-ic-link {
+       font-size: 14px !important;
+       font-weight: 400 !important;
+    }
+    .ventas-historial-btn-icon-del {
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+       background: transparent;
+       border: none;
+       padding: 4px;
+       color: #f87171;
+       cursor: pointer;
+       border-radius: 6px;
+    }
+    .ventas-historial-btn-icon-del:hover {
+       background: rgba(248, 113, 113, 0.12);
+    }
+    .ventas-historial-btn-icon-del .material-symbols-outlined {
+       font-size: 18px;
+    }
+    .ventas-historial-table td.ventas-h-col-obs {
+       white-space: normal !important;
+    }
+    .ventas-historial-table td.ventas-h-col-acc {
+       white-space: nowrap !important;
+    }
+
     .card {
        background: var(--sidebar);
        border-radius: 10px;

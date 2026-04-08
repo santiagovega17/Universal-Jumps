@@ -14,6 +14,8 @@
        'Banco Bci (CL)', 'Dólar App (MX)', 'Banco Sadabell (ESP)', 'Banco Itaú (URU)'
     ];
 
+    var SIMPLE_ICONS_SVG_CDN = 'https://cdn.jsdelivr.net/npm/simple-icons@13.16.0/icons/';
+
     /**
      * logoSlug: SVG en jsDelivr (Simple Icons). logoUrl: imagen propia/CDN.
      * icon: Material Symbols si no hay imagen, o respaldo si el logo remoto falla (404).
@@ -159,7 +161,10 @@
        });
        var html = construirTablaHistorialAcciones(filtrados, nombreVendedor);
        var cont = document.getElementById('contenedorHistorial');
-       if (cont) cont.innerHTML = html;
+       if (cont) {
+          cont.innerHTML = html;
+          bindVentasHistorialMiniLogos(cont);
+       }
     }
  
 
@@ -518,6 +523,83 @@
        if (!num || num === 0) return '-';
        return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
     }
+
+    function historialTh(label, extraClass) {
+       var cls = 'ventas-historial-th' + (extraClass ? ' ' + extraClass : '');
+       return '<th class="' + cls + '"><span class="ventas-historial-th-inner">' + label +
+          '<span class="material-symbols-outlined ventas-historial-th-sort" aria-hidden="true">swap_vert</span></span></th>';
+    }
+
+    function historialEstadoBadgeHtml(estadoRaw) {
+       var raw = (estadoRaw || '').toString();
+       var e = raw.trim().toUpperCase();
+       var cls = 'ventas-badge ventas-badge--neutral';
+       var icon = 'label';
+       if (e.indexOf('COBRADO') >= 0) { cls = 'ventas-badge ventas-badge--cobrado'; icon = 'check_circle'; }
+       else if (e.indexOf('PENDIENTE') >= 0) { cls = 'ventas-badge ventas-badge--pendiente'; icon = 'schedule'; }
+       else if (e.indexOf('PREVENDIDO') >= 0 || e.indexOf('PRE-VENTA') >= 0) { cls = 'ventas-badge ventas-badge--prevendido'; icon = 'shopping_cart'; }
+       else if (e.indexOf('SEÑADO') >= 0 || e.indexOf('SENADO') >= 0) { cls = 'ventas-badge ventas-badge--senado'; icon = 'percent'; }
+       else if (e.indexOf('CTA') >= 0 && e.indexOf('CORRIENTE') >= 0) { cls = 'ventas-badge ventas-badge--ctacte'; icon = 'request_quote'; }
+       return '<span class="' + cls + '"><span class="material-symbols-outlined ventas-badge-ic">' + icon + '</span>' +
+          escapeHtmlText(raw) + '</span>';
+    }
+
+    function historialPaisCellHtml(paisRaw) {
+       var p = (paisRaw || '').toString();
+       var u = p.toUpperCase();
+       var emoji = '🏳️';
+       if (u.indexOf('ARGENTINA') >= 0) emoji = '🇦🇷';
+       else if (u.indexOf('CHILE') >= 0) emoji = '🇨🇱';
+       else if (u.indexOf('MEXICO') >= 0 || u.indexOf('MÉXICO') >= 0) emoji = '🇲🇽';
+       else if (u.indexOf('ESPAÑA') >= 0 || u.indexOf('ESPANA') >= 0) emoji = '🇪🇸';
+       else if (u.indexOf('BRASIL') >= 0) emoji = '🇧🇷';
+       else if (u.indexOf('URUGUAY') >= 0) emoji = '🇺🇾';
+       else if (u.indexOf('EEUU') >= 0 || u.indexOf('USA') >= 0 || u.indexOf('ESTADOS') >= 0) emoji = '🇺🇸';
+       else if (u.indexOf('RDM') >= 0) emoji = '🌐';
+       return '<span class="ventas-historial-pais"><span class="ventas-historial-pais-flag" aria-hidden="true">' + emoji +
+          '</span><span class="ventas-historial-pais-txt">' + escapeHtmlText(p) + '</span></span>';
+    }
+
+    function historialFormaPagoCellHtml(nombrePago) {
+       var meta = getFormaPagoCardMeta(nombrePago);
+       var nameEsc = escapeHtmlText(nombrePago);
+       var fb = escapeHtmlAttr(formaPagoCardFallbackIcon(meta, nombrePago));
+       var u = meta && meta.logoUrl;
+       if (u) {
+          return '<span class="ventas-historial-fp">' +
+             '<img class="ventas-historial-fp-img ventas-historial-fp-img--brand" src="' + escapeHtmlAttr(u) +
+             '" alt="" loading="lazy" data-fallback-icon="' + fb + '"/>' +
+             '<span class="ventas-historial-fp-txt">' + nameEsc + '</span></span>';
+       }
+       var slug = meta && meta.logoSlug;
+       if (slug) {
+          var url = SIMPLE_ICONS_SVG_CDN + encodeURIComponent(slug) + '.svg';
+          return '<span class="ventas-historial-fp">' +
+             '<img class="ventas-historial-fp-img ventas-historial-fp-img--si" src="' + escapeHtmlAttr(url) +
+             '" alt="" loading="lazy" data-fallback-icon="' + fb + '"/>' +
+             '<span class="ventas-historial-fp-txt">' + nameEsc + '</span></span>';
+       }
+       var ic = formaPagoCardFallbackIcon(meta, nombrePago);
+       return '<span class="ventas-historial-fp"><span class="material-symbols-outlined ventas-historial-fp-icon">' + ic +
+          '</span><span class="ventas-historial-fp-txt">' + nameEsc + '</span></span>';
+    }
+
+    function bindVentasHistorialMiniLogos(root) {
+       if (!root || !root.querySelectorAll) return;
+       var imgs = root.querySelectorAll('img.ventas-historial-fp-img[data-fallback-icon]');
+       for (var i = 0; i < imgs.length; i++) {
+          (function (img) {
+             var fb = img.getAttribute('data-fallback-icon') || 'payments';
+             img.onerror = function () {
+                img.onerror = null;
+                var sp = document.createElement('span');
+                sp.className = 'material-symbols-outlined ventas-historial-fp-icon';
+                sp.textContent = fb;
+                img.replaceWith(sp);
+             };
+          })(imgs[i]);
+       }
+    }
  
     function construirTablaHistorialAcciones(datos, nombreVendedor) {
        // Permitir editar si es ADMIN o ROOT (cualquier hoja), o VENDEDOR en su propia hoja
@@ -526,23 +608,20 @@
           USUARIO_ACTUAL.rol === 'ROOT' ||
           (USUARIO_ACTUAL.rol === 'VENDEDOR' && USUARIO_ACTUAL.hoja && USUARIO_ACTUAL.hoja.toUpperCase() === nombreVendedor.toUpperCase())
        );
-       let html = '<table><thead><tr>';
-       let headers = [
-          { n: "FECHA", c: "col-sm" },
-          { n: "ESTADO", c: "col-sm" },
-          { n: "CHEQUEADO", c: "col-min" },
-          { n: "PAIS", c: "col-sm" },
-          { n: "CLIENTE", c: "col-md" },
-          { n: "CONCEPTO", c: "col-md" },
-          { n: "FORMA DE PAGO", c: "col-md" },
-          { n: "CANTIDAD", c: "col-min" },
-          { n: "PRECIO", c: "col-sm" },
-          { n: "TOTAL", c: "col-sm" },
-          { n: "TOTAL (SIN IVA)", c: "col-sm" },
-          { n: "OBSERVACIONES", c: "col-lg text-left" }
-       ];
-       if (puedeEditar) headers.push({ n: "ACC", c: "col-min" });
-       headers.forEach(h => html += `<th class="${h.c}">${h.n}</th>`);
+       let html = '<table class="ventas-historial-table"><thead><tr>';
+       html += historialTh('FECHA', 'col-sm ventas-h-col-fecha');
+       html += historialTh('ESTADO', 'col-sm');
+       html += historialTh('CHEQUEADO', 'col-min');
+       html += historialTh('PAIS', 'col-sm');
+       html += historialTh('CLIENTE', 'col-md ventas-h-col-cliente');
+       html += historialTh('CONCEPTO', 'col-md ventas-h-col-concepto');
+       html += historialTh('FORMA DE PAGO', 'col-md ventas-h-col-pago');
+       html += historialTh('CANTIDAD', 'col-min');
+       html += historialTh('PRECIO', 'col-sm ventas-h-col-num');
+       html += historialTh('TOTAL', 'col-sm ventas-h-col-num');
+       html += historialTh('TOTAL (SIN IVA)', 'col-sm ventas-h-col-num');
+       html += historialTh('OBSERVACIONES', 'col-lg ventas-h-col-obs text-left');
+       if (puedeEditar) html += historialTh('ACC', 'col-min ventas-h-col-acc');
        html += '</tr></thead><tbody>';
  
        function escAttr(s) { return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
@@ -558,33 +637,29 @@
           let args = `'${idEsc}', '${nombreVendedorEsc}', ` + datosPuros.map(d => `'${escAttr(d)}'`).join(',');
  
           let obs = row[11] || '';
-          let obsHtml = obs;
-          if (obs.length > 20) {
-             obsHtml = `<div class="obs-container">
-                <span class="obs-text">${obs}</span>
-                <span class="view-more-btn" onclick="toggleVerMasObs(this); event.stopPropagation();">Ver más...</span>
-                <div class="obs-full">${obs}</div>
-             </div>`;
-          }
+          let obsTitle = escapeHtmlAttr(obs);
+          let obsEsc = escapeHtmlText(obs);
  
           html += `<tr>
-                 <td>${row[0]}</td>
-                 <td>${row[1]}</td>
-                <td>${puedeEditar ? `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} onclick="toggleCheck(this, '${idEsc}', '${nombreVendedorEsc}')">` : `<input type="checkbox" ${row[2] == 'SI' ? 'checked' : ''} disabled>`}</td>
-                 <td>${row[3]}</td>
-                 <td>${row[4]}</td>
-                 <td>${row[5]}</td>
-                 <td>${row[6]}</td>
-                 <td>${row[7]}</td>
-                 <td>${formatNumberAr(precio)}</td>
-                 <td>${formatNumberAr(total)}</td>
-                 <td>${formatNumberAr(totalSinIva)}</td>
-                 <td class="text-left">${obsHtml}</td>`;
+                 <td class="ventas-h-col-fecha">${escapeHtmlText(row[0])}</td>
+                 <td class="ventas-h-col-estado">${historialEstadoBadgeHtml(row[1])}</td>
+                <td class="ventas-historial-col-check">${puedeEditar ? `<input type="checkbox" class="ventas-historial-check" ${row[2] == 'SI' ? 'checked' : ''} onclick="toggleCheck(this, '${idEsc}', '${nombreVendedorEsc}')">` : `<input type="checkbox" class="ventas-historial-check" ${row[2] == 'SI' ? 'checked' : ''} disabled>`}</td>
+                 <td class="ventas-h-col-pais">${historialPaisCellHtml(row[3])}</td>
+                 <td class="ventas-h-col-cliente"><span class="ventas-historial-cliente"><span class="material-symbols-outlined ventas-historial-cliente-ic">person</span><span class="ventas-historial-cliente-txt" title="${escapeHtmlAttr(row[4] || '')}">${escapeHtmlText(row[4])}</span></span></td>
+                 <td class="ventas-h-col-concepto"><span class="ventas-historial-clip" title="${escapeHtmlAttr(row[5] || '')}">${escapeHtmlText(row[5])}</span></td>
+                 <td class="ventas-h-col-pago">${historialFormaPagoCellHtml(row[6])}</td>
+                 <td class="ventas-h-col-cant">${escapeHtmlText(row[7])}</td>
+                 <td class="ventas-h-col-num">${formatNumberAr(precio)}</td>
+                 <td class="ventas-h-col-num">${formatNumberAr(total)}</td>
+                 <td class="ventas-h-col-num">${formatNumberAr(totalSinIva)}</td>
+                 <td class="ventas-h-col-obs text-left"><span class="ventas-historial-obs-ellipsis" title="${obsTitle}">${obsEsc}</span></td>`;
  
           if (puedeEditar) {
-             html += `<td>
-                     <button class="action-btn btn-edit" onclick="clickEditar(${args})"><span class="material-symbols-outlined">edit</span></button>
-                     <button class="action-btn btn-del" onclick="clickBorrar('${idEsc}', '${nombreVendedorEsc}')"><span class="material-symbols-outlined">delete</span></button>
+             html += `<td class="ventas-h-col-acc">
+                     <div class="ventas-historial-acc-row">
+                     <button type="button" class="ventas-historial-link-detalles" onclick="clickEditar(${args})">Ver detalles<span class="material-symbols-outlined ventas-historial-ic-link">open_in_new</span></button>
+                     <button type="button" class="ventas-historial-btn-icon-del" title="Eliminar" aria-label="Eliminar" onclick="clickBorrar('${idEsc}', '${nombreVendedorEsc}')"><span class="material-symbols-outlined">delete</span></button>
+                     </div>
                  </td>`;
           }
  
@@ -883,9 +958,6 @@
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
     }
-
-    /** Versión fijada de Simple Icons (SVG en jsDelivr); filtro CSS las deja claras sobre fondo oscuro. */
-    var SIMPLE_ICONS_SVG_CDN = 'https://cdn.jsdelivr.net/npm/simple-icons@13.16.0/icons/';
 
     /** Logo: URL propia, SVG Simple Icons, o icono Material. Imágenes remotas llevan data-fallback-icon por si 404. */
     function formaPagoCardLogoHtml(meta, nombre) {
