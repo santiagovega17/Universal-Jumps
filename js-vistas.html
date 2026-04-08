@@ -633,6 +633,66 @@
     }
  
     let CLIENTES_ACTUALES = [];
+    /** Clientes del país actual en el modal de venta (para el buscador del selector). */
+    let CLIENTES_LISTA_VENTA_CACHE = [];
+
+    function nombreCompletoClienteVenta(cliente) {
+       let nombreCompleto = `${cliente.nombre} ${cliente.apellido}`.trim();
+       if (!nombreCompleto) nombreCompleto = cliente.nombre || 'Sin nombre';
+       return nombreCompleto;
+    }
+
+    function poblarOpcionesClienteVenta(selectCliente, clientes, valorPreservar) {
+       selectCliente.innerHTML = '<option value="">Selecciona un cliente...</option>';
+       if (!clientes || !clientes.length) return;
+       clientes.forEach(cliente => {
+          let nombreCompleto = nombreCompletoClienteVenta(cliente);
+          let opt = document.createElement('option');
+          opt.value = nombreCompleto;
+          opt.innerText = nombreCompleto;
+          opt.dataset.dni = cliente.dni || '';
+          opt.dataset.telefono = cliente.telefono || '';
+          opt.dataset.correo = cliente.correo || '';
+          selectCliente.appendChild(opt);
+       });
+       if (valorPreservar && clientes.some(c => nombreCompletoClienteVenta(c) === valorPreservar)) {
+          selectCliente.value = valorPreservar;
+       }
+    }
+
+    function aplicarFiltroBuscadorClientesVenta() {
+       let selectCliente = document.getElementById('clienteInput');
+       let buscar = document.getElementById('clienteBuscarInput');
+       if (!selectCliente || selectCliente.tagName !== 'SELECT' || !buscar) return;
+       let lista = CLIENTES_LISTA_VENTA_CACHE;
+       if (!lista.length) return;
+       let q = (buscar.value || '').trim().toLowerCase();
+       let normalize = function (s) {
+          return (s || '').toString().toLowerCase();
+       };
+       let prev = (selectCliente.value || '').trim();
+       let filtrada = lista;
+       if (q) {
+          let qTel = q.replace(/\s/g, '');
+          filtrada = lista.filter(function (c) {
+             let nc = normalize(nombreCompletoClienteVenta(c));
+             if (nc.indexOf(q) !== -1) return true;
+             if (normalize(c.dni).indexOf(q) !== -1) return true;
+             if (qTel && normalize(c.telefono).replace(/\s/g, '').indexOf(qTel) !== -1) return true;
+             if (normalize(c.correo).indexOf(q) !== -1) return true;
+             return false;
+          });
+       }
+       if (q && (!filtrada || filtrada.length === 0)) {
+          selectCliente.innerHTML = '<option value="">Sin resultados</option>';
+          return;
+       }
+       let preserve = '';
+       if (prev && filtrada.some(function (c) { return nombreCompletoClienteVenta(c) === prev; })) {
+          preserve = prev;
+       }
+       poblarOpcionesClienteVenta(selectCliente, filtrada, preserve);
+    }
  
     function abrirModalCliente(modo, index) {
        let form = document.getElementById('formCliente');
@@ -910,6 +970,7 @@
     function actualizarSelectorClientes(vendedor) {
        let selectCliente = document.getElementById('clienteInput');
        let paisSelect = document.getElementById('paisInput');
+       let buscar = document.getElementById('clienteBuscarInput');
  
        if (!selectCliente) {
           console.error('No se encontró el elemento clienteInput');
@@ -920,50 +981,54 @@
           return;
        }
  
-       // Obtener país seleccionado
        let paisSeleccionado = paisSelect ? paisSelect.value : '';
  
-       // Si no hay país seleccionado, dejar mensaje
+       CLIENTES_LISTA_VENTA_CACHE = [];
+       if (buscar) {
+          buscar.value = '';
+          buscar.disabled = true;
+       }
+ 
        if (!paisSeleccionado || paisSeleccionado === '') {
           selectCliente.innerHTML = '<option value="">Selecciona un país primero...</option>';
           selectCliente.disabled = true;
           return;
        }
  
-       // Mostrar loading
        selectCliente.innerHTML = '<option value="">Cargando clientes...</option>';
        selectCliente.disabled = true;
  
        google.script.run.withSuccessHandler(res => {
           selectCliente.disabled = false;
+          if (buscar) buscar.disabled = false;
           if (res.error) {
              selectCliente.innerHTML = '<option value="">Error al cargar clientes</option>';
+             CLIENTES_LISTA_VENTA_CACHE = [];
+             if (buscar) {
+                buscar.disabled = true;
+                buscar.value = '';
+             }
              console.error('Error al obtener clientes:', res.mensaje);
              return;
           }
  
-          selectCliente.innerHTML = '<option value="">Selecciona un cliente...</option>';
+          let data = (res.data && res.data.length > 0) ? res.data : [];
+          CLIENTES_LISTA_VENTA_CACHE = data;
  
-          if (res.data && res.data.length > 0) {
-             res.data.forEach(cliente => {
-                let nombreCompleto = `${cliente.nombre} ${cliente.apellido}`.trim();
-                if (!nombreCompleto) nombreCompleto = cliente.nombre || 'Sin nombre';
-                let opt = document.createElement('option');
-                opt.value = nombreCompleto;
-                opt.innerText = nombreCompleto;
-                opt.dataset.dni = cliente.dni || '';
-                opt.dataset.telefono = cliente.telefono || '';
-                opt.dataset.correo = cliente.correo || '';
-                selectCliente.appendChild(opt);
-             });
-          }
- 
-          // Si no hay clientes después del filtro, mostrar mensaje
-          if (!res.data || res.data.length === 0) {
+          if (!data.length) {
              selectCliente.innerHTML = '<option value="">No hay clientes agregados en ese país</option>';
+             if (buscar) buscar.disabled = true;
+             return;
           }
+ 
+          poblarOpcionesClienteVenta(selectCliente, data, '');
        }).withFailureHandler(err => {
           selectCliente.disabled = false;
+          CLIENTES_LISTA_VENTA_CACHE = [];
+          if (buscar) {
+             buscar.disabled = true;
+             buscar.value = '';
+          }
           selectCliente.innerHTML = '<option value="">Error al cargar clientes</option>';
           console.error('Error al obtener clientes:', err);
        }).obtenerClientesVendedor(vendedor, paisSeleccionado);

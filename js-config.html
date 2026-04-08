@@ -113,6 +113,16 @@
           });
           paisInput.dataset.listenerAdded = 'true';
        }
+
+       let clienteBuscarInput = document.getElementById('clienteBuscarInput');
+       if (clienteBuscarInput && !clienteBuscarInput.dataset.listenerAdded) {
+          clienteBuscarInput.addEventListener('input', function () {
+             if (typeof aplicarFiltroBuscadorClientesVenta === 'function') {
+                aplicarFiltroBuscadorClientesVenta();
+             }
+          });
+          clienteBuscarInput.dataset.listenerAdded = 'true';
+       }
     }, 2000);
 
     // --- NUEVA FUNCIÓN: CAMBIAR PAÍS EN CAJA ---
