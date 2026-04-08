@@ -198,6 +198,19 @@ CREATE TABLE IF NOT EXISTS public."configMarcaModelo" (
 CREATE INDEX IF NOT EXISTS idx_configMarcaModelo_marca ON public."configMarcaModelo"(marca);
 
 -- -----------------------------------------------------------------------------
+-- ConfigFormaPagoVenta (medios de pago del formulario de ventas)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public."configFormaPagoVenta" (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  nombre text NOT NULL,
+  orden int NOT NULL DEFAULT 0,
+  created_at timestamptz DEFAULT now(),
+  CONSTRAINT uq_configFormaPagoVenta_nombre UNIQUE (nombre)
+);
+
+CREATE INDEX IF NOT EXISTS idx_configFormaPagoVenta_orden ON public."configFormaPagoVenta"(orden);
+
+-- -----------------------------------------------------------------------------
 -- RLS (Row Level Security)
 -- -----------------------------------------------------------------------------
 ALTER TABLE public."usuario" ENABLE ROW LEVEL SECURITY;
@@ -210,6 +223,7 @@ ALTER TABLE public."venta" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."producto" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."stockMovimiento" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."configMarcaModelo" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."configFormaPagoVenta" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Authenticated full access usuario" ON public."usuario" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access cajaMovimiento" ON public."cajaMovimiento" FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -221,6 +235,7 @@ CREATE POLICY "Authenticated full access venta" ON public."venta" FOR ALL TO aut
 CREATE POLICY "Authenticated full access producto" ON public."producto" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access stockMovimiento" ON public."stockMovimiento" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access configMarcaModelo" ON public."configMarcaModelo" FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated full access configFormaPagoVenta" ON public."configFormaPagoVenta" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Comentarios
 COMMENT ON TABLE public."usuario" IS 'Usuario (vendedor/admin). nombre = nombre de hoja del vendedor.';
@@ -228,6 +243,7 @@ COMMENT ON TABLE public."cajaMovimiento" IS 'Movimiento de caja.';
 COMMENT ON TABLE public."venta" IS 'Venta. Relación N:1 con Usuario (vendedor).';
 COMMENT ON TABLE public."producto" IS 'Producto (definición de stock). codigo = ID de negocio.';
 COMMENT ON TABLE public."stockMovimiento" IS 'Movimiento de stock. Relación N:1 con Producto.';
+COMMENT ON TABLE public."configFormaPagoVenta" IS 'Medios de pago configurables para el formulario de ventas.';
 
 -- =============================================================================
 -- NOTA: Migración desde Sheets y uso en la API

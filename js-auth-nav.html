@@ -88,6 +88,7 @@
           document.querySelectorAll('.vendor-item').forEach(item => { if (item.id !== 'menu-' + perfil.hoja.replace(/\s/g, '')) item.style.display = 'none'; });
           // Clientes siempre visible para vendedores
           if (document.getElementById('menu-clientes')) document.getElementById('menu-clientes').style.display = 'block';
+          if (document.getElementById('menu-config-ventas')) document.getElementById('menu-config-ventas').style.display = 'none';
        } else if (perfil.rol === 'VENDEDORGRAL') {
           var adminGroup = document.getElementById('nav-admin-group');
           if (adminGroup) adminGroup.style.display = 'none';
@@ -96,10 +97,15 @@
           if (document.getElementById('menu-comisiones')) document.getElementById('menu-comisiones').style.display = 'none';
           // Ocultar config permisos
           if (document.getElementById('menu-config-permisos')) document.getElementById('menu-config-permisos').style.display = 'none';
+          if (document.getElementById('menu-config-ventas')) document.getElementById('menu-config-ventas').style.display = 'none';
        } else if (perfil.rol === 'ROOT') {
           // ROOT tiene todos los permisos (se definirán más adelante)
+          if (document.getElementById('menu-config-ventas')) document.getElementById('menu-config-ventas').style.display = 'block';
        }
        // ADMIN ya puede ver todo por defecto (no se oculta nada)
+       if (perfil.rol === 'ADMIN' && document.getElementById('menu-config-ventas')) {
+          document.getElementById('menu-config-ventas').style.display = 'block';
+       }
     }
  
     // NUEVA FUNCIÓN: Renderizar lista de vendedores dinámicamente
@@ -144,6 +150,7 @@
  
           // Aplicar permisos después de renderizar
           if (USUARIO_ACTUAL) aplicarPermisos(USUARIO_ACTUAL);
+          if (typeof poblarSelectFormasPagoVenta === 'function') poblarSelectFormasPagoVenta('pagoInput');
        }).obtenerListaVendedores();
     }
  
@@ -346,6 +353,20 @@
              renderConsolidadoCaja();
           }
        }
+       else if (hoja === 'CONFIGURACION_VENTAS') {
+          if (!USUARIO_ACTUAL || (USUARIO_ACTUAL.rol !== 'ADMIN' && USUARIO_ACTUAL.rol !== 'ROOT')) {
+             alert('No tienes permisos para esta sección.');
+             NAVEGANDO = false;
+             return;
+          }
+          document.getElementById('titulo').innerText = 'CONFIGURACIÓN - VENTAS';
+          mostrarEstadoCarga('CONFIGURACIÓN', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CONFIGURACION_VENTAS');
+          if (typeof renderConfiguracionVentas === 'function') {
+             renderConfiguracionVentas();
+          } else {
+             document.getElementById('app').innerHTML += '<div style="padding:40px;color:#ef4444;text-align:center;">No se cargó el módulo de configuración.</div>';
+          }
+       }
        else if (hoja === 'CLIENTES') {
           document.getElementById('titulo').innerText = 'CLIENTES';
           mostrarEstadoCarga('CLIENTES', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CLIENTES');
@@ -423,7 +444,8 @@
           html += `<div class="home-card" onclick="navegar(null, 'CONSOLIDADO')"><div class="home-icon"><span class="material-symbols-outlined">leaderboard</span></div><div class="home-title">Consolidado</div></div>
                       <div class="home-card" onclick="navegar(null, '%')"><div class="home-icon"><span class="material-symbols-outlined">trending_up</span></div><div class="home-title">Comisiones</div></div>
                       <div class="home-card" onclick="navegar(null, 'OBJETIVOS')"><div class="home-icon"><span class="material-symbols-outlined">track_changes</span></div><div class="home-title">Objetivos</div></div>
-                      <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
+                      <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>
+                      <div class="home-card" onclick="navegar(null, 'CONFIGURACION_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined">tune</span></div><div class="home-title">Configuración</div><div class="home-desc">Medios de pago y más</div></div>`;
        } else if (user.rol === 'VENDEDORGRAL') {
           html += `<div class="home-card" onclick="navegar(null, 'OBJETIVOS')"><div class="home-icon"><span class="material-symbols-outlined">track_changes</span></div><div class="home-title">Objetivos</div></div>
                       <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;

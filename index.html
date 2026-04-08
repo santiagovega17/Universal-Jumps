@@ -102,6 +102,9 @@
                      <div class="menu-item" id="menu-clientes" onclick="navegar(this, 'CLIENTES')">
                         <span class="material-symbols-outlined">contacts</span> Clientes
                      </div>
+                     <div class="menu-item" id="menu-config-ventas" onclick="navegar(this, 'CONFIGURACION_VENTAS')">
+                        <span class="material-symbols-outlined">tune</span> Configuración
+                     </div>
                      <div class="menu-sublabel" id="cat-vendedores">Vendedores</div>
                      <div id="vendor-list-container"></div>
                   </div>
@@ -257,18 +260,7 @@
                </div>
                <div class="form-group form-group-venta-sm" style="flex:1.5;">
                   <label class="form-label form-label-venta-sm">Forma de Pago</label><select class="form-input form-input-venta-sm" name="formaPago" id="pagoInput">
-                     <option value="Mercado Pago">Mercado Pago</option>
-                     <option value="Transferencia">Transferencia</option>
-                     <option value="Efectivo">Efectivo</option>
-                     <option value="Cta corriente">Cta corriente</option>
-                     <option value="Mercado Libre">Mercado Libre</option>
-                     <option value="Amazon">Amazon</option>
-                     <option value="Prisma">Prisma</option>
-                     <option value="Paypal">Paypal</option>
-                     <option value="Banco Bci (CL)">Banco Bci (CL)</option>
-                     <option value="Dólar App (MX)">Dólar App (MX)</option>
-                     <option value="Banco Sadabell (ESP)">Banco Sadabell (ESP)</option>
-                     <option value="Banco Itaú (URU)">Banco Itaú (URU)</option>
+                     <option value="">Cargando medios de pago...</option>
                   </select>
                </div>
             </div>
@@ -522,6 +514,25 @@
             </div>
 
             <button type="submit" class="btn-submit" id="btnGuardarCliente">Guardar</button>
+         </form>
+      </div>
+   </div>
+
+   <div class="modal-overlay" id="modalFormaPagoVenta">
+      <div class="modal-content">
+         <div class="modal-header">
+            <div class="modal-title" id="modalTitleFormaPagoVenta">Medio de pago</div>
+            <button type="button" class="close-btn" onclick="cerrarModalFormaPagoVentaConfig()"><span
+                  class="material-symbols-outlined">close</span></button>
+         </div>
+         <form id="formFormaPagoVenta" onsubmit="enviarFormaPagoVentaConfig(event)">
+            <input type="hidden" id="formaPagoVentaIdEdicion" value="">
+            <div class="form-group">
+               <label class="form-label" for="formaPagoVentaNombreInput">Nombre del medio de pago</label>
+               <input type="text" class="form-input" id="formaPagoVentaNombreInput" required maxlength="120"
+                  placeholder="Ej. Transferencia, Mercado Pago...">
+            </div>
+            <button type="submit" class="btn-submit" id="btnGuardarFormaPagoVenta">Guardar</button>
          </form>
       </div>
    </div>
