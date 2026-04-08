@@ -161,12 +161,6 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload || {}),
         }),
-      actualizarFormaPagoVenta: (payload) =>
-        requestJson('/api/forma-pago-venta?action=actualizar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload || {}),
-        }),
       borrarFormaPagoVenta: (payload) =>
         requestJson('/api/forma-pago-venta?action=borrar', {
           method: 'POST',

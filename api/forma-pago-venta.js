@@ -1,7 +1,6 @@
 const {
   listFormasPagoVentaService,
   crearFormaPagoVentaService,
-  actualizarFormaPagoVentaService,
   borrarFormaPagoVentaService,
 } = require('../lib/formaPagoVentaService');
 
@@ -34,10 +33,6 @@ module.exports = async (req, res) => {
       const body = getBody(req);
       if (action === 'crear') {
         const result = await crearFormaPagoVentaService(body.nombre);
-        return res.status(200).json(result);
-      }
-      if (action === 'actualizar') {
-        const result = await actualizarFormaPagoVentaService(body.id, body.nombre);
         return res.status(200).json(result);
       }
       if (action === 'borrar') {

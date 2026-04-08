@@ -809,13 +809,10 @@
           .replace(/>/g, '&gt;');
     }
 
-    /** Última lista cargada en pantalla de configuración (para editar sin otra llamada). */
-    var CONFIG_FORMAS_PAGO_ROWS_CACHE = [];
-
     function renderConfiguracionVentas() {
        var back = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>';
        var titulo = '<div class="dash-section-title">CONFIGURACIÓN</div>';
-       var sub = '<p style="color:#94a3b8; margin: 0 0 16px 0; font-size: 14px;">Medios de pago disponibles en el formulario de ventas y en los filtros del historial.</p>';
+       var sub = '<p style="color:#94a3b8; margin: 0 0 16px 0; font-size: 14px;">Medios de pago en ventas y filtros del historial. Los nombres no se pueden editar. Solo podés eliminar un medio si no figura en ninguna venta ni movimiento de caja.</p>';
        document.getElementById('app').innerHTML = back + titulo + sub + '<div id="config-formas-pago-body" style="padding:20px 0;">Cargando...</div>';
 
        google.script.run
@@ -826,11 +823,10 @@
                    return { id: '', nombre: n, orden: i };
                 });
              }
-             CONFIG_FORMAS_PAGO_ROWS_CACHE = rows;
-             var btnAdd = '<div style="margin-bottom:16px;"><button type="button" class="btn-submit" style="width:auto;padding:8px 16px;font-size:13px;" onclick="abrirModalFormaPagoVentaConfig(\'crear\')"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">add</span>Nuevo medio de pago</button></div>';
+             var btnAdd = '<div style="margin-bottom:16px;"><button type="button" class="btn-submit" style="width:auto;padding:8px 16px;font-size:13px;" onclick="abrirModalFormaPagoVentaConfig()"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">add</span>Nuevo medio de pago</button></div>';
              var table = '<div class="clientes-table-wrap"><table class="clientes-table"><thead><tr style="border-bottom:2px solid var(--border-color);">' +
                 '<th style="text-align:left;color:var(--accent);font-weight:600;padding:10px;">Nombre</th>' +
-                '<th style="text-align:center;color:var(--accent);font-weight:600;width:140px;padding:10px;">Acciones</th></tr></thead><tbody>';
+                '<th style="text-align:center;color:var(--accent);font-weight:600;width:100px;padding:10px;">Acciones</th></tr></thead><tbody>';
              rows.forEach(function (row) {
                 var nombre = (row.nombre || '').toString();
                 var id = (row.id || '').toString();
@@ -839,8 +835,7 @@
                    '<td style="padding:12px;color:#f1f5f9;">' + escapeHtmlText(nombre) + '</td>';
                 if (tieneId) {
                    table += '<td style="padding:12px;text-align:center;white-space:nowrap;">' +
-                      '<button type="button" class="action-btn btn-edit" title="Editar" onclick="abrirModalFormaPagoVentaConfig(\'editar\',\'' + id + '\')"><span class="material-symbols-outlined">edit</span></button>' +
-                      '<button type="button" class="action-btn btn-del" title="Eliminar" data-id="' + escapeHtmlAttr(id) + '" data-nombre="' + escapeHtmlAttr(nombre) + '" onclick="clickEliminarFormaPagoVenta(this)"><span class="material-symbols-outlined">delete</span></button>' +
+                      '<button type="button" class="action-btn btn-del" title="Eliminar (solo si no fue usado)" data-id="' + escapeHtmlAttr(id) + '" data-nombre="' + escapeHtmlAttr(nombre) + '" onclick="clickEliminarFormaPagoVenta(this)"><span class="material-symbols-outlined">delete</span></button>' +
                       '</td></tr>';
                 } else {
                    table += '<td style="padding:12px;text-align:center;color:#64748b;font-size:12px;">Ejecutá en Supabase: migration_configFormaPagoVenta.sql</td></tr>';
@@ -855,25 +850,15 @@
           .obtenerFormasPagoVenta();
     }
 
-    function abrirModalFormaPagoVentaConfig(modo, id) {
+    function abrirModalFormaPagoVentaConfig() {
        var modal = document.getElementById('modalFormaPagoVenta');
        var titleEl = document.getElementById('modalTitleFormaPagoVenta');
-       var idInput = document.getElementById('formaPagoVentaIdEdicion');
        var nombreInput = document.getElementById('formaPagoVentaNombreInput');
        var btn = document.getElementById('btnGuardarFormaPagoVenta');
        if (!modal || !nombreInput) return;
-       idInput.value = '';
+       titleEl.innerText = 'NUEVO MEDIO DE PAGO';
+       if (btn) btn.innerText = 'GUARDAR';
        nombreInput.value = '';
-       if (modo === 'editar' && id) {
-          titleEl.innerText = 'EDITAR MEDIO DE PAGO';
-          btn.innerText = 'ACTUALIZAR';
-          idInput.value = id;
-          var row = CONFIG_FORMAS_PAGO_ROWS_CACHE.find(function (r) { return (r.id || '') === id; });
-          if (row) nombreInput.value = row.nombre || '';
-       } else {
-          titleEl.innerText = 'NUEVO MEDIO DE PAGO';
-          btn.innerText = 'GUARDAR';
-       }
        modal.classList.add('open');
        setTimeout(function () { nombreInput.focus(); }, 100);
     }
@@ -885,7 +870,6 @@
 
     function enviarFormaPagoVentaConfig(e) {
        e.preventDefault();
-       var id = (document.getElementById('formaPagoVentaIdEdicion').value || '').trim();
        var nombre = (document.getElementById('formaPagoVentaNombreInput').value || '').trim();
        var btn = document.getElementById('btnGuardarFormaPagoVenta');
        if (!nombre) {
@@ -898,43 +882,23 @@
           if (btn) { btn.disabled = false; }
        }
 
-       if (id) {
-          google.script.run
-             .withSuccessHandler(function (res) {
-                fin();
-                if (res && res.error) {
-                   mostrarAlerta(res.mensaje || 'No se pudo actualizar.');
-                   return;
-                }
-                cerrarModalFormaPagoVentaConfig();
-                poblarSelectFormasPagoVenta('pagoInput');
-                renderConfiguracionVentas();
-                if (typeof mostrarToast === 'function') mostrarToast('Medio de pago actualizado.');
-             })
-             .withFailureHandler(function (err) {
-                fin();
-                mostrarAlerta('Error: ' + (err && err.message ? err.message : err));
-             })
-             .actualizarFormaPagoVenta({ id: id, nombre: nombre });
-       } else {
-          google.script.run
-             .withSuccessHandler(function (res) {
-                fin();
-                if (res && res.error) {
-                   mostrarAlerta(res.mensaje || 'No se pudo crear.');
-                   return;
-                }
-                cerrarModalFormaPagoVentaConfig();
-                poblarSelectFormasPagoVenta('pagoInput');
-                renderConfiguracionVentas();
-                if (typeof mostrarToast === 'function') mostrarToast('Medio de pago creado.');
-             })
-             .withFailureHandler(function (err) {
-                fin();
-                mostrarAlerta('Error: ' + (err && err.message ? err.message : err));
-             })
-             .crearFormaPagoVenta({ nombre: nombre });
-       }
+       google.script.run
+          .withSuccessHandler(function (res) {
+             fin();
+             if (res && res.error) {
+                mostrarAlerta(res.mensaje || 'No se pudo crear.');
+                return;
+             }
+             cerrarModalFormaPagoVentaConfig();
+             poblarSelectFormasPagoVenta('pagoInput');
+             renderConfiguracionVentas();
+             if (typeof mostrarToast === 'function') mostrarToast('Medio de pago creado.');
+          })
+          .withFailureHandler(function (err) {
+             fin();
+             mostrarAlerta('Error: ' + (err && err.message ? err.message : err));
+          })
+          .crearFormaPagoVenta({ nombre: nombre });
     }
 
     function clickEliminarFormaPagoVenta(btn) {
