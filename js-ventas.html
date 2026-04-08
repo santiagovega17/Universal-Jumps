@@ -140,6 +140,31 @@
           .obtenerFormasPagoVenta();
     }
 
+    /** Milisegundos para ordenar: DD/MM/AAAA o ISO (YYYY-MM-DD…). */
+    function historialFechaMs(celda) {
+       if (celda === undefined || celda === null) return 0;
+       var s = String(celda).trim();
+       if (!s) return 0;
+       if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+          var tIso = Date.parse(s.length >= 10 ? s.substring(0, 10) : s);
+          return isNaN(tIso) ? 0 : tIso;
+       }
+       var t = parseFecha(celda).getTime();
+       return isNaN(t) ? 0 : t;
+    }
+
+    /** Orden: fecha más reciente primero; mismo día → mayor índice de fila primero. */
+    function compareFilasHistorialNuevoPrimero(a, b) {
+       var ta = historialFechaMs(a[0]);
+       var tb = historialFechaMs(b[0]);
+       if (tb !== ta) return tb - ta;
+       var ida = parseInt(a[a.length - 1], 10);
+       var idb = parseInt(b[b.length - 1], 10);
+       if (isNaN(ida)) ida = 0;
+       if (isNaN(idb)) idb = 0;
+       return idb - ida;
+    }
+
     function aplicarFiltrosHistorial(sellerName, opts) {
        opts = opts || {};
        if (!opts.preserveLimite) {
@@ -165,9 +190,7 @@
           let matchPago = (pago === "" || row[6].toUpperCase().includes(pago));
           return matchMes && matchAnio && matchEstado && matchPais && matchConcepto && matchPago;
        });
-       filtrados.sort(function (a, b) {
-          return parseFecha(b[0]) - parseFecha(a[0]);
-       });
+       filtrados.sort(compareFilasHistorialNuevoPrimero);
        var visibles = filtrados.slice(0, VENTAS_HISTORIAL_LIMITE_MOSTRAR);
        var html = construirTablaHistorialAcciones(visibles, nombreVendedor);
        var restantes = filtrados.length - visibles.length;
@@ -198,7 +221,7 @@
                 filas.push(filaConId);
              }
           }
-          filas.sort((a, b) => parseFecha(b[0]) - parseFecha(a[0]));
+          filas.sort(compareFilasHistorialNuevoPrimero);
        }
           HISTORIAL_CACHE = filas;
           VENTAS_HISTORIAL_VENDEDOR = nombreVendedor;
