@@ -574,21 +574,32 @@
        return meses[(Number(m || 1) - 1)] || '';
     }
 
-    /** Eje Y: 4 valores (0 + 3 escalones), máximo redondo; el texto se formatea en pesos completos. */
+    /** Eje Y: 4 marcas (0 y 3 saltos). Cada salto es un número redondo (1/2/2.5/5/10 × 10ⁿ). */
     function homeChartYAxisConfig(dataActual, dataPrev) {
        var maxVal = 0;
        var all = (dataActual || []).concat(dataPrev || []);
        for (var i = 0; i < all.length; i++) maxVal = Math.max(maxVal, Number(all[i]) || 0);
        if (maxVal <= 0) return { max: 3000000, stepSize: 1000000 };
+
+       function niceMoneyStepFromRough(rough) {
+          if (!isFinite(rough) || rough <= 0) return 1;
+          var pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
+          var norm = rough / pow10;
+          var mult = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
+          return Math.round(mult * pow10);
+       }
+
        var padded = maxVal * 1.15;
-       var roughStep = padded / 3;
-       var pow10 = Math.pow(10, Math.floor(Math.log10(roughStep)));
-       var norm = roughStep / pow10;
-       var mult = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
-       var coarseStep = mult * pow10;
-       var niceMax = Math.ceil(padded / coarseStep) * coarseStep;
-       var stepSize = Math.max(1, Math.round(niceMax / 3));
-       niceMax = stepSize * 3;
+       var target = padded / 3;
+       var stepSize = niceMoneyStepFromRough(target);
+       if (stepSize < 1) stepSize = 1;
+       var guard = 0;
+       while (3 * stepSize < padded && guard++ < 40) {
+          target *= 1.12;
+          stepSize = niceMoneyStepFromRough(target);
+          if (stepSize < 1) stepSize = 1;
+       }
+       var niceMax = 3 * stepSize;
        return { max: niceMax, stepSize: stepSize };
     }
 
