@@ -87,6 +87,8 @@
         requestJson(`/api/caja?${buildQuery({ action: 'medios', pais, mes, anio })}`),
       obtenerHistorialCaja: (pais, mes, anio) =>
         requestJson(`/api/caja?${buildQuery({ action: 'historial', pais, mes, anio })}`),
+      obtenerProximosVencimientosCaja: (pais, limite) =>
+        requestJson(`/api/caja?${buildQuery({ action: 'proximos-vencimientos', pais, limite: limite != null ? limite : 3 })}`),
       obtenerDatosCajaCompleto: (pais, mes, anio) =>
         requestJson(`/api/caja?${buildQuery({ action: 'datos-completo', pais, mes, anio })}`),
       obtenerConsolidadoCaja: (pais, anio) =>

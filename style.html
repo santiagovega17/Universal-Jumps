@@ -1078,6 +1078,165 @@
        color: #cbd5e1;
        font-weight: 600;
     }
+ 
+    .dash-home-mid {
+       display: flex;
+       flex-wrap: wrap;
+       align-items: flex-start;
+       gap: 20px;
+    }
+ 
+    .dash-home-mid > .dash-charts-grid {
+       flex: 1 1 420px;
+       min-width: 0;
+    }
+ 
+    .home-caja-venc-widget {
+       flex: 0 1 340px;
+       width: 100%;
+       max-width: 360px;
+       margin-left: auto;
+       margin-right: auto;
+       background: linear-gradient(145deg, #14141a 0%, #0f0f14 100%);
+       border-radius: 14px;
+       border: 1px solid rgba(139, 92, 246, 0.22);
+       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 12px 40px rgba(0, 0, 0, 0.45);
+       position: relative;
+       overflow: hidden;
+    }
+ 
+    .home-caja-venc-widget::before {
+       content: '';
+       position: absolute;
+       left: 0;
+       top: 0;
+       bottom: 0;
+       width: 4px;
+       background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
+       border-radius: 14px 0 0 14px;
+    }
+ 
+    .home-caja-venc-inner {
+       padding: 18px 18px 16px 22px;
+       position: relative;
+    }
+ 
+    .home-caja-venc-head {
+       display: flex;
+       align-items: center;
+       justify-content: space-between;
+       gap: 12px;
+       margin-bottom: 16px;
+    }
+ 
+    .home-caja-venc-title {
+       font-size: 12px;
+       font-weight: 800;
+       letter-spacing: 0.14em;
+       text-transform: uppercase;
+       color: #f8fafc;
+    }
+ 
+    .home-caja-venc-badge {
+       min-width: 26px;
+       height: 26px;
+       padding: 0 7px;
+       border-radius: 999px;
+       background: #c4b5fd;
+       color: #1e1b4b;
+       font-size: 12px;
+       font-weight: 800;
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+    }
+ 
+    .home-caja-venc-list {
+       display: flex;
+       flex-direction: column;
+       gap: 10px;
+       margin-bottom: 16px;
+    }
+ 
+    .home-caja-venc-loading,
+    .home-caja-venc-empty {
+       font-size: 13px;
+       color: #94a3b8;
+       padding: 12px 8px;
+       text-align: center;
+    }
+ 
+    .home-caja-venc-item {
+       display: flex;
+       align-items: flex-start;
+       gap: 12px;
+       padding: 12px 12px;
+       background: rgba(30, 27, 45, 0.85);
+       border-radius: 10px;
+       border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+ 
+    .home-caja-venc-check {
+       flex-shrink: 0;
+       width: 18px;
+       height: 18px;
+       margin-top: 2px;
+       border-radius: 4px;
+       border: 1px solid rgba(167, 139, 250, 0.45);
+       background: rgba(15, 15, 20, 0.9);
+    }
+ 
+    .home-caja-venc-item-text {
+       min-width: 0;
+       flex: 1;
+       text-align: left;
+    }
+ 
+    .home-caja-venc-item-title {
+       font-size: 13px;
+       font-weight: 700;
+       color: #f1f5f9;
+       line-height: 1.35;
+    }
+ 
+    .home-caja-venc-item-meta {
+       font-size: 12px;
+       color: #c4a574;
+       margin-top: 4px;
+       line-height: 1.4;
+       opacity: 0.92;
+    }
+ 
+    .home-caja-venc-btn {
+       width: 100%;
+       padding: 12px 14px;
+       border-radius: 10px;
+       border: 1px solid rgba(148, 163, 184, 0.25);
+       background: rgba(20, 20, 28, 0.95);
+       color: #f8fafc;
+       font-size: 11px;
+       font-weight: 800;
+       letter-spacing: 0.1em;
+       text-transform: uppercase;
+       cursor: pointer;
+       transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+ 
+    .home-caja-venc-btn:hover {
+       background: rgba(124, 58, 237, 0.18);
+       border-color: rgba(167, 139, 250, 0.45);
+       color: #e9d5ff;
+    }
+ 
+    @media (min-width: 1080px) {
+       .dash-home-mid {
+          flex-wrap: nowrap;
+       }
+       .home-caja-venc-widget {
+          margin-left: 0;
+          margin-right: 0;
+       }
+    }
 
     .dash-chart-title {
        display: flex;

@@ -3,6 +3,7 @@ const {
   getHistorialCaja,
   getMediosPagoCaja,
   getConsolidadoCaja,
+  getProximosVencimientosCaja,
   getMovimientoCajaById,
   updateEstadoMovimientoCaja,
   deleteMovimientoCaja,
@@ -71,6 +72,12 @@ module.exports = async (req, res) => {
         const id = req.query.id || req.query.filaIndex;
         if (!id) return res.status(400).json({ error: true, mensaje: 'id es requerido' });
         const data = await getMovimientoCajaById(id);
+        return res.status(200).json({ error: false, data });
+      }
+
+      if (action === 'proximos-vencimientos') {
+        const limite = toNumber(req.query.limite, 3);
+        const data = await getProximosVencimientosCaja({ pais, limite });
         return res.status(200).json({ error: false, data });
       }
 

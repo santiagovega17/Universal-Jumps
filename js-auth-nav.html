@@ -324,6 +324,8 @@
              if (window.innerWidth <= 768) {
                 var sb = document.getElementById('app-sidebar');
                 if (sb) sb.classList.remove('sidebar-collapsed');
+             } else {
+                syncSidebarExpandedForHome();
              }
           });
        }
@@ -387,6 +389,22 @@
        return;
     }
  
+    /** En INICIO el sidebar queda expandido en escritorio; en el resto de vistas, auto-hide como siempre. */
+    function syncSidebarExpandedForHome() {
+       var sb = document.getElementById('app-sidebar');
+       if (!sb) return;
+       if (window.innerWidth <= 768) {
+          sb.classList.remove('sidebar-collapsed');
+          return;
+       }
+       var h = typeof HOJA_ACTUAL !== 'undefined' ? HOJA_ACTUAL : '';
+       if (h === 'HOME') {
+          sb.classList.remove('sidebar-collapsed');
+       } else {
+          sb.classList.add('sidebar-collapsed');
+       }
+    }
+ 
     function navegar(el, hoja) {
        // Prevenir navegación múltiple
        if (NAVEGANDO) return;
@@ -441,6 +459,7 @@
           if (rolEff === 'VENDEDOR' || rolEff === 'VENDEDORGRAL') {
              alert('No tienes permisos para ver esta sección');
              NAVEGANDO = false;
+             syncSidebarExpandedForHome();
              return;
           }
           document.getElementById('titulo').innerText = 'STOCK';
@@ -453,6 +472,7 @@
           if (rolEff === 'VENDEDOR' || rolEff === 'VENDEDORGRAL') {
              alert('No tienes permisos para ver esta sección');
              NAVEGANDO = false;
+             syncSidebarExpandedForHome();
              return;
           }
           document.getElementById('titulo').innerText = 'STOCK';
@@ -521,6 +541,7 @@
          if (!USUARIO_ACTUAL || (rolEff !== 'ADMIN' && rolEff !== 'ROOT')) {
              alert('No tienes permisos para esta sección.');
              NAVEGANDO = false;
+             syncSidebarExpandedForHome();
              return;
           }
           document.getElementById('titulo').innerText = 'CONFIGURACIÓN - VENTAS';
@@ -549,6 +570,7 @@
          if (USUARIO_ACTUAL && getRolEfectivo() === 'VENDEDORGRAL') {
              alert('No tienes permisos para ver esta sección');
              NAVEGANDO = false;
+             syncSidebarExpandedForHome();
              return;
           }
           let tituloConsolidado = hoja === '%' ? 'COMISIONES' : 'CONSOLIDADO';
@@ -565,8 +587,12 @@
           cargar(hoja);
        }
  
+       syncSidebarExpandedForHome();
+
        // Resetear flag después de un breve delay para permitir la navegación
-       setTimeout(() => { NAVEGANDO = false; }, 300);
+       setTimeout(function () {
+          NAVEGANDO = false;
+       }, 300);
     }
  
     // --- MENUS ---
@@ -667,6 +693,77 @@
           maximumFractionDigits: 0,
        }).format(n);
        return '$ ' + fmt;
+    }
+
+    function escHtmlHome(s) {
+       return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function subtituloVencHome(ddmmyyyy) {
+       var t = (ddmmyyyy || '').toString().trim();
+       if (!t) return 'Sin fecha de vencimiento';
+       var parts = t.split('/');
+       if (parts.length !== 3) return 'Vencimiento: ' + t;
+       var d = Date.UTC(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+       var now = new Date();
+       var t0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+       if (d < t0) return 'Vencido el ' + t;
+       if (d === t0) return 'Vence hoy';
+       return 'Vence el ' + t;
+    }
+
+    function pintarWidgetVencimientosHome(res) {
+       var root = document.getElementById('home-caja-venc-root');
+       var list = document.getElementById('home-caja-venc-list');
+       var badge = document.getElementById('home-caja-venc-badge');
+       if (!root || !list || !badge) return;
+       root.classList.remove('home-caja-venc-widget--loading');
+       var pack = res && res.data ? res.data : res;
+       var items = pack && Array.isArray(pack.items) ? pack.items : [];
+       var total = pack && typeof pack.totalPendientesConVencimiento === 'number' ? pack.totalPendientesConVencimiento : items.length;
+       badge.textContent = total > 99 ? '99+' : String(total);
+       if (items.length === 0) {
+          list.innerHTML = '<div class="home-caja-venc-empty">No hay egresos pendientes con vencimiento cargado.</div>';
+          return;
+       }
+       var html = '';
+       items.forEach(function (it) {
+          var tit = escHtmlHome((it.concepto || '').trim());
+          var desc = (it.descripcion || '').toString().trim();
+          if (desc) tit = tit ? tit + ' — ' + escHtmlHome(desc) : escHtmlHome(desc);
+          if (!tit) tit = 'Egreso pendiente';
+          var meta = escHtmlHome(subtituloVencHome(it.vencimiento || ''));
+          var montoPart = it.monto != null && it.monto !== '' ? ' · $ ' + formatMoneyHome(it.monto) : '';
+          html +=
+             '<div class="home-caja-venc-item">' +
+             '<span class="home-caja-venc-check" aria-hidden="true"></span>' +
+             '<div class="home-caja-venc-item-text">' +
+             '<div class="home-caja-venc-item-title">' + tit + '</div>' +
+             '<div class="home-caja-venc-item-meta">' + meta + montoPart + '</div>' +
+             '</div></div>';
+       });
+       list.innerHTML = html;
+    }
+
+    function cargarProximosVencimientosHome() {
+       var pais = typeof PAIS_CAJA_ACTUAL !== 'undefined' && PAIS_CAJA_ACTUAL ? PAIS_CAJA_ACTUAL : 'ARGENTINA';
+       google.script.run
+          .withSuccessHandler(function (res) {
+             if (res && res.error) {
+                pintarWidgetVencimientosHome({ data: { items: [], totalPendientesConVencimiento: 0 } });
+                return;
+             }
+             pintarWidgetVencimientosHome(res);
+          })
+          .withFailureHandler(function () {
+             var root = document.getElementById('home-caja-venc-root');
+             var list = document.getElementById('home-caja-venc-list');
+             var badge = document.getElementById('home-caja-venc-badge');
+             if (root) root.classList.remove('home-caja-venc-widget--loading');
+             if (badge) badge.textContent = '0';
+             if (list) list.innerHTML = '<div class="home-caja-venc-empty">No se pudieron cargar los vencimientos.</div>';
+          })
+          .obtenerProximosVencimientosCaja(pais, 3);
     }
 
     function getDashboardVendedorParam() {
@@ -771,7 +868,19 @@
           }
        }
 
-       var chartsBlock = '<div class="dash-charts-grid dash-charts-compare">' + serieCard + rankBlock + '</div>';
+       var chartsInner = '<div class="dash-charts-grid dash-charts-compare">' + serieCard + rankBlock + '</div>';
+       var vencWidget =
+          '<aside id="home-caja-venc-root" class="home-caja-venc-widget home-caja-venc-widget--loading" aria-label="Próximos vencimientos de caja">' +
+             '<div class="home-caja-venc-inner">' +
+                '<header class="home-caja-venc-head">' +
+                   '<span class="home-caja-venc-title">Próximos vencimientos</span>' +
+                   '<span class="home-caja-venc-badge" id="home-caja-venc-badge">–</span>' +
+                '</header>' +
+                '<div class="home-caja-venc-list" id="home-caja-venc-list"><div class="home-caja-venc-loading">Cargando…</div></div>' +
+                '<button type="button" class="home-caja-venc-btn" onclick="navegar(null, \'CAJA\')">IR AL BALANCE DE CAJA</button>' +
+             '</div>' +
+          '</aside>';
+       var midBlock = '<div class="dash-home-mid">' + chartsInner + vencWidget + '</div>';
 
        var rows = d.ultimasVentas || [];
        var colSpan = vendedorFiltrado ? 4 : 5;
@@ -793,9 +902,11 @@
           });
        }
 
-       inner.innerHTML = kpiBlock + chartsBlock +
+       inner.innerHTML = kpiBlock + midBlock +
           '<div class="dash-table-section"><div class="dash-table-title">Últimas 5 ventas</div><div class="dash-table-wrap"><table class="ventas-historial-table dash-ventas-table"><thead>' +
           tableHead + '</thead><tbody>' + tableBody + '</tbody></table></div></div>';
+
+       cargarProximosVencimientosHome();
 
        if (typeof Chart === 'undefined') return;
 
