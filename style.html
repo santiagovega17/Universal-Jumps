@@ -969,6 +969,17 @@
     }
  
     /* --- HOME DASHBOARD (negro/gris + acentos de marca) --- */
+    @keyframes home-dash-section-in {
+       from {
+          opacity: 0;
+          transform: translateY(14px);
+       }
+       to {
+          opacity: 1;
+          transform: translateY(0);
+       }
+    }
+ 
     .home-dashboard {
        width: 100%;
        max-width: none;
@@ -988,6 +999,39 @@
        display: flex;
        flex-direction: column;
        gap: 0;
+    }
+ 
+    .home-dashboard-inner > .dash-home-top-row,
+    .home-dashboard-inner > .dash-home-chart-venc-row,
+    .home-dashboard-inner > .dash-table-section {
+       animation: home-dash-section-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+ 
+    .home-dashboard-inner > .dash-home-chart-venc-row {
+       animation-delay: 0.1s;
+    }
+ 
+    .home-dashboard-inner > .dash-table-section {
+       animation-delay: 0.2s;
+    }
+ 
+    @media (prefers-reduced-motion: reduce) {
+       .home-dashboard-inner > .dash-home-top-row,
+       .home-dashboard-inner > .dash-home-chart-venc-row,
+       .home-dashboard-inner > .dash-table-section {
+          animation: none;
+          opacity: 1;
+          transform: none;
+       }
+ 
+       .home-dashboard .dash-kpi-card,
+       .home-dashboard .dash-kpi-label {
+          transition: none;
+       }
+ 
+       .home-dashboard .dash-kpi-card:hover {
+          transform: none;
+       }
     }
  
     .home-dashboard-inner > .dash-home-top-row + .dash-home-chart-venc-row {
@@ -1035,20 +1079,40 @@
        display: flex;
        flex-direction: column;
        min-height: 118px;
+       transition: border-color 0.28s ease, box-shadow 0.28s ease, transform 0.28s ease;
+    }
+ 
+    .home-dashboard .dash-kpi-card:hover {
+       border-color: rgba(93, 177, 223, 0.5);
+       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(93, 177, 223, 0.18);
+       transform: translateY(-3px);
     }
  
     .home-dashboard .dash-kpi-head {
        display: flex;
        justify-content: flex-end;
-       margin-bottom: 6px;
+       margin-bottom: 8px;
     }
  
     .home-dashboard .dash-kpi-label {
-       color: var(--title-accent);
-       font-weight: 700;
-       letter-spacing: 0.12em;
+       display: inline-block;
+       font-weight: 800;
+       letter-spacing: 0.11em;
        text-transform: uppercase;
-       font-size: 13px;
+       font-size: 15px;
+       background: linear-gradient(102deg, #f0f9ff 0%, var(--brand-mid) 42%, var(--brand-bright) 100%);
+       -webkit-background-clip: text;
+       background-clip: text;
+       color: transparent;
+       filter: drop-shadow(0 0 14px rgba(61, 154, 196, 0.4));
+       border-bottom: 2px solid rgba(93, 177, 223, 0.5);
+       padding-bottom: 5px;
+       transition: filter 0.28s ease, border-color 0.28s ease;
+    }
+ 
+    .home-dashboard .dash-kpi-card:hover .dash-kpi-label {
+       filter: drop-shadow(0 0 22px rgba(93, 177, 223, 0.75)) drop-shadow(0 0 36px rgba(61, 154, 196, 0.35));
+       border-bottom-color: rgba(93, 177, 223, 0.85);
     }
  
     .home-dashboard .dash-kpi-value {
@@ -1170,24 +1234,32 @@
  
     .home-dashboard .dash-chart-title {
        color: #94a3b8;
-       font-weight: 700;
-       letter-spacing: 0.1em;
+       font-weight: 800;
+       letter-spacing: 0.09em;
        text-transform: uppercase;
-       font-size: 14px;
-       margin-bottom: 14px;
+       font-size: 15px;
+       margin-bottom: 16px;
+       padding-bottom: 12px;
+       border-bottom: 1px solid rgba(61, 154, 196, 0.35);
     }
  
     .home-dashboard .dash-chart-title > span:first-child {
-       color: var(--title-accent);
-       font-size: 15px;
-       letter-spacing: 0.11em;
+       display: inline-block;
+       font-size: 17px;
+       letter-spacing: 0.1em;
+       background: linear-gradient(102deg, #f0f9ff 0%, var(--brand-mid) 40%, var(--brand-bright) 100%);
+       -webkit-background-clip: text;
+       background-clip: text;
+       color: transparent;
+       filter: drop-shadow(0 0 16px rgba(61, 154, 196, 0.45));
     }
  
     .home-dashboard .dash-chart-legend {
-       color: #64748b;
+       color: #94a3b8;
        text-transform: uppercase;
-       font-size: 12px;
-       letter-spacing: 0.07em;
+       font-size: 13px;
+       font-weight: 700;
+       letter-spacing: 0.06em;
     }
  
     .home-dashboard .dash-legend-dot-actual {
@@ -1198,13 +1270,36 @@
        background: rgba(100, 116, 139, 0.55);
     }
  
-    .home-dashboard .dash-ranking-title,
-    .home-dashboard .dash-table-title {
-       color: var(--title-accent);
-       font-weight: 700;
-       letter-spacing: 0.12em;
+    .home-dashboard .dash-ranking-title {
+       display: block;
+       font-weight: 800;
+       letter-spacing: 0.1em;
        text-transform: uppercase;
-       font-size: 14px;
+       font-size: 16px;
+       padding-bottom: 10px;
+       margin-bottom: 12px;
+       border-bottom: 2px solid rgba(61, 154, 196, 0.45);
+       background: linear-gradient(102deg, #f0f9ff 0%, var(--brand-mid) 40%, var(--brand-bright) 100%);
+       -webkit-background-clip: text;
+       background-clip: text;
+       color: transparent;
+       filter: drop-shadow(0 0 14px rgba(61, 154, 196, 0.35));
+    }
+ 
+    .home-dashboard .dash-table-title {
+       display: block;
+       font-weight: 800;
+       letter-spacing: 0.1em;
+       text-transform: uppercase;
+       font-size: 16px;
+       padding-bottom: 10px;
+       margin-bottom: 14px;
+       border-bottom: 2px solid rgba(61, 154, 196, 0.45);
+       background: linear-gradient(102deg, #f0f9ff 0%, var(--brand-mid) 40%, var(--brand-bright) 100%);
+       -webkit-background-clip: text;
+       background-clip: text;
+       color: transparent;
+       filter: drop-shadow(0 0 14px rgba(61, 154, 196, 0.35));
     }
  
     .home-dashboard .dash-rank-item {
@@ -1231,10 +1326,10 @@
  
     .home-dashboard table.ventas-historial-table.dash-ventas-table thead th.ventas-historial-th {
        background: transparent !important;
-       color: #64748b !important;
-       font-weight: 700;
-       font-size: 12px;
-       letter-spacing: 0.1em;
+       color: #a1a1aa !important;
+       font-weight: 800;
+       font-size: 13px;
+       letter-spacing: 0.09em;
        text-transform: uppercase;
        border-bottom: none;
        padding-top: 4px;
@@ -1428,22 +1523,30 @@
     }
  
     .home-caja-venc-title {
-       font-size: 14px;
+       display: block;
+       font-size: 16px;
        font-weight: 800;
-       letter-spacing: 0.11em;
+       letter-spacing: 0.1em;
        text-transform: uppercase;
-       color: var(--title-accent);
+       padding-left: 12px;
+       border-left: 3px solid var(--accent);
+       background: linear-gradient(102deg, #f0f9ff 0%, var(--brand-mid) 40%, var(--brand-bright) 100%);
+       -webkit-background-clip: text;
+       background-clip: text;
+       color: transparent;
+       filter: drop-shadow(0 0 14px rgba(61, 154, 196, 0.35));
     }
  
     .home-caja-venc-badge {
-       min-width: 26px;
-       height: 26px;
-       padding: 0 7px;
+       min-width: 28px;
+       height: 28px;
+       padding: 0 8px;
        border-radius: 999px;
-       background: rgba(61, 154, 196, 0.22);
+       background: rgba(61, 154, 196, 0.28);
        color: var(--accent);
-       font-size: 11px;
+       font-size: 12px;
        font-weight: 800;
+       box-shadow: 0 0 14px rgba(93, 177, 223, 0.25);
        display: inline-flex;
        align-items: center;
        justify-content: center;
