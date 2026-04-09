@@ -819,8 +819,6 @@
              semanaActualIdx = Math.floor((hd - 1) / 7);
           }
        }
-       var nSemGraf = (d.serieSemanalActual || []).length;
-
        var kpiBlock =
           '<div class="dash-kpi-grid">' +
              '<div class="dash-kpi-card">' +
@@ -888,10 +886,19 @@
                 '<button type="button" class="home-caja-venc-btn" onclick="navegar(null, \'CAJA\')">IR AL BALANCE DE CAJA</button>' +
              '</div>' +
           '</aside>';
-       var chartRow = '<div class="dash-home-chart-row">' + serieCard + '</div>';
-       var sideRowClass = 'dash-home-side-row' + (showRanking && rankBlock ? '' : ' dash-home-side-row--single');
-       var sideRow = '<div class="' + sideRowClass + '">' + vencWidget + rankBlock + '</div>';
-       var midBlock = chartRow + sideRow;
+       var rankingCol = (showRanking && rankBlock) ? '<div class="dash-home-ranking-wrap">' + rankBlock + '</div>' : '';
+       var topRowClass = 'dash-home-top-row' + (rankingCol ? '' : ' dash-home-top-row--no-rank');
+       var topRow =
+          '<div class="' + topRowClass + '">' +
+             '<div class="dash-home-kpi-wrap">' + kpiBlock + '</div>' +
+             rankingCol +
+          '</div>';
+       var chartVencRow =
+          '<div class="dash-home-chart-venc-row">' +
+             '<div class="dash-home-chart-main">' + serieCard + '</div>' +
+             vencWidget +
+          '</div>';
+       var midBlock = topRow + chartVencRow;
 
        var rows = d.ultimasVentas || [];
        var colSpan = vendedorFiltrado ? 4 : 5;

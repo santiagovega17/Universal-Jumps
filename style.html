@@ -1063,29 +1063,58 @@
        }
     }
  
-    .dash-home-chart-row {
+    /* Fila 1: KPIs a la izquierda, ranking a la derecha */
+    .dash-home-top-row {
+       display: grid;
+       gap: 20px;
+       align-items: stretch;
        width: 100%;
-       margin-bottom: 20px;
     }
  
-    .dash-home-side-row {
+    @media (min-width: 900px) {
+       .dash-home-top-row:not(.dash-home-top-row--no-rank) {
+          grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+       }
+    }
+ 
+    .dash-home-kpi-wrap {
+       min-width: 0;
+    }
+ 
+    .dash-home-ranking-wrap {
+       min-width: 0;
+    }
+ 
+    .home-dashboard .dash-home-ranking-wrap .dash-ranking-card {
+       height: 100%;
+       display: flex;
+       flex-direction: column;
+    }
+ 
+    .home-dashboard .dash-home-ranking-wrap .dash-ranking-list {
+       flex: 1;
+       min-height: 0;
+       overflow: auto;
+       max-height: 340px;
+    }
+ 
+    /* Fila 2: gráfico a la izquierda, vencimientos a la derecha */
+    .dash-home-chart-venc-row {
        display: grid;
-       grid-template-columns: 1fr;
        gap: 20px;
        align-items: start;
        width: 100%;
     }
  
     @media (min-width: 900px) {
-       .dash-home-side-row:not(.dash-home-side-row--single) {
-          grid-template-columns: minmax(260px, 360px) 1fr;
+       .dash-home-chart-venc-row {
+          grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
        }
     }
  
-    .dash-home-side-row--single {
-       max-width: 440px;
-       margin-left: auto;
-       margin-right: auto;
+    .dash-home-chart-main {
+       min-width: 0;
+       width: 100%;
     }
  
     .home-dashboard .home-caja-venc-widget {
