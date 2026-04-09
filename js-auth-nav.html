@@ -699,6 +699,17 @@
        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    /** Badge tipo píldora para columna Estado en el home (tabla últimas ventas). */
+    function dashHomeEstadoCell(raw) {
+       var s = (raw || '').toString().trim();
+       var e = s.toUpperCase();
+       var cls = 'dash-estado-badge dash-estado--neutral';
+       if (e.indexOf('COBRADO') >= 0) cls = 'dash-estado-badge dash-estado--ok';
+       else if (e.indexOf('PENDIENTE') >= 0) cls = 'dash-estado-badge dash-estado--pend';
+       else if (e.indexOf('ANUL') >= 0 || e.indexOf('CANCEL') >= 0) cls = 'dash-estado-badge dash-estado--bad';
+       return '<span class="' + cls + '">' + escHtmlHome(s || '–') + '</span>';
+    }
+
     function subtituloVencHome(ddmmyyyy) {
        var t = (ddmmyyyy || '').toString().trim();
        if (!t) return 'Sin fecha de vencimiento';
@@ -736,7 +747,7 @@
           var montoPart = it.monto != null && it.monto !== '' ? ' · $ ' + formatMoneyHome(it.monto) : '';
           html +=
              '<div class="home-caja-venc-item">' +
-             '<span class="home-caja-venc-check" aria-hidden="true"></span>' +
+             '<span class="home-caja-venc-dot" aria-hidden="true"></span>' +
              '<div class="home-caja-venc-item-text">' +
              '<div class="home-caja-venc-item-title">' + tit + '</div>' +
              '<div class="home-caja-venc-item-meta">' + meta + montoPart + '</div>' +
@@ -807,13 +818,16 @@
 
        var kpiBlock =
           '<div class="dash-kpi-grid">' +
-             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total mensual</div>' +
+             '<div class="dash-kpi-card">' +
+                '<div class="dash-kpi-head"><span class="dash-kpi-label">Total mensual</span></div>' +
                 '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalMes) + '</div>' +
                 formatDashKpiVsMesAnterior(d.totalMes, d.totalMesPrev) + '</div>' +
-             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido hoy</div>' +
+             '<div class="dash-kpi-card">' +
+                '<div class="dash-kpi-head"><span class="dash-kpi-label">Total vendido hoy</span></div>' +
                 '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalHoy) + '</div>' +
                 formatDashKpiVsAyer(d.totalHoy, d.totalAyer) + '</div>' +
-             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total anual (acumulado)</div>' +
+             '<div class="dash-kpi-card">' +
+                '<div class="dash-kpi-head"><span class="dash-kpi-label">Total anual (acumulado)</span></div>' +
                 '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalAnualYtd != null ? d.totalAnualYtd : 0) + '</div></div>' +
           '</div>';
 
@@ -888,7 +902,7 @@
           rows.forEach(function (r) {
              tableBody += '<tr><td class="ventas-h-col-fecha">' + formatFechaHome(r.fecha || '') + '</td>';
              if (!vendedorFiltrado) tableBody += '<td>' + (r.vendedor || '') + '</td>';
-             tableBody += '<td class="ventas-h-col-cliente">' + (r.cliente || '') + '</td><td class="ventas-h-col-num">$ ' + formatMoneyHome(r.total) + '</td><td class="ventas-h-col-estado">' + (r.estado || '') + '</td></tr>';
+             tableBody += '<td class="ventas-h-col-cliente">' + (r.cliente || '') + '</td><td class="ventas-h-col-num">$ ' + formatMoneyHome(r.total) + '</td><td class="ventas-h-col-estado">' + dashHomeEstadoCell(r.estado) + '</td></tr>';
           });
        }
 
@@ -900,9 +914,9 @@
 
        if (typeof Chart === 'undefined') return;
 
-       var tickColor = '#94a3b8';
-       var accent = '#c4b5fd';
-       var prevColor = 'rgba(167, 139, 250, 0.45)';
+       var tickColor = '#64748b';
+       var accent = '#38bdf8';
+       var prevColor = 'rgba(100, 116, 139, 0.45)';
 
        var serieLabels = (d.serieSemanalActual || []).map(function (p, i) {
           var n = (d.serieSemanalActual || []).length;
@@ -941,8 +955,8 @@
                    pointHoverRadius: (d.serieSemanalActual || []).map(function (_, i) {
                       return (i === semanaActualIdx && semanaActualIdx >= 0) ? 8 : 4;
                    }),
-                   pointBackgroundColor: '#a78bfa',
-                   pointBorderColor: '#1e1b4b',
+                   pointBackgroundColor: '#22d3ee',
+                   pointBorderColor: '#0f172a',
                    pointBorderWidth: 2,
                 }, {
                    label: 'ANTERIOR',
