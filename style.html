@@ -989,9 +989,8 @@
        border-radius: 0;
        box-sizing: border-box;
        min-height: 100%;
-       /* Sin hueco vertical entre totales↔gráfico y ranking↔venc; separación mínima entre columnas */
        --home-main-grid-row-gap: 0;
-       --home-main-grid-col-gap: 0;
+       --home-main-grid-col-gap: 12px;
        /* Tabla respecto al bloque superior */
        --home-chart-venc-gap: 20px;
     }
@@ -1131,13 +1130,14 @@
        display: grid;
        row-gap: var(--home-main-grid-row-gap);
        column-gap: var(--home-main-grid-col-gap);
-       align-items: start;
+       align-items: stretch;
        width: 100%;
     }
  
     @media (min-width: 900px) {
+       /* Columna izquierda más angosta → gráfico menos ancho; derecha un poco más ancha */
        .dash-home-main-grid:not(.dash-home-main-grid--no-rank) {
-          grid-template-columns: minmax(0, 2.35fr) minmax(260px, 1fr);
+          grid-template-columns: minmax(0, 1.65fr) minmax(272px, 1.12fr);
        }
  
        .dash-home-main-grid--no-rank {
@@ -1147,6 +1147,11 @@
        .dash-home-main-grid--no-rank .dash-home-kpi-wrap {
           grid-column: 1 / -1;
        }
+ 
+       /* Tres KPI en una fila (evita que el tercero ocupe todo el ancho entre 900–1023px) */
+       .dash-home-main-grid--no-rank .dash-home-kpi-wrap .dash-kpi-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+       }
     }
  
     .dash-home-kpi-wrap {
@@ -1155,6 +1160,34 @@
  
     .dash-home-ranking-wrap {
        min-width: 0;
+    }
+ 
+    /* Si el ranking es más alto que la franja de KPIs, estirar la zona de totales hacia abajo (sin hueco) */
+    @media (min-width: 900px) {
+       .dash-home-main-grid:not(.dash-home-main-grid--no-rank) .dash-home-kpi-wrap {
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+       }
+ 
+       .dash-home-main-grid:not(.dash-home-main-grid--no-rank) .dash-home-kpi-wrap .dash-kpi-grid {
+          flex: 1;
+          min-height: 0;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-rows: 1fr;
+          align-items: stretch;
+       }
+ 
+       .dash-home-main-grid:not(.dash-home-main-grid--no-rank) .dash-home-ranking-wrap {
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+       }
+ 
+       .dash-home-main-grid:not(.dash-home-main-grid--no-rank) .dash-home-ranking-wrap .dash-ranking-card {
+          flex: 1;
+          min-height: 0;
+       }
     }
  
     .home-dashboard .dash-home-ranking-wrap .dash-ranking-card {
@@ -1172,6 +1205,14 @@
     .dash-home-chart-main {
        min-width: 0;
        width: 100%;
+       display: flex;
+       flex-direction: column;
+    }
+ 
+    .dash-home-chart-main .dash-chart-card {
+       flex: 1;
+       min-height: 0;
+       width: 100%;
     }
  
     .dash-home-venc-aside {
@@ -1180,6 +1221,11 @@
        justify-content: flex-start;
        align-items: stretch;
        min-width: 0;
+       min-height: 0;
+    }
+ 
+    .home-dashboard .dash-home-venc-aside .home-caja-venc-widget {
+       flex: 1;
        min-height: 0;
     }
  
