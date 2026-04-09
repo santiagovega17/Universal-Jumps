@@ -549,25 +549,197 @@
     }
  
     // --- MENUS ---
+    function destroyHomeCharts() {
+       if (window._ujHomeCharts && window._ujHomeCharts.length) {
+          window._ujHomeCharts.forEach(function (c) {
+             try { c.destroy(); } catch (e) {}
+          });
+       }
+       window._ujHomeCharts = [];
+    }
+
+    function formatMoneyHome(n) {
+       return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
+    }
+
+    function formatFechaHome(iso) {
+       if (!iso || String(iso).length < 10) return iso || '';
+       var p = String(iso).slice(0, 10).split('-');
+       if (p.length !== 3) return iso;
+       return p[2] + '/' + p[1] + '/' + p[0];
+    }
+
+    function getDashboardVendedorParam() {
+       var u = USUARIO_ACTUAL;
+       if (!u) return '';
+       var rolEff = getRolEfectivo();
+       if (rolEff === 'ADMIN' || rolEff === 'ROOT') return '';
+       if (rolEff === 'VENDEDOR') {
+          var h = (getHojaEfectiva() || u.hoja || '').toString().trim();
+          return h || '__SIN_HOJA__';
+       }
+       if (rolEff === 'VENDEDORGRAL') {
+          var n = (u.nombre || '').toString().trim();
+          return n || '__SIN_NOMBRE_VENDEDOR__';
+       }
+       return '';
+    }
+
+    function pintarHomeDashboard(res, showRanking, vendedorFiltrado) {
+       var inner = document.getElementById('home-dashboard-inner');
+       if (!inner) return;
+       if (res.error || !res.data) {
+          inner.innerHTML = '<div class="home-dashboard-error">No se pudieron cargar los datos del panel.</div>';
+          return;
+       }
+       var d = res.data;
+       var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+       var tituloMes = (meses[(d.mes || 1) - 1] || '') + ' ' + (d.anio || '');
+
+       destroyHomeCharts();
+
+       var kpiBlock = '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido (' + tituloMes + ')</div>' +
+          '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalMes) + '</div>' +
+          '<div class="dash-kpi-sub">Incluye ventas registradas en el mes (año operativo).</div></div>';
+
+       var gridClass = showRanking ? 'dash-charts-grid dash-charts-two' : 'dash-charts-grid';
+       var serieCard = '<div class="dash-chart-card"><div class="dash-chart-title">Ventas por día</div><canvas id="chartHomeSerie" height="220"></canvas></div>';
+       var rankCard = showRanking
+          ? '<div class="dash-chart-card"><div class="dash-chart-title">Ranking de vendedores</div><canvas id="chartHomeRank" height="220"></canvas></div>'
+          : '';
+       var chartsBlock = '<div class="' + gridClass + '">' + serieCard + rankCard + '</div>';
+
+       var rows = d.ultimasVentas || [];
+       var colSpan = vendedorFiltrado ? 4 : 5;
+       var tableHead = '<tr><th>Fecha</th>';
+       if (!vendedorFiltrado) tableHead += '<th>Vendedor</th>';
+       tableHead += '<th>Cliente</th><th>Total</th><th>Estado</th></tr>';
+       var tableBody = '';
+       if (rows.length === 0) {
+          tableBody = '<tr><td colspan="' + colSpan + '" class="dash-ventas-empty">No hay ventas recientes en este período.</td></tr>';
+       } else {
+          rows.forEach(function (r) {
+             tableBody += '<tr><td>' + formatFechaHome(r.fecha || '') + '</td>';
+             if (!vendedorFiltrado) tableBody += '<td>' + (r.vendedor || '') + '</td>';
+             tableBody += '<td>' + (r.cliente || '') + '</td><td>$ ' + formatMoneyHome(r.total) + '</td><td>' + (r.estado || '') + '</td></tr>';
+          });
+       }
+
+       inner.innerHTML = kpiBlock + chartsBlock +
+          '<div class="dash-table-section"><div class="dash-table-title">Últimas 5 ventas</div><div class="dash-table-wrap"><table class="dash-ventas-table"><thead>' +
+          tableHead + '</thead><tbody>' + tableBody + '</tbody></table></div></div>';
+
+       if (typeof Chart === 'undefined') return;
+
+       var gridColor = 'rgba(148, 163, 184, 0.2)';
+       var tickColor = '#94a3b8';
+       var accent = '#38bdf8';
+
+       var serieLabels = (d.serieDiaria || []).map(function (p) {
+          var parts = (p.fecha || '').split('-');
+          return parts.length === 3 ? String(Number(parts[2])) : '';
+       });
+       var serieData = (d.serieDiaria || []).map(function (p) { return Number(p.total) || 0; });
+
+       var ctxS = document.getElementById('chartHomeSerie');
+       if (ctxS) {
+          window._ujHomeCharts.push(new Chart(ctxS.getContext('2d'), {
+             type: 'line',
+             data: {
+                labels: serieLabels,
+                datasets: [{
+                   label: 'Total',
+                   data: serieData,
+                   borderColor: accent,
+                   backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                   fill: true,
+                   tension: 0.25,
+                   pointRadius: 0,
+                   pointHoverRadius: 4,
+                }],
+             },
+             options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                   x: { ticks: { color: tickColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { color: gridColor } },
+                   y: { ticks: { color: tickColor }, grid: { color: gridColor } },
+                },
+             },
+          }));
+       }
+
+       if (showRanking) {
+          var rank = d.rankingVendedores || [];
+          var ctxR = document.getElementById('chartHomeRank');
+          if (ctxR) {
+             var labelsR = rank.map(function (x) { return x.vendedor || ''; });
+             var dataR = rank.map(function (x) { return Number(x.total) || 0; });
+             window._ujHomeCharts.push(new Chart(ctxR.getContext('2d'), {
+                type: 'bar',
+                data: {
+                   labels: labelsR,
+                   datasets: [{
+                      label: 'Total',
+                      data: dataR,
+                      backgroundColor: 'rgba(56, 189, 248, 0.45)',
+                      borderColor: accent,
+                      borderWidth: 1,
+                   }],
+                },
+                options: {
+                   indexAxis: 'y',
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   plugins: { legend: { display: false } },
+                   scales: {
+                      x: { ticks: { color: tickColor }, grid: { color: gridColor } },
+                      y: { ticks: { color: tickColor }, grid: { display: false } },
+                   },
+                },
+             }));
+          }
+       }
+    }
+
     function renderMainMenu() {
        let user = USUARIO_ACTUAL;
        let rol = user ? getRolEfectivo() : '';
+       let showRanking = (rol === 'ADMIN' || rol === 'ROOT');
+       let vendedorParam = getDashboardVendedorParam();
+       let mesNow = (new Date()).getMonth() + 1;
+       let anioDash = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : (new Date()).getFullYear();
+
        let html = `<div class="welcome-banner"><div class="welcome-title">Panel Principal</div></div>
+          <div id="home-dashboard" class="home-dashboard">
+             <div class="dash-section-title" style="margin-top:0;border-bottom:none;padding-bottom:8px;">Resumen</div>
+             <div id="home-dashboard-inner" class="home-dashboard-inner">
+                <div class="home-dashboard-loading">Cargando datos…</div>
+             </div>
+          </div>
           <div class="home-grid">`;
- 
-       // VENDEDOR y VENDEDORGRAL solo ven VENTAS
+
        if (rol === 'VENDEDOR' || rol === 'VENDEDORGRAL') {
           html += `<div class="home-card main-cat" onclick="navegar(null, 'MENU_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">trending_up</span></div><div class="home-title">VENTAS</div></div>`;
-       }
-       // ADMIN y ROOT ven todo
-       else if (rol === 'ADMIN' || rol === 'ROOT') {
+       } else if (rol === 'ADMIN' || rol === 'ROOT') {
           html += `<div class="home-card main-cat" onclick="navegar(null, 'MENU_ADMIN')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">domain</span></div><div class="home-title">ADMINISTRACIÓN</div></div>
              <div class="home-card main-cat" onclick="navegar(null, 'MENU_STOCK')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">inventory_2</span></div><div class="home-title">STOCK</div></div>
              <div class="home-card main-cat" onclick="navegar(null, 'MENU_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">trending_up</span></div><div class="home-title">VENTAS</div></div>`;
        }
- 
+
        html += `</div>`;
        document.getElementById('app').innerHTML = html;
+
+       google.script.run
+          .withSuccessHandler(function (res) {
+             pintarHomeDashboard(res, showRanking, !!vendedorParam);
+          })
+          .withFailureHandler(function () {
+             var inner = document.getElementById('home-dashboard-inner');
+             if (inner) inner.innerHTML = '<div class="home-dashboard-error">Error al cargar el panel.</div>';
+          })
+          .obtenerDashboardHome(mesNow, anioDash, vendedorParam);
     }
  
     function renderAdminMenu() {

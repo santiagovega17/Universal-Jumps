@@ -1,5 +1,6 @@
 const {
   obtenerDatosDeHojaVentas,
+  obtenerDashboardHomeService,
   guardarVentaService,
   editarVentaService,
   actualizarCheckService,
@@ -28,6 +29,13 @@ module.exports = async (req, res) => {
         const nombreHoja = req.query.nombreHoja || req.query.vendedor || '';
         if (!nombreHoja) return res.status(400).json({ error: true, mensaje: 'nombreHoja es requerido' });
         const result = await obtenerDatosDeHojaVentas(nombreHoja);
+        return res.status(200).json(result);
+      }
+      if (action === 'dashboard-home') {
+        const mes = req.query.mes;
+        const anio = req.query.anio;
+        const vendedor = (req.query.vendedor || '').toString().trim();
+        const result = await obtenerDashboardHomeService({ mes, anio, vendedor });
         return res.status(200).json(result);
       }
       return res.status(400).json({ error: true, mensaje: 'action no soportado en GET' });

@@ -685,6 +685,148 @@
        margin-top: 5px;
     }
  
+    /* --- HOME DASHBOARD --- */
+    .home-dashboard {
+       max-width: 1000px;
+       margin: 0 auto 36px;
+       padding: 0 4px;
+    }
+ 
+    .home-dashboard-inner {
+       display: flex;
+       flex-direction: column;
+       gap: 20px;
+    }
+ 
+    .home-dashboard-loading,
+    .home-dashboard-error {
+       text-align: center;
+       padding: 28px 16px;
+       color: #94a3b8;
+       font-size: 14px;
+    }
+ 
+    .home-dashboard-error {
+       color: #f87171;
+    }
+ 
+    .dash-kpi-card {
+       background: var(--sidebar);
+       border: 1px solid var(--border-color);
+       border-radius: 12px;
+       padding: 22px 24px;
+       text-align: center;
+    }
+ 
+    .dash-kpi-label {
+       font-size: 11px;
+       font-weight: 700;
+       text-transform: uppercase;
+       letter-spacing: 1.2px;
+       color: var(--accent);
+       margin-bottom: 10px;
+    }
+ 
+    .dash-kpi-value {
+       font-size: 30px;
+       font-weight: 700;
+       color: #f8fafc;
+       letter-spacing: -0.5px;
+    }
+ 
+    .dash-kpi-sub {
+       font-size: 12px;
+       color: #94a3b8;
+       margin-top: 8px;
+    }
+ 
+    .dash-charts-grid {
+       display: grid;
+       grid-template-columns: 1fr;
+       gap: 20px;
+    }
+ 
+    @media (min-width: 920px) {
+       .dash-charts-grid.dash-charts-two {
+          grid-template-columns: 1fr 1fr;
+       }
+    }
+ 
+    .dash-chart-card {
+       background: var(--sidebar);
+       border: 1px solid var(--border-color);
+       border-radius: 12px;
+       padding: 16px 18px 8px;
+    }
+ 
+    .dash-chart-title {
+       font-size: 11px;
+       font-weight: 700;
+       text-transform: uppercase;
+       letter-spacing: 1px;
+       color: #94a3b8;
+       margin-bottom: 12px;
+    }
+ 
+    .dash-chart-card canvas {
+       max-height: 240px;
+    }
+ 
+    .dash-table-section {
+       background: var(--sidebar);
+       border: 1px solid var(--border-color);
+       border-radius: 12px;
+       padding: 16px 18px 20px;
+    }
+ 
+    .dash-table-title {
+       font-size: 11px;
+       font-weight: 700;
+       text-transform: uppercase;
+       letter-spacing: 1px;
+       color: #94a3b8;
+       margin-bottom: 14px;
+    }
+ 
+    .dash-table-wrap {
+       overflow-x: auto;
+       -webkit-overflow-scrolling: touch;
+    }
+ 
+    .dash-ventas-table {
+       width: 100%;
+       border-collapse: collapse;
+       font-size: 13px;
+    }
+ 
+    .dash-ventas-table th {
+       text-align: left;
+       padding: 10px 12px 10px 0;
+       color: #64748b;
+       font-weight: 600;
+       font-size: 11px;
+       text-transform: uppercase;
+       letter-spacing: 0.5px;
+       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+ 
+    .dash-ventas-table td {
+       padding: 12px 12px 12px 0;
+       color: #e2e8f0;
+       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+ 
+    .dash-ventas-table tr:last-child td {
+       border-bottom: none;
+    }
+ 
+    .dash-ventas-empty {
+       padding: 20px 0;
+       text-align: center;
+       color: #64748b;
+       font-size: 13px;
+    }
+ 
     /* --- TARJETAS MES (UNIFICADO) --- */
     .month-grid {
        display: grid;

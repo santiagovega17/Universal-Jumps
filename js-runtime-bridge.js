@@ -114,6 +114,8 @@
 
       obtenerDatosDeHoja: (nombreHoja) =>
         requestJson(`/api/ventas?${buildQuery({ action: 'datos-hoja', nombreHoja })}`),
+      obtenerDashboardHome: (mes, anio, vendedor) =>
+        requestJson(`/api/ventas?${buildQuery({ action: 'dashboard-home', mes, anio, vendedor })}`),
       guardarVenta: (payload) =>
         requestJson('/api/ventas?action=guardar', {
           method: 'POST',
