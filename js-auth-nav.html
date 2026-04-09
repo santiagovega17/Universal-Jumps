@@ -33,6 +33,102 @@
        }, 500);
        inicializarApp();
     }
+
+    // --- ROOT "Ver como" (solo UI, no cambia permisos reales) ---
+    var VIEW_AS_STORAGE_KEY_ROLE = 'uj_view_as_role';
+    var VIEW_AS_STORAGE_KEY_HOJA = 'uj_view_as_hoja';
+    var VIEW_AS_ROLE = '';
+    var VIEW_AS_HOJA = '';
+    var VIEW_AS_VENDEDORES = [];
+
+    function isRootUser() {
+       return USUARIO_ACTUAL && String(USUARIO_ACTUAL.rol || '').toUpperCase() === 'ROOT';
+    }
+
+    function getRolEfectivo() {
+       var real = USUARIO_ACTUAL ? String(USUARIO_ACTUAL.rol || '').toUpperCase() : '';
+       if (real === 'ROOT' && VIEW_AS_ROLE) return String(VIEW_AS_ROLE || '').toUpperCase();
+       return real;
+    }
+
+    function getHojaEfectiva() {
+       var rolEff = getRolEfectivo();
+       if (rolEff === 'VENDEDOR' && isRootUser() && VIEW_AS_HOJA) return VIEW_AS_HOJA;
+       return USUARIO_ACTUAL ? (USUARIO_ACTUAL.hoja || '') : '';
+    }
+
+    function loadViewAsFromStorage() {
+       try {
+          VIEW_AS_ROLE = (localStorage.getItem(VIEW_AS_STORAGE_KEY_ROLE) || '').toUpperCase();
+          VIEW_AS_HOJA = (localStorage.getItem(VIEW_AS_STORAGE_KEY_HOJA) || '').toString();
+       } catch (_) {
+          VIEW_AS_ROLE = '';
+          VIEW_AS_HOJA = '';
+       }
+    }
+
+    function saveViewAsToStorage() {
+       try {
+          localStorage.setItem(VIEW_AS_STORAGE_KEY_ROLE, VIEW_AS_ROLE || '');
+          localStorage.setItem(VIEW_AS_STORAGE_KEY_HOJA, VIEW_AS_HOJA || '');
+       } catch (_) {}
+    }
+
+    function updateViewAsControls() {
+       var cont = document.getElementById('viewas-container');
+       if (!cont) return;
+       if (!isRootUser()) {
+          cont.style.display = 'none';
+          return;
+       }
+       cont.style.display = 'flex';
+       var selRole = document.getElementById('viewas-role');
+       var selHoja = document.getElementById('viewas-hoja');
+       if (selRole) selRole.value = VIEW_AS_ROLE || '';
+       var showHoja = String(VIEW_AS_ROLE || '').toUpperCase() === 'VENDEDOR';
+       if (selHoja) selHoja.style.display = showHoja ? 'inline-flex' : 'none';
+    }
+
+    function populateViewAsHojaOptions() {
+       var selHoja = document.getElementById('viewas-hoja');
+       if (!selHoja) return;
+       var prev = VIEW_AS_HOJA || '';
+       selHoja.innerHTML = '<option value=\"\">Vendedor...</option>';
+       (VIEW_AS_VENDEDORES || []).forEach(function (v) {
+          var opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          selHoja.appendChild(opt);
+       });
+       if (prev && Array.prototype.some.call(selHoja.options, function (o) { return o.value === prev; })) selHoja.value = prev;
+       else selHoja.value = '';
+    }
+
+    function bindViewAsControls() {
+       var selRole = document.getElementById('viewas-role');
+       var selHoja = document.getElementById('viewas-hoja');
+       if (selRole && !selRole._ujBound) {
+          selRole._ujBound = true;
+          selRole.addEventListener('change', function () {
+             VIEW_AS_ROLE = String(selRole.value || '').toUpperCase();
+             if (VIEW_AS_ROLE !== 'VENDEDOR') VIEW_AS_HOJA = '';
+             saveViewAsToStorage();
+             updateViewAsControls();
+             populateViewAsHojaOptions();
+             if (USUARIO_ACTUAL) aplicarPermisos(USUARIO_ACTUAL);
+             navegar(null, 'HOME');
+          });
+       }
+       if (selHoja && !selHoja._ujBound) {
+          selHoja._ujBound = true;
+          selHoja.addEventListener('change', function () {
+             VIEW_AS_HOJA = String(selHoja.value || '');
+             saveViewAsToStorage();
+             if (USUARIO_ACTUAL) aplicarPermisos(USUARIO_ACTUAL);
+             navegar(null, 'HOME');
+          });
+       }
+    }
  
     function iniciarSesion() {
        var btn = document.getElementById('btn-entrar');
@@ -76,20 +172,42 @@
  
     function aplicarPermisos(perfil) {
        document.getElementById('user-display-name').innerText = perfil.email;
-       document.getElementById('user-display-role').innerText = perfil.rol + (perfil.hoja !== 'TODAS' ? ` (${perfil.hoja})` : '');
+       loadViewAsFromStorage();
+       bindViewAsControls();
+       updateViewAsControls();
+
+       var rolEff = getRolEfectivo();
+       var hojaEff = getHojaEfectiva();
+       var label = perfil.rol;
+       if (isRootUser() && rolEff && rolEff !== 'ROOT') {
+          label = 'ROOT (viendo como ' + rolEff + (rolEff === 'VENDEDOR' && hojaEff ? ' - ' + hojaEff : '') + ')';
+       }
+       document.getElementById('user-display-role').innerText = label + (perfil.hoja !== 'TODAS' ? ` (${perfil.hoja})` : '');
  
-       if (perfil.rol === 'VENDEDOR') {
+       // Reset básico de visibilidad antes de aplicar reglas (para poder alternar "ver como" sin refrescar).
+       var adminGroup0 = document.getElementById('nav-admin-group');
+       if (adminGroup0) adminGroup0.style.display = '';
+       if (document.getElementById('menu-consolidado')) document.getElementById('menu-consolidado').style.display = '';
+       if (document.getElementById('menu-comisiones')) document.getElementById('menu-comisiones').style.display = '';
+       if (document.getElementById('menu-config-permisos')) document.getElementById('menu-config-permisos').style.display = '';
+       if (document.getElementById('menu-config-ventas')) document.getElementById('menu-config-ventas').style.display = '';
+       document.querySelectorAll('.vendor-item').forEach(item => { item.style.display = ''; });
+       document.querySelectorAll('.menu-sublabel').forEach(item => { item.style.display = ''; });
+
+       if (rolEff === 'VENDEDOR') {
           var adminGroup = document.getElementById('nav-admin-group');
           if (adminGroup) adminGroup.style.display = 'none';
           document.getElementById('menu-consolidado').style.display = 'none';
           document.getElementById('menu-comisiones').style.display = 'none';
           let sublabels = document.querySelectorAll('.menu-sublabel');
           if (sublabels[0]) sublabels[0].style.display = 'none';
-          document.querySelectorAll('.vendor-item').forEach(item => { if (item.id !== 'menu-' + perfil.hoja.replace(/\s/g, '')) item.style.display = 'none'; });
+          if (hojaEff) {
+             document.querySelectorAll('.vendor-item').forEach(item => { if (item.id !== 'menu-' + hojaEff.replace(/\s/g, '')) item.style.display = 'none'; });
+          }
           // Clientes siempre visible para vendedores
           if (document.getElementById('menu-clientes')) document.getElementById('menu-clientes').style.display = 'block';
           if (document.getElementById('menu-config-ventas')) document.getElementById('menu-config-ventas').style.display = 'none';
-       } else if (perfil.rol === 'VENDEDORGRAL') {
+       } else if (rolEff === 'VENDEDORGRAL') {
           var adminGroup = document.getElementById('nav-admin-group');
           if (adminGroup) adminGroup.style.display = 'none';
           // Ocultar consolidado y comisiones para VENDEDORGRAL
@@ -98,12 +216,12 @@
           // Ocultar config permisos
           if (document.getElementById('menu-config-permisos')) document.getElementById('menu-config-permisos').style.display = 'none';
           if (document.getElementById('menu-config-ventas')) document.getElementById('menu-config-ventas').style.display = 'none';
-       } else if (perfil.rol === 'ROOT') {
+       } else if (rolEff === 'ROOT') {
           // ROOT tiene todos los permisos (se definirán más adelante)
           if (document.getElementById('menu-config-ventas')) document.getElementById('menu-config-ventas').style.display = 'block';
        }
        // ADMIN ya puede ver todo por defecto (no se oculta nada)
-       if (perfil.rol === 'ADMIN' && document.getElementById('menu-config-ventas')) {
+       if (rolEff === 'ADMIN' && document.getElementById('menu-config-ventas')) {
           document.getElementById('menu-config-ventas').style.display = 'block';
        }
     }
@@ -120,12 +238,14 @@
           if (!container) return;
  
           let html = '';
+          VIEW_AS_VENDEDORES = [];
  
           // Vendedores activos (ordenados alfabéticamente)
           let activosOrdenados = (res.activos || []).sort((a, b) => a.nombre.localeCompare(b.nombre));
           activosOrdenados.forEach(v => {
              let idNombre = v.nombre.replace(/\s/g, '');
              let icono = v.nombre === 'Universal Jumps' ? 'storefront' : 'person';
+             VIEW_AS_VENDEDORES.push(v.nombre);
              html += `<div class="menu-item vendor-item vendor-active" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
                    <span class="material-symbols-outlined">${icono}</span> ${v.nombre}
                 </div>`;
@@ -140,6 +260,7 @@
              inactivosOrdenados.forEach(v => {
                 let idNombre = v.nombre.replace(/\s/g, '');
                 let icono = v.nombre === 'Universal Jumps' ? 'storefront' : 'person';
+                VIEW_AS_VENDEDORES.push(v.nombre);
                 html += `<div class="menu-item vendor-item vendor-inactive" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
                       <span class="material-symbols-outlined">${icono}</span> ${v.nombre}
                    </div>`;
@@ -147,6 +268,9 @@
           }
  
           container.innerHTML = html;
+          populateViewAsHojaOptions();
+          updateViewAsControls();
+          bindViewAsControls();
  
           // Aplicar permisos después de renderizar
           if (USUARIO_ACTUAL) aplicarPermisos(USUARIO_ACTUAL);
@@ -354,7 +478,8 @@
           }
        }
        else if (hoja === 'CONFIGURACION_VENTAS') {
-          if (!USUARIO_ACTUAL || (USUARIO_ACTUAL.rol !== 'ADMIN' && USUARIO_ACTUAL.rol !== 'ROOT')) {
+         var rolEff = getRolEfectivo();
+         if (!USUARIO_ACTUAL || (rolEff !== 'ADMIN' && rolEff !== 'ROOT')) {
              alert('No tienes permisos para esta sección.');
              NAVEGANDO = false;
              return;
@@ -382,7 +507,7 @@
        }
        else if (hoja === 'CONSOLIDADO' || hoja === '%') {
           // Verificar permisos para CONSOLIDADO y COMISIONES
-          if (USUARIO_ACTUAL && USUARIO_ACTUAL.rol === 'VENDEDORGRAL') {
+         if (USUARIO_ACTUAL && getRolEfectivo() === 'VENDEDORGRAL') {
              alert('No tienes permisos para ver esta sección');
              NAVEGANDO = false;
              return;
@@ -408,7 +533,7 @@
     // --- MENUS ---
     function renderMainMenu() {
        let user = USUARIO_ACTUAL;
-       let rol = user ? user.rol : '';
+       let rol = user ? getRolEfectivo() : '';
        let html = `<div class="welcome-banner"><div class="welcome-title">Panel Principal</div></div>
           <div class="home-grid">`;
  
@@ -439,18 +564,20 @@
  
     function renderVentasMenu() {
        let user = USUARIO_ACTUAL;
+       let rolEff = getRolEfectivo();
+       let hojaEff = getHojaEfectiva();
        let html = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">VENTAS</div><div class="home-grid">`;
-       if (user.rol === 'ADMIN' || user.rol === 'ROOT') {
+       if (rolEff === 'ADMIN' || rolEff === 'ROOT') {
           html += `<div class="home-card" onclick="navegar(null, 'CONSOLIDADO')"><div class="home-icon"><span class="material-symbols-outlined">leaderboard</span></div><div class="home-title">Consolidado</div></div>
                       <div class="home-card" onclick="navegar(null, '%')"><div class="home-icon"><span class="material-symbols-outlined">trending_up</span></div><div class="home-title">Comisiones</div></div>
                       <div class="home-card" onclick="navegar(null, 'OBJETIVOS')"><div class="home-icon"><span class="material-symbols-outlined">track_changes</span></div><div class="home-title">Objetivos</div></div>
                       <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>
                       <div class="home-card" onclick="navegar(null, 'CONFIGURACION_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined">tune</span></div><div class="home-title">Configuración</div><div class="home-desc">Medios de pago y más</div></div>`;
-       } else if (user.rol === 'VENDEDORGRAL') {
+       } else if (rolEff === 'VENDEDORGRAL') {
           html += `<div class="home-card" onclick="navegar(null, 'OBJETIVOS')"><div class="home-icon"><span class="material-symbols-outlined">track_changes</span></div><div class="home-title">Objetivos</div></div>
                       <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
        } else {
-          html += `<div class="home-card" onclick="navegar(null, '${user.hoja}')"><div class="home-icon"><span class="material-symbols-outlined">edit_note</span></div><div class="home-title">Mis Ventas</div></div>
+         html += `<div class="home-card" onclick="navegar(null, '${hojaEff || user.hoja}')"><div class="home-icon"><span class="material-symbols-outlined">edit_note</span></div><div class="home-title">Mis Ventas</div></div>
                       <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
        }
        html += `</div>`;

@@ -336,7 +336,7 @@
                          <td style="padding: 15px; text-align: center;"><span style="color: var(--grass-green); font-weight: 600;">● Activo</span></td>
                          <td style="padding: 15px; text-align: center; color: #cbd5e1;">${tipoObjDisplay}</td>
                          <td style="padding: 15px; text-align: center;">
-                            ${(USUARIO_ACTUAL && (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT')) ? `<button class="action-btn btn-edit" style="margin-right: 8px;" onclick="abrirModalVendedor('editar', '${u.nombre}', '${u.email || ''}', '${u.tipoObjetivo || 'RANGO'}', '${u.rol}')" title="Editar">
+                           ${(USUARIO_ACTUAL && ((typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ADMIN' || (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ROOT')) ? `<button class="action-btn btn-edit" style="margin-right: 8px;" onclick="abrirModalVendedor('editar', '${u.nombre}', '${u.email || ''}', '${u.tipoObjetivo || 'RANGO'}', '${u.rol}')" title="Editar">
                                <span class="material-symbols-outlined">edit</span>
                             </button>` : ''}
                             <button class="action-btn" style="background: var(--danger); color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;" onclick="cambiarEstadoUsuario('${u.email}', false)">
@@ -358,7 +358,7 @@
                          <td style="padding: 15px; text-align: center;"><span style="color: #64748b; font-weight: 600;">● Inactivo</span></td>
                          <td style="padding: 15px; text-align: center; color: #64748b;">${tipoObjDisplay}</td>
                          <td style="padding: 15px; text-align: center;">
-                            ${(USUARIO_ACTUAL && (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT')) ? `<button class="action-btn btn-edit" style="margin-right: 8px;" onclick="abrirModalVendedor('editar', '${u.nombre}', '${u.email || ''}', '${u.tipoObjetivo || 'RANGO'}', '${u.rol}')" title="Editar">
+                           ${(USUARIO_ACTUAL && ((typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ADMIN' || (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ROOT')) ? `<button class="action-btn btn-edit" style="margin-right: 8px;" onclick="abrirModalVendedor('editar', '${u.nombre}', '${u.email || ''}', '${u.tipoObjetivo || 'RANGO'}', '${u.rol}')" title="Editar">
                                <span class="material-symbols-outlined">edit</span>
                             </button>` : ''}
                             <button class="action-btn" style="background: var(--grass-green); color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;" onclick="cambiarEstadoUsuario('${u.email}', true)">
@@ -503,7 +503,9 @@
        // Verificar rol de forma más robusta (normalizar a mayúsculas y trim)
        // Si USUARIO_ACTUAL no está definido, asumir que es vendedor para permitir crear clientes
        let rolUsuario = '';
-       if (USUARIO_ACTUAL && USUARIO_ACTUAL.rol) {
+       if (typeof getRolEfectivo === 'function') {
+          rolUsuario = String(getRolEfectivo() || '').trim().toUpperCase();
+       } else if (USUARIO_ACTUAL && USUARIO_ACTUAL.rol) {
           rolUsuario = USUARIO_ACTUAL.rol.toString().trim().toUpperCase();
        } else {
           // Si no hay USUARIO_ACTUAL, permitir crear clientes por defecto (probablemente es vendedor)
@@ -1219,8 +1221,9 @@
           title.innerText = esVendedor ? 'EDITAR VENDEDOR' : 'EDITAR USUARIO';
           btn.innerText = 'ACTUALIZAR';
           emailInput.value = email || '';
-          // Solo ADMIN y ROOT pueden editar email
-          let puedeEditarEmail = USUARIO_ACTUAL && (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT');
+         // Solo ADMIN y ROOT pueden editar email (según rol efectivo para ROOT "ver como")
+         let rolEff = (typeof getRolEfectivo === 'function') ? getRolEfectivo() : (USUARIO_ACTUAL && USUARIO_ACTUAL.rol);
+         let puedeEditarEmail = USUARIO_ACTUAL && (rolEff === 'ADMIN' || rolEff === 'ROOT');
           emailInput.disabled = !puedeEditarEmail;
           nombreInput.value = nombre;
           nombreInput.disabled = true;
@@ -1527,9 +1530,10 @@
        objetivosEspeciales = objetivosEspeciales || [];
        let sel = document.getElementById('selTrimestreHeader');
        let textTrimestre = sel ? sel.options[sel.selectedIndex].text : '';
-       let isAdmin = (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT');
-       let isSuperVendedor = (USUARIO_ACTUAL.rol === 'VENDEDORGRAL');
-       let esVendedor = (USUARIO_ACTUAL.rol === 'VENDEDOR');
+       var rolEff = (typeof getRolEfectivo === 'function') ? getRolEfectivo() : (USUARIO_ACTUAL && USUARIO_ACTUAL.rol);
+       let isAdmin = (rolEff === 'ADMIN' || rolEff === 'ROOT');
+       let isSuperVendedor = (rolEff === 'VENDEDORGRAL');
+       let esVendedor = (rolEff === 'VENDEDOR');
        let puedeEditar = isAdmin;
  
        // Si es vendedor, verificar si tiene objetivos especiales

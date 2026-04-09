@@ -263,7 +263,7 @@
                    <span class="material-symbols-outlined" style="font-size: 18px;">history</span>
                    HISTORIAL
                 </div>
-                ${USUARIO_ACTUAL && USUARIO_ACTUAL.rol !== 'VENDEDORGRAL' ? `<button class="btn-submit" onclick="abrirModalVenta()" style="padding: 8px 16px; font-size: 13px; width: auto; flex-shrink: 0;">
+                ${USUARIO_ACTUAL && (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) !== 'VENDEDORGRAL' ? `<button class="btn-submit" onclick="abrirModalVenta()" style="padding: 8px 16px; font-size: 13px; width: auto; flex-shrink: 0;">
                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">add</span>
                    Agregar Venta
                 </button>` : ''}
@@ -642,10 +642,12 @@
  
     function construirTablaHistorialAcciones(datos, nombreVendedor) {
        // Permitir editar si es ADMIN o ROOT (cualquier hoja), o VENDEDOR en su propia hoja
+       var rolEff = USUARIO_ACTUAL ? (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) : '';
+       var hojaEff = USUARIO_ACTUAL ? (typeof getHojaEfectiva === 'function' ? getHojaEfectiva() : USUARIO_ACTUAL.hoja) : '';
        let puedeEditar = USUARIO_ACTUAL && (
-          USUARIO_ACTUAL.rol === 'ADMIN' ||
-          USUARIO_ACTUAL.rol === 'ROOT' ||
-          (USUARIO_ACTUAL.rol === 'VENDEDOR' && USUARIO_ACTUAL.hoja && USUARIO_ACTUAL.hoja.toUpperCase() === nombreVendedor.toUpperCase())
+          String(rolEff).toUpperCase() === 'ADMIN' ||
+          String(rolEff).toUpperCase() === 'ROOT' ||
+          (String(rolEff).toUpperCase() === 'VENDEDOR' && hojaEff && hojaEff.toUpperCase() === nombreVendedor.toUpperCase())
        );
        let html = '<table class="ventas-historial-table"><thead><tr>';
        html += historialTh('FECHA', 'col-sm ventas-h-col-fecha');
@@ -789,7 +791,7 @@
        var vendedorSugerido = esVendedorValido(vendedorBase) ? vendedorBase : '';
        var grupoVendedor = document.getElementById('grupoVendedor');
        if (grupoVendedor) {
-          var r = (USUARIO_ACTUAL && USUARIO_ACTUAL.rol || '').toString().toUpperCase();
+          var r = (USUARIO_ACTUAL && (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) || '').toString().toUpperCase();
           grupoVendedor.style.display = (r === 'ADMIN' || r === 'ROOT') ? 'block' : 'none';
        }
        let title = document.getElementById('modalTitle'); let btn = document.getElementById('btnGuardar');
@@ -797,9 +799,11 @@
        poblarSelectVendedoresVenta(vendedorSugerido, modo === 'editar', function (vendedorFinal) {
           let vendedorParaClientes = '';
           if (USUARIO_ACTUAL) {
-             if (USUARIO_ACTUAL.rol === 'VENDEDOR') {
-                vendedorParaClientes = USUARIO_ACTUAL.hoja;
-             } else if (USUARIO_ACTUAL.rol === 'ADMIN' || USUARIO_ACTUAL.rol === 'ROOT') {
+             var rolEff = (typeof getRolEfectivo === 'function') ? getRolEfectivo() : USUARIO_ACTUAL.rol;
+             var hojaEff = (typeof getHojaEfectiva === 'function') ? getHojaEfectiva() : USUARIO_ACTUAL.hoja;
+             if (rolEff === 'VENDEDOR') {
+                vendedorParaClientes = hojaEff;
+             } else if (rolEff === 'ADMIN' || rolEff === 'ROOT') {
                 vendedorParaClientes = vendedorFinal;
              }
           }

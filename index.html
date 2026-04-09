@@ -113,6 +113,17 @@
 
             <div class="top-nav-right">
                <span class="top-nav-version" id="sidebar-version">v1.0.0</span>
+               <div class="top-nav-viewas" id="viewas-container" style="display:none;">
+                  <select id="viewas-role" class="top-nav-viewas-select" title="Ver como (solo ROOT)">
+                     <option value="">Ver como: ROOT</option>
+                     <option value="ADMIN">Ver como: ADMIN</option>
+                     <option value="VENDEDORGRAL">Ver como: VENDEDORGRAL</option>
+                     <option value="VENDEDOR">Ver como: VENDEDOR</option>
+                  </select>
+                  <select id="viewas-hoja" class="top-nav-viewas-select" style="display:none;" title="Vendedor a simular (solo ROOT)">
+                     <option value="">Vendedor...</option>
+                  </select>
+               </div>
                <div class="top-nav-user">
                   <div id="user-display-name" class="user-name">...</div>
                   <div id="user-display-role" class="user-role">...</div>
