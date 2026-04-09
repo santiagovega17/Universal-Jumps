@@ -321,14 +321,14 @@
                 let claseStock = cantidad > 0 ? 'stock-disponible' : cantidad < 0 ? 'stock-negativo' : 'stock-cero';
                 let iconoStock = cantidad > 0 ? 'check_circle' : cantidad < 0 ? 'error' : 'remove_circle';
                 var colorTalle = cantidad > 0 ? '#22c55e' : cantidad < 0 ? '#ef4444' : '#94a3b8';
-                tallesHtml += '<tr><td style="font-weight:600; padding:8px 0; color:white; font-size:13px;">Talle ' + talle + '</td><td style="text-align:right; padding:8px 0;"><span style="display:inline-flex; align-items:center; gap:5px; color:' + colorTalle + '; font-size:13px;"><span class="material-symbols-outlined" style="font-size:18px;">' + iconoStock + '</span>' + cantidad + '</span></td></tr>';
+                tallesHtml += '<tr><td class="stock-talles-label">Talle ' + talle + '</td><td class="stock-talles-qty"><span style="display:inline-flex; align-items:center; gap:5px; color:' + colorTalle + '; font-size:13px;"><span class="material-symbols-outlined" style="font-size:18px;">' + iconoStock + '</span>' + cantidad + '</span></td></tr>';
              });
           } else {
              let cantidad = producto.talles && producto.talles['UNICO'] !== undefined ? producto.talles['UNICO'] : 0;
              if (cantidad !== 0) todosTallesEnCero = false;
              let iconoStock = cantidad > 0 ? 'check_circle' : cantidad < 0 ? 'error' : 'remove_circle';
              var colorUnico = cantidad > 0 ? '#22c55e' : cantidad < 0 ? '#ef4444' : '#94a3b8';
-             tallesHtml = '<tr><td style="font-weight:600; padding:8px 0; color:white; font-size:13px;">Cantidad</td><td style="text-align:right; padding:8px 0;"><span style="display:inline-flex; align-items:center; gap:5px; color:' + colorUnico + '; font-size:13px;"><span class="material-symbols-outlined" style="font-size:18px;">' + iconoStock + '</span>' + cantidad + '</span></td></tr>';
+             tallesHtml = '<tr><td class="stock-talles-label">Cantidad</td><td class="stock-talles-qty"><span style="display:inline-flex; align-items:center; gap:5px; color:' + colorUnico + '; font-size:13px;"><span class="material-symbols-outlined" style="font-size:18px;">' + iconoStock + '</span>' + cantidad + '</span></td></tr>';
           }
           
           // Guardar si todos los talles están en 0 en el producto para usar en el botón
@@ -357,7 +357,7 @@
              '<div style="padding:15px; flex:1; display:flex; flex-direction:column; gap:12px;">' +
              '<h3 style="margin:0; color:white; font-size:16px; font-weight:600;">' + tituloProducto + '</h3>' + descrHtml +
              '<div style="border-top:1px solid #1e293b; padding-top:12px; margin-top:0;">' +
-             '<table style="width:100%; border-collapse:collapse;"><tbody>' + tallesHtml + '</tbody></table></div>' +
+             '<table class="ventas-historial-table stock-talles-mini"><tbody>' + tallesHtml + '</tbody></table></div>' +
              '<button class="btn-submit" onclick="abrirModalAjusteStock(\'' + producto.id + '\', \'' + (producto.modelo || '') + '\', \'' + String(colorProd).replace(/'/g, '&#39;') + '\', ' + (producto.divideTalles === 'NO') + ')" style="width:100%; background:var(--accent); margin-top:0;">' +
              '<span class="material-symbols-outlined" style="font-size:18px; vertical-align:middle;">edit</span> Ajustar Stock</button></div></div>';
              });
@@ -419,15 +419,15 @@
              '<div style="font-size:16px;">No hay movimientos registrados</div>' +
              '</div>';
        } else {
-          html += '<div style="overflow-x:auto;">' +
-             '<table style="width:100%; border-collapse:collapse; background:#0f172a; border-radius:8px; overflow:hidden;">' +
-             '<thead><tr style="background:#1e293b;">' +
-             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Fecha</th>' +
-             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Producto</th>' +
-             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Talle</th>' +
-             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Tipo</th>' +
-             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Cantidad</th>' +
-             '<th style="padding:12px; text-align:center; color:#94a3b8; font-size:13px; font-weight:600; border-bottom:1px solid #334155;">Observación</th>' +
+          html += '<div class="caja-historial-table-wrap">' +
+             '<table class="ventas-historial-table stock-movimientos-table">' +
+             '<thead><tr>' +
+             '<th class="ventas-historial-th ventas-h-col-fecha"><span class="ventas-historial-th-inner">Fecha</span></th>' +
+             '<th class="ventas-historial-th"><span class="ventas-historial-th-inner">Producto</span></th>' +
+             '<th class="ventas-historial-th"><span class="ventas-historial-th-inner">Talle</span></th>' +
+             '<th class="ventas-historial-th ventas-h-col-estado"><span class="ventas-historial-th-inner">Tipo</span></th>' +
+             '<th class="ventas-historial-th ventas-h-col-num"><span class="ventas-historial-th-inner">Cantidad</span></th>' +
+             '<th class="ventas-historial-th ventas-h-col-obs"><span class="ventas-historial-th-inner">Observación</span></th>' +
              '</tr></thead><tbody>';
  
           movimientos.forEach(mov => {
@@ -439,17 +439,16 @@
              const tipoProd = mov.tipoProducto || mov.tipo || '';
              const marcaTipo = mov.marca + (tipoProd ? ' - ' + tipoProd : '') + ' - ' + mov.modelo;
              const signo = tipoMov === 'INGRESO' ? '+' : '-';
-             html += '<tr style="border-bottom:1px solid #1e293b;">' +
-                '<td style="padding:12px; text-align:center; color:#f1f5f9; font-size:14px;">' + (mov.fecha || '') + '</td>' +
-                '<td style="padding:12px; text-align:center; color:#f1f5f9; font-size:14px;">' +
-                '<div style="font-weight:600;">' + marcaTipo + '</div>' +
+             html += '<tr>' +
+                '<td class="ventas-h-col-fecha">' + (mov.fecha || '') + '</td>' +
+                '<td><div style="font-weight:600; color:#f1f5f9;">' + marcaTipo + '</div>' +
                 '<div style="color:#94a3b8; font-size:12px;">' + (mov.color || '') + '</div></td>' +
-                '<td style="padding:12px; text-align:center; color:#f1f5f9; font-size:14px;">' + (mov.talle || '') + '</td>' +
-                '<td style="padding:12px; text-align:center;">' +
+                '<td>' + (mov.talle || '') + '</td>' +
+                '<td class="ventas-h-col-estado">' +
                 '<span style="display:inline-flex; align-items:center; gap:5px; color:' + tipoColor + '; font-size:13px; font-weight:600;">' +
                 '<span class="material-symbols-outlined" style="font-size:18px;">' + tipoIcono + '</span>' + (tipoMov || mov.tipo || '') + '</span></td>' +
-                '<td style="padding:12px; text-align:center; color:' + tipoColor + '; font-size:14px; font-weight:600;">' + signo + cantidadAbs + '</td>' +
-                '<td style="padding:12px; text-align:center; color:#94a3b8; font-size:13px;">' + (mov.observacion || '') + '</td>' +
+                '<td class="ventas-h-col-num" style="color:' + tipoColor + '; font-weight:600;">' + signo + cantidadAbs + '</td>' +
+                '<td class="ventas-h-col-obs">' + (mov.observacion || '') + '</td>' +
                 '</tr>';
           });
  

@@ -691,6 +691,19 @@
        gap: 12px;
     }
  
+    .app-sidebar .menu-item > .material-symbols-outlined:first-of-type {
+       flex-shrink: 0;
+       min-width: 22px;
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+    }
+ 
+    #menu-config-ventas.menu-item > .material-symbols-outlined:first-of-type {
+       min-width: 26px;
+       padding-right: 2px;
+    }
+ 
     .app-sidebar .menu-item:hover {
        background: rgba(56, 189, 248, 0.12);
        color: white;
@@ -999,6 +1012,37 @@
        margin-top: 8px;
     }
  
+    .dash-kpi-trend {
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+       flex-wrap: wrap;
+       gap: 6px;
+       margin-top: 12px;
+       font-size: 13px;
+       font-weight: 600;
+       font-variant-numeric: tabular-nums;
+    }
+ 
+    .dash-kpi-trend-ic {
+       font-size: 20px !important;
+       font-weight: 400 !important;
+       line-height: 1;
+    }
+ 
+    .dash-kpi-trend--up {
+       color: #2dd4bf;
+    }
+ 
+    .dash-kpi-trend--down {
+       color: #f87171;
+    }
+ 
+    .dash-kpi-trend--flat {
+       color: #64748b;
+       font-weight: 500;
+    }
+ 
     .dash-charts-grid {
        display: grid;
        grid-template-columns: 1fr;
@@ -1174,38 +1218,17 @@
        -webkit-overflow-scrolling: touch;
     }
  
-    .dash-ventas-table {
+    table.ventas-historial-table.dash-ventas-table {
+       min-width: 0 !important;
        width: 100%;
-       border-collapse: collapse;
-       font-size: 13px;
-    }
- 
-    .dash-ventas-table th {
-       text-align: left;
-       padding: 10px 12px 10px 0;
-       color: #64748b;
-       font-weight: 600;
-       font-size: 11px;
-       text-transform: uppercase;
-       letter-spacing: 0.5px;
-       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
- 
-    .dash-ventas-table td {
-       padding: 12px 12px 12px 0;
-       color: #e2e8f0;
-       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
- 
-    .dash-ventas-table tr:last-child td {
-       border-bottom: none;
     }
  
     .dash-ventas-empty {
-       padding: 20px 0;
-       text-align: center;
-       color: #64748b;
+       padding: 24px 12px !important;
+       text-align: center !important;
+       color: #64748b !important;
        font-size: 13px;
+       background: #0f172a !important;
     }
  
     /* --- TARJETAS MES (UNIFICADO) --- */
@@ -1990,6 +2013,42 @@
     }
     .ventas-historial-table td.ventas-h-col-acc {
        white-space: nowrap !important;
+    }
+ 
+    .usuarios-gestion-table {
+       min-width: 880px;
+    }
+ 
+    tr.usuarios-gestion-row-inactive td {
+       color: #94a3b8;
+    }
+ 
+    .stock-movimientos-table {
+       min-width: 720px;
+    }
+ 
+    table.ventas-historial-table.stock-talles-mini {
+       min-width: 0 !important;
+       width: 100%;
+       background: transparent;
+    }
+ 
+    table.ventas-historial-table.stock-talles-mini tbody tr:nth-child(odd) td,
+    table.ventas-historial-table.stock-talles-mini tbody tr:nth-child(even) td {
+       background: transparent !important;
+    }
+ 
+    table.ventas-historial-table.stock-talles-mini tbody tr:hover td {
+       background: rgba(30, 41, 59, 0.45) !important;
+    }
+ 
+    .stock-talles-label {
+       font-weight: 600;
+       color: #f8fafc;
+    }
+ 
+    .stock-talles-qty {
+       text-align: right;
     }
 
     .card {
@@ -3451,6 +3510,103 @@
     .btn-cargar-mas { background: var(--border-color); color: var(--accent); font-size: 13px; padding: 8px 20px; }
     .btn-cargar-mas:hover { opacity: 0.9; }
 
+    /* Consolidado anual caja: dos tablas alineadas (concepto fijo + meses con scroll), misma piel que historial ventas */
+    .caja-consolidado-split {
+       display: flex;
+       width: 100%;
+       overflow: hidden;
+       border-radius: 10px;
+       border: 1px solid #334155;
+       background: #0f172a;
+    }
+ 
+    .caja-consolidado-concept-wrap {
+       flex-shrink: 0;
+       border-right: 1px solid #334155;
+       background: #0f172a;
+    }
+ 
+    .caja-consolidado-scroll {
+       flex: 1;
+       overflow-x: auto;
+       min-width: 0;
+       -webkit-overflow-scrolling: touch;
+       background: #0f172a;
+    }
+ 
+    .caja-consolidado-table--concept {
+       min-width: 0 !important;
+       width: 100%;
+       table-layout: fixed;
+    }
+ 
+    .caja-consolidado-table--meses {
+       min-width: 1100px;
+       width: 100%;
+    }
+ 
+    .caja-consolidado-th-concept {
+       text-align: left !important;
+    }
+ 
+    .caja-consolidado-th-mes,
+    .caja-consolidado-th-total-col {
+       min-width: 96px;
+    }
+ 
+    .caja-consolidado-cell-concept {
+       text-align: left !important;
+       color: #e2e8f0 !important;
+       font-size: 12px !important;
+       white-space: normal !important;
+       word-break: break-word;
+    }
+ 
+    .caja-consolidado-total-label {
+       font-weight: 700 !important;
+       color: #f1f5f9 !important;
+       text-transform: uppercase;
+       letter-spacing: 0.04em;
+       font-size: 11px !important;
+    }
+ 
+    .caja-consolidado-table--meses thead th,
+    .caja-consolidado-table--meses tbody td {
+       text-align: center !important;
+    }
+ 
+    .caja-consolidado-num {
+       font-variant-numeric: tabular-nums;
+       font-size: 12px !important;
+    }
+ 
+    .caja-consolidado-num--zero {
+       color: #64748b !important;
+    }
+ 
+    .caja-consolidado-num--accent {
+       color: #38bdf8 !important;
+    }
+ 
+    .caja-consolidado-num--year {
+       font-weight: 700 !important;
+       color: #4ade80 !important;
+    }
+ 
+    .caja-consolidado-num--year-total {
+       font-weight: 800 !important;
+       color: #22c55e !important;
+    }
+ 
+    .caja-consolidado-table tbody tr.caja-consolidado-row-total td {
+       border-top: 2px solid #334155 !important;
+       background: #1e293b !important;
+    }
+ 
+    .caja-consolidado-table tbody tr.caja-consolidado-row-total:hover td {
+       background: #1e293b !important;
+    }
+ 
     /* Historial caja: una sola tabla, acordeón dentro de la tabla para grupos con >1 movimiento */
     .caja-historial-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .caja-historial-table,

@@ -112,10 +112,6 @@
 
        var mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-       var headerBg = '#232f42';
-       var rowStyle = 'background:' + headerBg + '; border-bottom: 1px solid var(--border-color);';
-       var cellStyle = 'padding:8px 10px; font-size:13px; text-align:center; white-space:nowrap;';
-
        var totalesMes = new Array(12).fill(0);
        var totalAnualGeneral = 0;
 
@@ -140,48 +136,44 @@
        var conceptColWidth = Math.max(220, Math.min(maxLen * 10 - 50, 700));
 
        var html = '';
-       html += '<div style="display:flex; width:100%; overflow:hidden;">';
-       // Panel fijo (concepto/descripción) - nunca se desplaza, ancho según el texto más largo
-       html += '<div style="flex-shrink:0; width:' + conceptColWidth + 'px; min-width:' + conceptColWidth + 'px; border-right: 1px solid var(--border-color);">';
-       html += '<table style="width:100%; border-collapse: collapse; table-layout: fixed;">';
-       html += '<thead><tr style="' + rowStyle + '"><th style="' + cellStyle + ' font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO / DESCRIPCIÓN</th></tr></thead>';
-       html += '<tbody>';
+       html += '<div class="caja-consolidado-split">';
+       html += '<div class="caja-consolidado-concept-wrap" style="width:' + conceptColWidth + 'px; min-width:' + conceptColWidth + 'px;">';
+       html += '<table class="ventas-historial-table caja-consolidado-table caja-consolidado-table--concept">';
+       html += '<thead><tr><th class="ventas-historial-th caja-consolidado-th-concept"><span class="ventas-historial-th-inner">CONCEPTO / DESCRIPCIÓN</span></th></tr></thead><tbody>';
        data.items.forEach(function (item) {
           var c = (item.concepto || '').toString().toUpperCase();
           var d = (item.descripcion || '').toString().toUpperCase();
           var conceptoDesc = (c ? '(' + c + ') ' : '') + d;
-          html += '<tr style="' + rowStyle + '"><td style="' + cellStyle + ' color:#e2e8f0;">' + conceptoDesc + '</td></tr>';
+          html += '<tr><td class="caja-consolidado-cell-concept">' + conceptoDesc + '</td></tr>';
        });
-       html += '<tr style="' + rowStyle + ' border-top: 2px solid var(--border-color);"><td style="' + cellStyle + ' font-weight:700; color:#e5e7eb; font-size:12px; text-transform:uppercase;">Total general</td></tr>';
+       html += '<tr class="caja-consolidado-row-total"><td class="caja-consolidado-cell-concept caja-consolidado-total-label">Total general</td></tr>';
        html += '</tbody></table></div>';
 
-       // Panel desplazable (meses + total)
-       html += '<div style="flex:1; overflow-x:auto; min-width:0;">';
-       html += '<table style="width:100%; min-width: 1100px; border-collapse: collapse; table-layout: auto; text-align:center;">';
-       html += '<thead><tr style="' + rowStyle + '">';
+       html += '<div class="caja-consolidado-scroll">';
+       html += '<table class="ventas-historial-table caja-consolidado-table caja-consolidado-table--meses">';
+       html += '<thead><tr>';
        for (var i = 0; i < 12; i++) {
-          html += '<th style="' + cellStyle + ' font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; min-width:110px;">' + mesesCortos[i] + '</th>';
+          html += '<th class="ventas-historial-th caja-consolidado-th-mes"><span class="ventas-historial-th-inner">' + mesesCortos[i] + '</span></th>';
        }
-       html += '<th style="' + cellStyle + ' font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase; min-width:110px;">TOTAL AÑO</th></tr></thead>';
-       html += '<tbody>';
+       html += '<th class="ventas-historial-th caja-consolidado-th-mes caja-consolidado-th-total-col"><span class="ventas-historial-th-inner">TOTAL AÑO</span></th></tr></thead><tbody>';
 
        data.items.forEach(function (item) {
           var totalFila = 0;
-          html += '<tr style="' + rowStyle + '">';
+          html += '<tr>';
           for (var m = 0; m < 12; m++) {
              var val = (item.meses && typeof item.meses[m] === 'number') ? item.meses[m] : 0;
              totalFila += val;
-             html += '<td style="' + cellStyle + ' color:' + (val > 0 ? '#38bdf8' : '#64748b') + ';">' + (val > 0 ? formatNumberAr(val) : '-') + '</td>';
+             html += '<td class="caja-consolidado-num' + (val > 0 ? ' caja-consolidado-num--accent' : ' caja-consolidado-num--zero') + '">' + (val > 0 ? formatNumberAr(val) : '-') + '</td>';
           }
-          html += '<td style="' + cellStyle + ' font-weight:700; color:#22c55e;">' + (totalFila > 0 ? formatNumberAr(totalFila) : '-') + '</td></tr>';
+          html += '<td class="caja-consolidado-num caja-consolidado-num--year">' + (totalFila > 0 ? formatNumberAr(totalFila) : '-') + '</td></tr>';
        });
 
-       html += '<tr style="' + rowStyle + ' border-top: 2px solid var(--border-color);">';
+       html += '<tr class="caja-consolidado-row-total">';
        for (var t = 0; t < 12; t++) {
           var tv = totalesMes[t];
-          html += '<td style="' + cellStyle + ' font-weight:600; color:#22c55e;">' + (tv > 0 ? formatNumberAr(tv) : '-') + '</td>';
+          html += '<td class="caja-consolidado-num caja-consolidado-num--year">' + (tv > 0 ? formatNumberAr(tv) : '-') + '</td>';
        }
-       html += '<td style="' + cellStyle + ' font-weight:800; color:#22c55e;">' + (totalAnualGeneral > 0 ? formatNumberAr(totalAnualGeneral) : '-') + '</td></tr>';
+       html += '<td class="caja-consolidado-num caja-consolidado-num--year-total">' + (totalAnualGeneral > 0 ? formatNumberAr(totalAnualGeneral) : '-') + '</td></tr>';
        html += '</tbody></table></div></div>';
 
        container.innerHTML = html;
@@ -590,7 +582,7 @@
        var fid = escIdCaja(mov.filaIndex);
        var acciones = '<button type="button" class="action-btn btn-edit" onclick="abrirModalCaja(\'editar\', ' + fid + '); event.stopPropagation();" title="Editar"><span class="material-symbols-outlined">edit</span></button>';
        var accionesWrap = '<div class="caja-acciones-wrap">' + acciones + '</div>';
-       return '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.fecha || '') + '</td><td style="padding:12px; text-align:center;"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + (mov.concepto || '') + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + (mov.descripcion || '') + '</td><td style="padding:12px; color:white; font-size:13px; text-align:center;">' + formaPagoHtml + '</td><td style="padding:12px; text-align:center;">' + montoHtml + '</td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + obsHtml + '</td><td style="padding:12px; text-align:center;"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td style="padding:12px; color:#94a3b8; font-size:13px; text-align:center;">' + vencHtml + '</td><td style="padding:12px; text-align:center;">' + accionesWrap + '</td></tr>';
+       return '<tr><td class="ventas-h-col-fecha">' + (mov.fecha || '') + '</td><td class="ventas-h-col-estado"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td>' + (mov.concepto || '') + '</td><td><span class="ventas-historial-clip">' + (mov.descripcion || '') + '</span></td><td>' + formaPagoHtml + '</td><td class="ventas-h-col-num">' + montoHtml + '</td><td>' + obsHtml + '</td><td class="ventas-h-col-estado"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td class="ventas-h-col-fecha">' + vencHtml + '</td><td class="ventas-h-col-acc">' + accionesWrap + '</td></tr>';
     }
 
     function renderHistorialMovimientos(data) {
@@ -617,9 +609,12 @@
        });
 
        var colgroup = '<colgroup><col style="width:8%"><col style="width:6%"><col style="width:10%"><col style="width:18%"><col style="width:10%"><col style="width:10%"><col style="width:14%"><col style="width:7%"><col style="width:7%"><col style="width:10%"></colgroup>';
-       var thRow = '<tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color);"><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FECHA</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">TIPO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">CONCEPTO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">DESCRIPCIÓN</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">FORMA DE PAGO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">MONTO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">OBSERVACION</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ESTADO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">VENCIMIENTO</th><th style="padding:12px; text-align:center; font-weight:600; color:#94a3b8; font-size:12px; text-transform:uppercase;">ACCIONES</th></tr>';
+       var thLabels = ['FECHA', 'TIPO', 'CONCEPTO', 'DESCRIPCIÓN', 'FORMA DE PAGO', 'MONTO', 'OBSERVACION', 'ESTADO', 'VENCIMIENTO', 'ACCIONES'];
+       var thRow = '<tr>' + thLabels.map(function (lbl) {
+          return '<th class="ventas-historial-th"><span class="ventas-historial-th-inner">' + lbl + '</span></th>';
+       }).join('') + '</tr>';
 
-       var html = '<div class="caja-historial-table-wrap"><table class="caja-historial-table" style="width:100%; min-width: 1100px; border-collapse: collapse; table-layout: fixed;">' + colgroup + '<thead>' + thRow + '</thead><tbody>';
+       var html = '<div class="caja-historial-table-wrap"><table class="caja-historial-table ventas-historial-table">' + colgroup + '<thead>' + thRow + '</thead><tbody>';
        dataFiltrada.forEach(function(mov) {
           html += buildRowHistorialCaja(mov);
        });

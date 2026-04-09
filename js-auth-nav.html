@@ -590,6 +590,24 @@
        return p[2] + '/' + p[1] + '/' + p[0];
     }
 
+    /** Comparación del total vendido hoy vs el día anterior (mismos permisos / vendedor). */
+    function formatDashKpiVsAyer(totalHoy, totalAyer) {
+       var hoy = Number(totalHoy) || 0;
+       var ayer = Number(totalAyer) || 0;
+       if (ayer > 0) {
+          var pct = ((hoy - ayer) / ayer) * 100;
+          var up = pct >= 0;
+          var cls = up ? 'dash-kpi-trend dash-kpi-trend--up' : 'dash-kpi-trend dash-kpi-trend--down';
+          var ic = up ? 'trending_up' : 'trending_down';
+          var absPct = Math.abs(pct).toFixed(1);
+          return '<div class="' + cls + '"><span class="material-symbols-outlined dash-kpi-trend-ic">' + ic + '</span>' + absPct + '% vs ayer</div>';
+       }
+       if (hoy > 0) {
+          return '<div class="dash-kpi-trend dash-kpi-trend--up"><span class="material-symbols-outlined dash-kpi-trend-ic">trending_up</span> Sin ventas ayer</div>';
+       }
+       return '<div class="dash-kpi-trend dash-kpi-trend--flat"><span class="material-symbols-outlined dash-kpi-trend-ic">horizontal_rule</span>0% vs ayer</div>';
+    }
+
     function monthNameEs(m) {
        var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
        return meses[(Number(m || 1) - 1)] || '';
@@ -665,11 +683,10 @@
        var kpiBlock =
           '<div class="dash-kpi-grid">' +
              '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido (' + tituloMes + ')</div>' +
-                '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalMes) + '</div>' +
-                '<div class="dash-kpi-sub">Mes actual (según permisos).</div></div>' +
+                '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalMes) + '</div></div>' +
              '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido ' + tituloHoy + '</div>' +
                 '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalHoy) + '</div>' +
-                '<div class="dash-kpi-sub">Ventas cargadas con fecha de hoy.</div></div>' +
+                formatDashKpiVsAyer(d.totalHoy, d.totalAyer) + '</div>' +
           '</div>';
 
        var serieCard =
@@ -717,22 +734,26 @@
 
        var rows = d.ultimasVentas || [];
        var colSpan = vendedorFiltrado ? 4 : 5;
-       var tableHead = '<tr><th>Fecha</th>';
-       if (!vendedorFiltrado) tableHead += '<th>Vendedor</th>';
-       tableHead += '<th>Cliente</th><th>Total</th><th>Estado</th></tr>';
+       var tableHead = '<tr><th class="ventas-historial-th ventas-h-col-fecha"><span class="ventas-historial-th-inner">Fecha</span></th>';
+       if (!vendedorFiltrado) {
+          tableHead += '<th class="ventas-historial-th"><span class="ventas-historial-th-inner">Vendedor</span></th>';
+       }
+       tableHead += '<th class="ventas-historial-th ventas-h-col-cliente"><span class="ventas-historial-th-inner">Cliente</span></th>' +
+          '<th class="ventas-historial-th ventas-h-col-num"><span class="ventas-historial-th-inner">Total</span></th>' +
+          '<th class="ventas-historial-th ventas-h-col-estado"><span class="ventas-historial-th-inner">Estado</span></th></tr>';
        var tableBody = '';
        if (rows.length === 0) {
           tableBody = '<tr><td colspan="' + colSpan + '" class="dash-ventas-empty">No hay ventas recientes en este período.</td></tr>';
        } else {
           rows.forEach(function (r) {
-             tableBody += '<tr><td>' + formatFechaHome(r.fecha || '') + '</td>';
+             tableBody += '<tr><td class="ventas-h-col-fecha">' + formatFechaHome(r.fecha || '') + '</td>';
              if (!vendedorFiltrado) tableBody += '<td>' + (r.vendedor || '') + '</td>';
-             tableBody += '<td>' + (r.cliente || '') + '</td><td>$ ' + formatMoneyHome(r.total) + '</td><td>' + (r.estado || '') + '</td></tr>';
+             tableBody += '<td class="ventas-h-col-cliente">' + (r.cliente || '') + '</td><td class="ventas-h-col-num">$ ' + formatMoneyHome(r.total) + '</td><td class="ventas-h-col-estado">' + (r.estado || '') + '</td></tr>';
           });
        }
 
        inner.innerHTML = kpiBlock + chartsBlock +
-          '<div class="dash-table-section"><div class="dash-table-title">Últimas 5 ventas</div><div class="dash-table-wrap"><table class="dash-ventas-table"><thead>' +
+          '<div class="dash-table-section"><div class="dash-table-title">Últimas 5 ventas</div><div class="dash-table-wrap"><table class="ventas-historial-table dash-ventas-table"><thead>' +
           tableHead + '</thead><tbody>' + tableBody + '</tbody></table></div></div>';
 
        if (typeof Chart === 'undefined') return;

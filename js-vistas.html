@@ -292,16 +292,16 @@
                    Agregar Usuario
                 </button>
              </div>
-             <div style="background: var(--sidebar); border-radius: 12px; padding: 20px;">
-                <table style="width: 100%; border-collapse: collapse;">
+             <div class="caja-historial-table-wrap" style="border-radius: 12px; margin: 0;">
+                <table class="ventas-historial-table usuarios-gestion-table">
                    <thead>
-                      <tr style="border-bottom: 2px solid var(--border-color);">
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">Nombre</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-md">Email</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">Rol</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">Estado</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-sm">Tipo Objetivo</th>
-                         <th style="text-align: center; padding: 12px; color: var(--accent); font-weight: 600;" class="col-min">Acciones</th>
+                      <tr>
+                         <th class="ventas-historial-th col-sm"><span class="ventas-historial-th-inner">Nombre</span></th>
+                         <th class="ventas-historial-th col-md"><span class="ventas-historial-th-inner">Email</span></th>
+                         <th class="ventas-historial-th col-sm"><span class="ventas-historial-th-inner">Rol</span></th>
+                         <th class="ventas-historial-th col-sm"><span class="ventas-historial-th-inner">Estado</span></th>
+                         <th class="ventas-historial-th col-sm"><span class="ventas-historial-th-inner">Tipo Objetivo</span></th>
+                         <th class="ventas-historial-th col-min ventas-h-col-acc"><span class="ventas-historial-th-inner">Acciones</span></th>
                       </tr>
                    </thead>
                    <tbody id="vendor-management-table">
@@ -329,13 +329,13 @@
              activos.forEach(u => {
                 let tipoObjDisplay = u.rol === 'VENDEDOR' ? (u.tipoObjetivo || 'RANGO') : '-';
                 tableHtml += `
-                      <tr style="border-bottom: 1px solid var(--border-color);">
-                         <td style="padding: 15px; text-align: center; color: white; font-weight: 500;">${u.nombre}</td>
-                         <td style="padding: 15px; text-align: center; color: #cbd5e1;">${u.email || ''}</td>
-                         <td style="padding: 15px; text-align: center; color: #cbd5e1;">${u.rol || 'VENDEDOR'}</td>
-                         <td style="padding: 15px; text-align: center;"><span style="color: var(--grass-green); font-weight: 600;">● Activo</span></td>
-                         <td style="padding: 15px; text-align: center; color: #cbd5e1;">${tipoObjDisplay}</td>
-                         <td style="padding: 15px; text-align: center;">
+                      <tr>
+                         <td class="col-sm" style="color: white; font-weight: 500;">${u.nombre}</td>
+                         <td class="col-md">${u.email || ''}</td>
+                         <td class="col-sm">${u.rol || 'VENDEDOR'}</td>
+                         <td class="col-sm"><span style="color: var(--grass-green); font-weight: 600;">● Activo</span></td>
+                         <td class="col-sm">${tipoObjDisplay}</td>
+                         <td class="col-min ventas-h-col-acc">
                            ${(USUARIO_ACTUAL && ((typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ADMIN' || (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ROOT')) ? `<button class="action-btn btn-edit" style="margin-right: 8px;" onclick="abrirModalVendedor('editar', '${u.nombre}', '${u.email || ''}', '${u.tipoObjetivo || 'RANGO'}', '${u.rol}')" title="Editar">
                                <span class="material-symbols-outlined">edit</span>
                             </button>` : ''}
@@ -351,13 +351,13 @@
              inactivos.forEach(u => {
                 let tipoObjDisplay = u.rol === 'VENDEDOR' ? (u.tipoObjetivo || 'RANGO') : '-';
                 tableHtml += `
-                      <tr style="border-bottom: 1px solid var(--border-color); opacity: 0.6;">
-                         <td style="padding: 15px; text-align: center; color: #94a3b8;">${u.nombre}</td>
-                         <td style="padding: 15px; text-align: center; color: #64748b;">${u.email || ''}</td>
-                         <td style="padding: 15px; text-align: center; color: #64748b;">${u.rol || 'VENDEDOR'}</td>
-                         <td style="padding: 15px; text-align: center;"><span style="color: #64748b; font-weight: 600;">● Inactivo</span></td>
-                         <td style="padding: 15px; text-align: center; color: #64748b;">${tipoObjDisplay}</td>
-                         <td style="padding: 15px; text-align: center;">
+                      <tr class="usuarios-gestion-row-inactive">
+                         <td class="col-sm">${u.nombre}</td>
+                         <td class="col-md">${u.email || ''}</td>
+                         <td class="col-sm">${u.rol || 'VENDEDOR'}</td>
+                         <td class="col-sm"><span style="color: #64748b; font-weight: 600;">● Inactivo</span></td>
+                         <td class="col-sm">${tipoObjDisplay}</td>
+                         <td class="col-min ventas-h-col-acc">
                            ${(USUARIO_ACTUAL && ((typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ADMIN' || (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ROOT')) ? `<button class="action-btn btn-edit" style="margin-right: 8px;" onclick="abrirModalVendedor('editar', '${u.nombre}', '${u.email || ''}', '${u.tipoObjetivo || 'RANGO'}', '${u.rol}')" title="Editar">
                                <span class="material-symbols-outlined">edit</span>
                             </button>` : ''}
@@ -539,18 +539,18 @@
                 </button>` : ''}
              </div>
              <div class="clientes-table-wrap">
-                <table class="clientes-table">
+                <table class="clientes-table ventas-historial-table">
                    <thead>
-                      <tr style="border-bottom: 2px solid var(--border-color);">
-                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-nombre">Nombre</th>
-                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-apellido">Apellido</th>
-                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-dni">DNI</th>
-                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-telefono">Teléfono</th>
-                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-correo">Correo</th>
-                         <th style="text-align: left; color: var(--accent); font-weight: 600;" class="col-address">Domicilio</th>
-                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-provincia">Provincia</th>
-                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-pais">País</th>
-                         <th style="text-align: center; color: var(--accent); font-weight: 600;" class="col-acciones">Acciones</th>
+                      <tr>
+                         <th class="ventas-historial-th col-nombre"><span class="ventas-historial-th-inner">Nombre</span></th>
+                         <th class="ventas-historial-th col-apellido"><span class="ventas-historial-th-inner">Apellido</span></th>
+                         <th class="ventas-historial-th col-dni"><span class="ventas-historial-th-inner">DNI</span></th>
+                         <th class="ventas-historial-th col-telefono"><span class="ventas-historial-th-inner">Teléfono</span></th>
+                         <th class="ventas-historial-th col-correo"><span class="ventas-historial-th-inner">Correo</span></th>
+                         <th class="ventas-historial-th col-address"><span class="ventas-historial-th-inner">Domicilio</span></th>
+                         <th class="ventas-historial-th col-provincia"><span class="ventas-historial-th-inner">Provincia</span></th>
+                         <th class="ventas-historial-th col-pais"><span class="ventas-historial-th-inner">País</span></th>
+                         <th class="ventas-historial-th col-acciones ventas-h-col-acc"><span class="ventas-historial-th-inner">Acciones</span></th>
                       </tr>
                    </thead>
                    <tbody id="clientes-table-body">
