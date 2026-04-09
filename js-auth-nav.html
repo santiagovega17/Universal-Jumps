@@ -392,16 +392,6 @@
        if (NAVEGANDO) return;
        NAVEGANDO = true;
  
-       if (window.innerWidth > 768) {
-          var sbNav = document.getElementById('app-sidebar');
-          if (sbNav && sbNav.classList.contains('sidebar-collapsed') && el && (el.classList.contains('menu-item') || el.classList.contains('top-nav-item'))) {
-             sbNav.classList.remove('sidebar-collapsed');
-             try { localStorage.setItem('uj_sidebar_collapsed', '0'); } catch (e2) {}
-             var icNav = document.querySelector('.sidebar-collapse-icon');
-             if (icNav) icNav.textContent = 'chevron_left';
-          }
-       }
- 
        if (window.innerWidth <= 768) {
           var s = document.getElementById('app-sidebar');
           var o = document.getElementById('mobile-overlay');

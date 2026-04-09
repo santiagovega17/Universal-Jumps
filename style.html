@@ -433,6 +433,16 @@
        display: none;
     }
  
+    /* Rail estrecho: ocultar submenús abiertos hasta el próximo hover */
+    .app-sidebar.sidebar-collapsed:not(:hover) .top-nav-dropdown-content {
+       max-height: 0 !important;
+       opacity: 0 !important;
+       visibility: hidden !important;
+       padding: 0 !important;
+       margin: 0 !important;
+       overflow: hidden !important;
+    }
+ 
     .header-menu-toggle {
        display: none;
        align-items: center;
