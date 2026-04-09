@@ -378,30 +378,13 @@
     }
 
     function toggleSidebarCollapsed() {
-       if (window.innerWidth <= 768) return;
-       var sb = document.getElementById('app-sidebar');
-       if (!sb) return;
-       sb.classList.toggle('sidebar-collapsed');
-       var col = sb.classList.contains('sidebar-collapsed');
-       try { localStorage.setItem('uj_sidebar_collapsed', col ? '1' : '0'); } catch (e) {}
-       var icon = document.querySelector('.sidebar-collapse-icon');
-       if (icon) icon.textContent = col ? 'chevron_right' : 'chevron_left';
-       document.querySelectorAll('.app-sidebar .top-nav-dropdown-content.open').forEach(function (el) {
-          el.classList.remove('open');
-          var tr = el.previousElementSibling;
-          if (tr && tr.classList && tr.classList.contains('top-nav-dropdown-trigger')) tr.classList.remove('active');
-       });
+       // auto-hide: el colapsado/expandido se maneja por hover (desktop) y drawer (móvil)
+       return;
     }
 
     function loadSidebarCollapsedState() {
-       try {
-          if (localStorage.getItem('uj_sidebar_collapsed') !== '1') return;
-          var sb = document.getElementById('app-sidebar');
-          if (!sb || window.innerWidth <= 768) return;
-          sb.classList.add('sidebar-collapsed');
-          var icon = document.querySelector('.sidebar-collapse-icon');
-          if (icon) icon.textContent = 'chevron_right';
-       } catch (e) {}
+       // auto-hide: siempre inicia colapsado en desktop (clase en el HTML)
+       return;
     }
  
     function navegar(el, hoja) {
@@ -866,14 +849,11 @@
        let mesNow = (new Date()).getMonth() + 1;
        let anioDash = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : (new Date()).getFullYear();
 
-       let html = `<div class="welcome-banner"><div class="welcome-title">Panel Principal</div></div>
-          <div id="home-dashboard" class="home-dashboard">
-             <div class="dash-section-title" style="margin-top:0;border-bottom:none;padding-bottom:8px;">Resumen</div>
+       let html = `<div id="home-dashboard" class="home-dashboard">
              <div id="home-dashboard-inner" class="home-dashboard-inner">
                 <div class="home-dashboard-loading">Cargando datos…</div>
              </div>
-          </div>
-          `;
+          </div>`;
        document.getElementById('app').innerHTML = html;
 
        google.script.run

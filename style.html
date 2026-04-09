@@ -213,7 +213,7 @@
     }
  
     @media (min-width: 769px) {
-       .app-sidebar.sidebar-collapsed:hover {
+       .app-sidebar.sidebar-auto-hide:hover {
           width: var(--sidebar-w);
           box-shadow: 8px 0 32px rgba(0, 0, 0, 0.45);
           z-index: 160;
@@ -338,7 +338,7 @@
     .app-sidebar .top-nav-dropdown-trigger {
        width: 100%;
        justify-content: flex-start;
-       gap: 10px;
+       gap: 12px;
        border-bottom: none;
        border-radius: 8px;
        margin: 2px 0;
@@ -387,7 +387,7 @@
        border-bottom: none !important;
        border-radius: 8px;
        justify-content: flex-start;
-       gap: 10px;
+       gap: 12px;
     }
  
     .app-sidebar.sidebar-collapsed:not(:hover) .nav-text,
@@ -395,16 +395,7 @@
     .app-sidebar.sidebar-collapsed:not(:hover) .menu-arrow,
     .app-sidebar.sidebar-collapsed:not(:hover) .sidebar-logo-text,
     .app-sidebar.sidebar-collapsed:not(:hover) .sidebar-footer {
-       opacity: 0;
-       width: 0;
-       height: 0;
-       overflow: hidden;
-       margin: 0;
-       padding: 0;
-       border: none;
-       pointer-events: none;
-       position: absolute;
-       clip: rect(0, 0, 0, 0);
+       display: none;
     }
  
     .app-sidebar.sidebar-collapsed:not(:hover) .sidebar-logo {

@@ -43,7 +43,7 @@
       <div id="mobile-overlay" onclick="toggleMenu()"></div>
 
       <div class="app-shell">
-         <aside class="app-sidebar" id="app-sidebar">
+         <aside class="app-sidebar sidebar-auto-hide sidebar-collapsed" id="app-sidebar">
             <div class="sidebar-header">
                <a href="#" class="sidebar-logo" onclick="navegar(null, 'HOME'); return false;">
                   <img src="https://i.postimg.cc/mDrtkkwV/logo-UJ.png" alt="Universal Jumps"
@@ -51,7 +51,7 @@
                   <span id="txt-logo" class="sidebar-logo-text" style="display:none;">UJ</span>
                </a>
                <button type="button" class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebarCollapsed()"
-                  aria-label="Contraer o expandir menú" title="Contraer menú">
+                  aria-label="Contraer o expandir menú" title="Contraer menú" style="display:none">
                   <span class="material-symbols-outlined sidebar-collapse-icon">chevron_left</span>
                </button>
             </div>
