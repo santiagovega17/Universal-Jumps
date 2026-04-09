@@ -969,11 +969,12 @@
     .home-dashboard-inner {
        display: flex;
        flex-direction: column;
-       gap: 12px;
+       gap: 0;
     }
  
-    .home-dashboard-inner > .dash-table-section {
-       margin-top: 8px;
+    /* Mismo ritmo vertical: totales→gráfico y gráfico→tabla */
+    .home-dashboard-inner > * + * {
+       margin-top: 20px;
     }
  
     .home-dashboard-loading,
