@@ -887,18 +887,14 @@
              '</div>' +
           '</aside>';
        var rankingCol = (showRanking && rankBlock) ? '<div class="dash-home-ranking-wrap">' + rankBlock + '</div>' : '';
-       var topRowClass = 'dash-home-top-row' + (rankingCol ? '' : ' dash-home-top-row--no-rank');
-       var topRow =
-          '<div class="' + topRowClass + '">' +
+       var mainGridClass = 'dash-home-main-grid' + (rankingCol ? '' : ' dash-home-main-grid--no-rank');
+       var midBlock =
+          '<div class="' + mainGridClass + '">' +
              '<div class="dash-home-kpi-wrap">' + kpiBlock + '</div>' +
              rankingCol +
-          '</div>';
-       var chartVencRow =
-          '<div class="dash-home-chart-venc-row">' +
              '<div class="dash-home-chart-main">' + serieCard + '</div>' +
              '<div class="dash-home-venc-aside">' + vencWidget + '</div>' +
           '</div>';
-       var midBlock = topRow + chartVencRow;
 
        var rows = d.ultimasVentas || [];
        var colSpan = vendedorFiltrado ? 4 : 5;
