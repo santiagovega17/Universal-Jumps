@@ -187,6 +187,8 @@
        // Reset básico de visibilidad antes de aplicar reglas (para poder alternar "ver como" sin refrescar).
        var adminGroup0 = document.getElementById('nav-admin-group');
        if (adminGroup0) adminGroup0.style.display = '';
+       var inventarioGroup0 = document.getElementById('nav-inventario-group');
+       if (inventarioGroup0) inventarioGroup0.style.display = '';
        if (document.getElementById('menu-consolidado')) document.getElementById('menu-consolidado').style.display = '';
        if (document.getElementById('menu-comisiones')) document.getElementById('menu-comisiones').style.display = '';
        if (document.getElementById('menu-config-permisos')) document.getElementById('menu-config-permisos').style.display = '';
@@ -197,6 +199,8 @@
        if (rolEff === 'VENDEDOR') {
           var adminGroup = document.getElementById('nav-admin-group');
           if (adminGroup) adminGroup.style.display = 'none';
+          var inventarioGroup = document.getElementById('nav-inventario-group');
+          if (inventarioGroup) inventarioGroup.style.display = 'none';
           document.getElementById('menu-consolidado').style.display = 'none';
           document.getElementById('menu-comisiones').style.display = 'none';
           let sublabels = document.querySelectorAll('.menu-sublabel');
@@ -210,6 +214,8 @@
        } else if (rolEff === 'VENDEDORGRAL') {
           var adminGroup = document.getElementById('nav-admin-group');
           if (adminGroup) adminGroup.style.display = 'none';
+          var inventarioGroup = document.getElementById('nav-inventario-group');
+          if (inventarioGroup) inventarioGroup.style.display = 'none';
           // Ocultar consolidado y comisiones para VENDEDORGRAL
           if (document.getElementById('menu-consolidado')) document.getElementById('menu-consolidado').style.display = 'none';
           if (document.getElementById('menu-comisiones')) document.getElementById('menu-comisiones').style.display = 'none';
@@ -410,12 +416,24 @@
           renderVentasMenu(); 
        }
        else if (hoja === 'MENU_STOCK') { 
+          var rolEff = getRolEfectivo();
+          if (rolEff === 'VENDEDOR' || rolEff === 'VENDEDORGRAL') {
+             alert('No tienes permisos para ver esta sección');
+             NAVEGANDO = false;
+             return;
+          }
           document.getElementById('titulo').innerText = 'STOCK';
           if (selStock) selStock.style.display = 'flex';
           if (document.getElementById('app')) document.getElementById('app').innerHTML = '';
           renderStockMenu(); 
        }
        else if (hoja === 'STOCK') {
+          var rolEff = getRolEfectivo();
+          if (rolEff === 'VENDEDOR' || rolEff === 'VENDEDORGRAL') {
+             alert('No tienes permisos para ver esta sección');
+             NAVEGANDO = false;
+             return;
+          }
           document.getElementById('titulo').innerText = 'STOCK';
           if (selStock) selStock.style.display = 'flex';
           mostrarEstadoCarga('STOCK', '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'STOCK');
