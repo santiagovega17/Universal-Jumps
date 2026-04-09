@@ -574,6 +574,33 @@
        return meses[(Number(m || 1) - 1)] || '';
     }
 
+    /** Eje Y: 4 valores (0 + 3 escalones), máximo redondo; el texto se formatea en pesos completos. */
+    function homeChartYAxisConfig(dataActual, dataPrev) {
+       var maxVal = 0;
+       var all = (dataActual || []).concat(dataPrev || []);
+       for (var i = 0; i < all.length; i++) maxVal = Math.max(maxVal, Number(all[i]) || 0);
+       if (maxVal <= 0) return { max: 3000000, stepSize: 1000000 };
+       var padded = maxVal * 1.15;
+       var roughStep = padded / 3;
+       var pow10 = Math.pow(10, Math.floor(Math.log10(roughStep)));
+       var norm = roughStep / pow10;
+       var mult = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
+       var coarseStep = mult * pow10;
+       var niceMax = Math.ceil(padded / coarseStep) * coarseStep;
+       var stepSize = Math.max(1, Math.round(niceMax / 3));
+       niceMax = stepSize * 3;
+       return { max: niceMax, stepSize: stepSize };
+    }
+
+    function homeChartFormatYAxisMoney(value) {
+       var n = Math.round(Number(value));
+       var fmt = new Intl.NumberFormat('es-AR', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+       }).format(n);
+       return '$ ' + fmt;
+    }
+
     function getDashboardVendedorParam() {
        var u = USUARIO_ACTUAL;
        if (!u) return '';
@@ -678,11 +705,10 @@
 
        if (typeof Chart === 'undefined') return;
 
-       var gridColor = 'rgba(148, 163, 184, 0.2)';
        var tickColor = '#94a3b8';
        var accent = '#38bdf8';
+       var prevColor = 'rgba(148, 163, 184, 0.65)';
 
-       var prevColor = 'rgba(148, 163, 184, 0.55)';
        var serieLabels = (d.serieSemanalActual || []).map(function (p) {
           return 'SEM ' + String(p.semana).padStart(2, '0');
        });
@@ -691,12 +717,11 @@
        while (dataPrev.length < serieLabels.length) dataPrev.push(0);
        if (dataPrev.length > serieLabels.length) dataPrev = dataPrev.slice(0, serieLabels.length);
 
+       var yScale = homeChartYAxisConfig(dataActual, dataPrev);
+
        var ctxS = document.getElementById('chartHomeSerie');
        if (ctxS) {
           var gctx = ctxS.getContext('2d');
-          var grad = gctx.createLinearGradient(0, 0, 0, 260);
-          grad.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
-          grad.addColorStop(1, 'rgba(56, 189, 248, 0.02)');
 
           window._ujHomeCharts.push(new Chart(gctx, {
              type: 'line',
@@ -706,9 +731,9 @@
                    label: 'ACTUAL',
                    data: dataActual,
                    borderColor: accent,
-                   backgroundColor: grad,
-                   fill: true,
-                   tension: 0.45,
+                   backgroundColor: 'transparent',
+                   fill: false,
+                   tension: 0.42,
                    cubicInterpolationMode: 'monotone',
                    borderWidth: 3,
                    pointRadius: 0,
@@ -717,12 +742,12 @@
                    label: 'ANTERIOR',
                    data: dataPrev,
                    borderColor: prevColor,
-                   backgroundColor: 'rgba(148, 163, 184, 0.05)',
+                   backgroundColor: 'transparent',
                    fill: false,
-                   tension: 0.45,
+                   tension: 0.42,
                    cubicInterpolationMode: 'monotone',
                    borderWidth: 2,
-                   borderDash: [6, 6],
+                   borderDash: [5, 5],
                    pointRadius: 0,
                    pointHoverRadius: 3,
                 }],
@@ -730,6 +755,11 @@
              options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 10, right: 6, left: 10, bottom: 6 } },
+                interaction: { mode: 'index', intersect: false },
+                elements: {
+                   line: { borderJoinStyle: 'round', borderCapStyle: 'round' },
+                },
                 plugins: {
                    legend: { display: false },
                    tooltip: {
@@ -741,8 +771,28 @@
                    },
                 },
                 scales: {
-                   x: { ticks: { color: tickColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { color: gridColor } },
-                   y: { ticks: { color: tickColor }, grid: { color: gridColor } },
+                   x: {
+                      offset: true,
+                      ticks: { color: tickColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, padding: 8 },
+                      grid: { display: false, drawBorder: false },
+                      border: { display: false },
+                   },
+                   y: {
+                      min: 0,
+                      max: yScale.max,
+                      ticks: {
+                         color: tickColor,
+                         stepSize: yScale.stepSize,
+                         maxTicksLimit: 5,
+                         autoSkip: false,
+                         padding: 10,
+                         font: { size: 10 },
+                         maxRotation: 0,
+                         callback: function (v) { return homeChartFormatYAxisMoney(v); },
+                      },
+                      grid: { display: false, drawBorder: false },
+                      border: { display: false },
+                   },
                 },
              },
           }));
