@@ -964,7 +964,9 @@
        border-radius: 0;
        box-sizing: border-box;
        min-height: 100%;
-       /* Separación vertical única entre filas (totales→gráfico, gráfico→tabla) */
+       /* Mismo valor que el hueco entre gráfico y vencimientos (columna) */
+       --home-chart-venc-gap: 20px;
+       /* Totales → fila gráfico+venc (más compacto) */
        --home-section-space: 10px;
     }
  
@@ -974,8 +976,12 @@
        gap: 0;
     }
  
-    .home-dashboard-inner > * + * {
+    .home-dashboard-inner > .dash-home-top-row + .dash-home-chart-venc-row {
        margin-top: var(--home-section-space);
+    }
+ 
+    .home-dashboard-inner > .dash-home-chart-venc-row + .dash-table-section {
+       margin-top: var(--home-chart-venc-gap);
     }
  
     .home-dashboard-loading,
@@ -1103,11 +1109,11 @@
        max-height: 340px;
     }
  
-    /* Fila 2: gráfico y vencimientos arrancan arriba (misma separación que ranking→fila: solo --home-section-space) */
+    /* Fila 2: mismo gap horizontal que margen hasta la tabla; bases del gráfico y venc alineadas */
     .dash-home-chart-venc-row {
        display: grid;
-       gap: 20px;
-       align-items: start;
+       gap: var(--home-chart-venc-gap);
+       align-items: end;
        width: 100%;
     }
  
@@ -1120,15 +1126,15 @@
     .dash-home-chart-main {
        min-width: 0;
        width: 100%;
-       align-self: start;
+       align-self: end;
     }
  
     .dash-home-venc-aside {
        display: flex;
        flex-direction: column;
-       justify-content: flex-start;
+       justify-content: flex-end;
        align-items: stretch;
-       align-self: start;
+       align-self: end;
        min-width: 0;
        min-height: 0;
     }
