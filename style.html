@@ -970,6 +970,104 @@
        color: #f87171;
     }
  
+    /* Home: KPIs, gráfico, ranking y tabla alineados al widget próximos vencimientos */
+    .home-dashboard .dash-kpi-card,
+    .home-dashboard .dash-chart-card,
+    .home-dashboard .dash-ranking-card,
+    .home-dashboard .dash-table-section {
+       background: linear-gradient(145deg, #14141a 0%, #0f0f14 100%);
+       border: 1px solid rgba(139, 92, 246, 0.22);
+       border-radius: 14px;
+       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 12px 40px rgba(0, 0, 0, 0.25);
+       position: relative;
+       overflow: hidden;
+    }
+ 
+    .home-dashboard .dash-kpi-card::before,
+    .home-dashboard .dash-chart-card::before,
+    .home-dashboard .dash-ranking-card::before,
+    .home-dashboard .dash-table-section::before {
+       content: '';
+       position: absolute;
+       left: 0;
+       top: 0;
+       bottom: 0;
+       width: 4px;
+       background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
+       border-radius: 14px 0 0 14px;
+       pointer-events: none;
+    }
+ 
+    .home-dashboard .dash-kpi-card {
+       padding: 22px 20px 22px 24px;
+       text-align: center;
+    }
+ 
+    .home-dashboard .dash-chart-card {
+       padding: 16px 16px 12px 22px;
+    }
+ 
+    .home-dashboard .dash-ranking-card {
+       padding: 16px 16px 14px 22px;
+    }
+ 
+    .home-dashboard .dash-table-section {
+       padding: 16px 16px 20px 22px;
+    }
+ 
+    .home-dashboard .dash-kpi-label {
+       color: #f8fafc;
+       font-weight: 800;
+       letter-spacing: 0.12em;
+    }
+ 
+    .home-dashboard .dash-chart-title {
+       color: #f8fafc;
+       font-weight: 800;
+       letter-spacing: 0.1em;
+       text-transform: uppercase;
+       font-size: 11px;
+       margin-bottom: 12px;
+    }
+ 
+    .home-dashboard .dash-chart-title > span:first-child {
+       color: #f8fafc;
+    }
+ 
+    .home-dashboard .dash-chart-legend {
+       color: #d8b4fe;
+       text-transform: uppercase;
+    }
+ 
+    .home-dashboard .dash-legend-dot-actual {
+       background: #c4b5fd;
+    }
+ 
+    .home-dashboard .dash-legend-dot-prev {
+       background: rgba(167, 139, 250, 0.55);
+    }
+ 
+    .home-dashboard .dash-ranking-title,
+    .home-dashboard .dash-table-title {
+       color: #f8fafc;
+       font-weight: 800;
+       letter-spacing: 0.12em;
+    }
+ 
+    .home-dashboard .dash-rank-item {
+       background: rgba(30, 27, 45, 0.85);
+       border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+ 
+    .home-dashboard .dash-rank-pos {
+       background: #c4b5fd;
+       color: #1e1b4b;
+    }
+ 
+    .home-dashboard .dash-ranking-empty {
+       color: #94a3b8;
+    }
+ 
     .dash-kpi-card {
        background: var(--sidebar);
        border: 1px solid var(--border-color);
@@ -1063,20 +1161,6 @@
 
     .dash-chart-canvas-wrap {
        height: 260px;
-    }
- 
-    .dash-chart-x-hint {
-       font-size: 12px;
-       color: #94a3b8;
-       line-height: 1.45;
-       margin-top: 12px;
-       padding: 0 8px 4px;
-       text-align: center;
-    }
- 
-    .dash-chart-x-hint strong {
-       color: #cbd5e1;
-       font-weight: 600;
     }
  
     .dash-home-mid {

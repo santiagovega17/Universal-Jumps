@@ -804,15 +804,6 @@
           }
        }
        var nSemGraf = (d.serieSemanalActual || []).length;
-       var lastDMes = Number(d.lastDayMes) || 31;
-       var chartHintHtml = '';
-       if (semanaActualIdx >= 0 && semanaActualIdx < nSemGraf) {
-          var r0 = semanaActualIdx * 7 + 1;
-          var r1 = Math.min((semanaActualIdx + 1) * 7, lastDMes);
-          chartHintHtml = '<div class="dash-chart-x-hint">En el eje X estás en la <strong>semana ' + (semanaActualIdx + 1) + '</strong> del mes (aprox. días ' + r0 + '–' + r1 + '). La etiqueta «· hoy» y el punto en la línea azul marcan esa semana.</div>';
-       } else if (nSemGraf > 0) {
-          chartHintHtml = '<div class="dash-chart-x-hint">Eje X: ventas por semana dentro del mes (SEM 01 ≈ días 1–7, SEM 02 ≈ 8–14, etc.), comparadas con el mismo esquema del mes anterior.</div>';
-       }
 
        var kpiBlock =
           '<div class="dash-kpi-grid">' +
@@ -836,7 +827,6 @@
                 '</span>' +
              '</div>' +
              '<div class="dash-chart-canvas-wrap"><canvas id="chartHomeSerie" height="240"></canvas></div>' +
-             chartHintHtml +
           '</div>';
 
        var rankBlock = '';
@@ -911,12 +901,15 @@
        if (typeof Chart === 'undefined') return;
 
        var tickColor = '#94a3b8';
-       var accent = '#38bdf8';
-       var prevColor = 'rgba(148, 163, 184, 0.65)';
+       var accent = '#c4b5fd';
+       var prevColor = 'rgba(167, 139, 250, 0.45)';
 
        var serieLabels = (d.serieSemanalActual || []).map(function (p, i) {
-          var base = 'SEM ' + String(p.semana).padStart(2, '0');
-          return (i === semanaActualIdx && semanaActualIdx >= 0) ? base + ' · hoy' : base;
+          var n = (d.serieSemanalActual || []).length;
+          if (n <= 1) return 'INICIO';
+          if (i === 0) return 'INICIO';
+          if (i === n - 1) return 'FIN';
+          return '';
        });
        var dataActual = (d.serieSemanalActual || []).map(function (p) { return Number(p.total) || 0; });
        var dataPrev = (d.serieSemanalAnterior || []).map(function (p) { return Number(p.total) || 0; });
@@ -948,8 +941,8 @@
                    pointHoverRadius: (d.serieSemanalActual || []).map(function (_, i) {
                       return (i === semanaActualIdx && semanaActualIdx >= 0) ? 8 : 4;
                    }),
-                   pointBackgroundColor: accent,
-                   pointBorderColor: '#0f172a',
+                   pointBackgroundColor: '#a78bfa',
+                   pointBorderColor: '#1e1b4b',
                    pointBorderWidth: 2,
                 }, {
                    label: 'ANTERIOR',
@@ -977,6 +970,13 @@
                    legend: { display: false },
                    tooltip: {
                       callbacks: {
+                         title: function (items) {
+                            if (!items || !items.length) return '';
+                            var i = items[0].dataIndex;
+                            var p = (d.serieSemanalActual || [])[i];
+                            if (p && p.semana != null) return 'Semana ' + p.semana + ' del mes';
+                            return '';
+                         },
                          label: function (ctx) {
                             return (ctx.dataset.label || '') + ': $ ' + formatMoneyHome(ctx.parsed.y);
                          },
@@ -986,7 +986,18 @@
                 scales: {
                    x: {
                       offset: true,
-                      ticks: { color: tickColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, padding: 8 },
+                      ticks: {
+                         color: tickColor,
+                         maxRotation: 0,
+                         autoSkip: false,
+                         padding: 8,
+                         callback: function (val) {
+                            var idx = typeof val === 'number' ? val : parseInt(val, 10);
+                            if (!Number.isFinite(idx) || idx < 0 || idx >= serieLabels.length) return '';
+                            var lab = serieLabels[idx];
+                            return lab != null && lab !== '' ? lab : '';
+                         },
+                      },
                       grid: { display: false, drawBorder: false },
                       border: { display: false },
                    },
