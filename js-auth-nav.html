@@ -822,15 +822,15 @@
        var kpiBlock =
           '<div class="dash-kpi-grid">' +
              '<div class="dash-kpi-card">' +
+                '<div class="dash-kpi-head"><span class="dash-kpi-label">Total diario</span></div>' +
+                '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalHoy) + '</div>' +
+                formatDashKpiVsAyer(d.totalHoy, d.totalAyer) + '</div>' +
+             '<div class="dash-kpi-card">' +
                 '<div class="dash-kpi-head"><span class="dash-kpi-label">Total mensual</span></div>' +
                 '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalMes) + '</div>' +
                 formatDashKpiVsMesAnterior(d.totalMes, d.totalMesPrev) + '</div>' +
              '<div class="dash-kpi-card">' +
-                '<div class="dash-kpi-head"><span class="dash-kpi-label">Total vendido hoy</span></div>' +
-                '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalHoy) + '</div>' +
-                formatDashKpiVsAyer(d.totalHoy, d.totalAyer) + '</div>' +
-             '<div class="dash-kpi-card">' +
-                '<div class="dash-kpi-head"><span class="dash-kpi-label">Total anual (acumulado)</span></div>' +
+                '<div class="dash-kpi-head"><span class="dash-kpi-label">Total acumulado anual</span></div>' +
                 '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalAnualYtd != null ? d.totalAnualYtd : 0) + '</div></div>' +
           '</div>';
 

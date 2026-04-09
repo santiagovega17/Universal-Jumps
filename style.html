@@ -989,8 +989,9 @@
        border-radius: 0;
        box-sizing: border-box;
        min-height: 100%;
-       /* Gutter uniforme del bloque KPI+ranking / gráfico+venc */
-       --home-main-grid-gap: 18px;
+       /* Sin hueco vertical entre totales↔gráfico y ranking↔venc; separación mínima entre columnas */
+       --home-main-grid-row-gap: 0;
+       --home-main-grid-col-gap: 0;
        /* Tabla respecto al bloque superior */
        --home-chart-venc-gap: 20px;
     }
@@ -1065,21 +1066,22 @@
  
     .home-dashboard .dash-kpi-head {
        display: flex;
-       justify-content: flex-end;
+       justify-content: flex-start;
        margin-bottom: 8px;
     }
  
+    /* Mismo criterio que .home-caja-venc-title: barra vertical, sin glow ni subrayado */
     .home-dashboard .dash-kpi-label {
+       display: inline-block;
        color: var(--title-accent);
        font-weight: 800;
-       letter-spacing: 0.11em;
+       letter-spacing: 0.1em;
        text-transform: uppercase;
        font-size: 15px;
-       text-decoration: underline;
-       text-decoration-color: rgba(93, 177, 223, 0.55);
-       text-decoration-thickness: 2px;
-       text-underline-offset: 6px;
-       text-shadow: 0 0 20px rgba(61, 154, 196, 0.35);
+       padding-left: 12px;
+       border-left: 3px solid var(--accent);
+       text-decoration: none;
+       text-shadow: none;
     }
  
     .home-dashboard .dash-kpi-value {
@@ -1124,10 +1126,11 @@
        }
     }
  
-    /* Bloque 2×2: KPI+gráfico (izq.) · ranking+venc (der.), sin hueco entre filas */
+    /* Bloque 2×2: KPI+gráfico (izq.) · ranking+venc (der.) */
     .dash-home-main-grid {
        display: grid;
-       gap: var(--home-main-grid-gap);
+       row-gap: var(--home-main-grid-row-gap);
+       column-gap: var(--home-main-grid-col-gap);
        align-items: start;
        width: 100%;
     }
@@ -1201,21 +1204,29 @@
     }
  
     .home-dashboard .dash-chart-title {
+       display: flex;
+       align-items: center;
+       justify-content: space-between;
+       gap: 12px;
+       flex-wrap: wrap;
        color: #94a3b8;
        font-weight: 800;
        letter-spacing: 0.09em;
        text-transform: uppercase;
        font-size: 15px;
-       margin-bottom: 16px;
-       padding-bottom: 12px;
-       border-bottom: 1px solid rgba(61, 154, 196, 0.35);
+       margin-bottom: 14px;
+       padding-bottom: 0;
+       border-bottom: none;
     }
  
     .home-dashboard .dash-chart-title > span:first-child {
        color: var(--title-accent);
-       font-size: 17px;
+       font-size: 16px;
        letter-spacing: 0.1em;
-       text-shadow: 0 0 22px rgba(61, 154, 196, 0.4), 0 1px 0 rgba(0, 0, 0, 0.35);
+       padding-left: 12px;
+       border-left: 3px solid var(--accent);
+       text-shadow: none;
+       text-align: left;
     }
  
     .home-dashboard .dash-chart-legend {
@@ -1242,12 +1253,11 @@
        text-transform: uppercase;
        font-size: 16px;
        margin-bottom: 12px;
-       padding-bottom: 0;
-       text-decoration: underline;
-       text-decoration-color: rgba(93, 177, 223, 0.55);
-       text-decoration-thickness: 2px;
-       text-underline-offset: 8px;
-       text-shadow: 0 0 18px rgba(61, 154, 196, 0.3);
+       padding-left: 12px;
+       border-left: 3px solid var(--accent);
+       text-decoration: none;
+       text-shadow: none;
+       text-align: left;
     }
  
     .home-dashboard .dash-table-title {
@@ -1257,10 +1267,13 @@
        letter-spacing: 0.1em;
        text-transform: uppercase;
        font-size: 16px;
-       padding-bottom: 10px;
+       padding-left: 12px;
        margin-bottom: 14px;
-       border-bottom: 2px solid rgba(61, 154, 196, 0.45);
-       text-shadow: 0 0 18px rgba(61, 154, 196, 0.3);
+       padding-bottom: 0;
+       border-bottom: none;
+       border-left: 3px solid var(--accent);
+       text-shadow: none;
+       text-align: left;
     }
  
     .home-dashboard .dash-rank-item {
@@ -1492,6 +1505,10 @@
        padding-left: 12px;
        border-left: 3px solid var(--accent);
        text-shadow: 0 0 18px rgba(61, 154, 196, 0.3);
+    }
+ 
+    .home-dashboard .home-caja-venc-title {
+       text-shadow: none;
     }
  
     .home-caja-venc-badge {
