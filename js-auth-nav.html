@@ -569,6 +569,11 @@
        return p[2] + '/' + p[1] + '/' + p[0];
     }
 
+    function monthNameEs(m) {
+       var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+       return meses[(Number(m || 1) - 1)] || '';
+    }
+
     function getDashboardVendedorParam() {
        var u = USUARIO_ACTUAL;
        if (!u) return '';
@@ -593,21 +598,63 @@
           return;
        }
        var d = res.data;
-       var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-       var tituloMes = (meses[(d.mes || 1) - 1] || '') + ' ' + (d.anio || '');
+       var tituloMes = monthNameEs(d.mes || 1) + ' ' + (d.anio || '');
+       var tituloHoy = 'Hoy (' + formatFechaHome(d.hoyIso || '') + ')';
 
        destroyHomeCharts();
 
-       var kpiBlock = '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido (' + tituloMes + ')</div>' +
-          '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalMes) + '</div>' +
-          '<div class="dash-kpi-sub">Incluye ventas registradas en el mes (año operativo).</div></div>';
+       var kpiBlock =
+          '<div class="dash-kpi-grid">' +
+             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido (' + tituloMes + ')</div>' +
+                '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalMes) + '</div>' +
+                '<div class="dash-kpi-sub">Mes actual (según permisos).</div></div>' +
+             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido ' + tituloHoy + '</div>' +
+                '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalHoy) + '</div>' +
+                '<div class="dash-kpi-sub">Ventas cargadas con fecha de hoy.</div></div>' +
+          '</div>';
 
-       var gridClass = showRanking ? 'dash-charts-grid dash-charts-two' : 'dash-charts-grid';
-       var serieCard = '<div class="dash-chart-card"><div class="dash-chart-title">Ventas por día</div><canvas id="chartHomeSerie" height="220"></canvas></div>';
-       var rankCard = showRanking
-          ? '<div class="dash-chart-card"><div class="dash-chart-title">Ranking de vendedores</div><canvas id="chartHomeRank" height="220"></canvas></div>'
-          : '';
-       var chartsBlock = '<div class="' + gridClass + '">' + serieCard + rankCard + '</div>';
+       var serieCard =
+          '<div class="dash-chart-card">' +
+             '<div class="dash-chart-title">' +
+                '<span>Ventas vs Mes Anterior</span>' +
+                '<span class="dash-chart-legend">' +
+                   '<span class="dash-legend-item"><span class="dash-legend-dot dash-legend-dot-actual"></span>Actual</span>' +
+                   '<span class="dash-legend-item"><span class="dash-legend-dot dash-legend-dot-prev"></span>Anterior</span>' +
+                '</span>' +
+             '</div>' +
+             '<div class="dash-chart-canvas-wrap"><canvas id="chartHomeSerie" height="240"></canvas></div>' +
+          '</div>';
+
+       var rankBlock = '';
+       if (showRanking) {
+          var rank = (d.rankingVendedores || []).slice(0, 10);
+          if (!rank.length) {
+             rankBlock =
+                '<div class="dash-ranking-card">' +
+                   '<div class="dash-ranking-title">Ranking de vendedores</div>' +
+                   '<div class="dash-ranking-empty">Sin datos para este mes.</div>' +
+                '</div>';
+          } else {
+             var items = '';
+             rank.forEach(function (x, idx) {
+                items +=
+                   '<div class="dash-rank-item">' +
+                      '<div class="dash-rank-left">' +
+                         '<div class="dash-rank-pos">' + (idx + 1) + '</div>' +
+                         '<div class="dash-rank-name">' + (x.vendedor || '') + '</div>' +
+                      '</div>' +
+                      '<div class="dash-rank-total">$ ' + formatMoneyHome(x.total) + '</div>' +
+                   '</div>';
+             });
+             rankBlock =
+                '<div class="dash-ranking-card">' +
+                   '<div class="dash-ranking-title">Ranking de vendedores</div>' +
+                   '<div class="dash-ranking-list">' + items + '</div>' +
+                '</div>';
+          }
+       }
+
+       var chartsBlock = '<div class="dash-charts-grid dash-charts-compare">' + serieCard + rankBlock + '</div>';
 
        var rows = d.ultimasVentas || [];
        var colSpan = vendedorFiltrado ? 4 : 5;
@@ -635,71 +682,70 @@
        var tickColor = '#94a3b8';
        var accent = '#38bdf8';
 
-       var serieLabels = (d.serieDiaria || []).map(function (p) {
-          var parts = (p.fecha || '').split('-');
-          return parts.length === 3 ? String(Number(parts[2])) : '';
+       var prevColor = 'rgba(148, 163, 184, 0.55)';
+       var serieLabels = (d.serieSemanalActual || []).map(function (p) {
+          return 'SEM ' + String(p.semana).padStart(2, '0');
        });
-       var serieData = (d.serieDiaria || []).map(function (p) { return Number(p.total) || 0; });
+       var dataActual = (d.serieSemanalActual || []).map(function (p) { return Number(p.total) || 0; });
+       var dataPrev = (d.serieSemanalAnterior || []).map(function (p) { return Number(p.total) || 0; });
+       while (dataPrev.length < serieLabels.length) dataPrev.push(0);
+       if (dataPrev.length > serieLabels.length) dataPrev = dataPrev.slice(0, serieLabels.length);
 
        var ctxS = document.getElementById('chartHomeSerie');
        if (ctxS) {
-          window._ujHomeCharts.push(new Chart(ctxS.getContext('2d'), {
+          var gctx = ctxS.getContext('2d');
+          var grad = gctx.createLinearGradient(0, 0, 0, 260);
+          grad.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
+          grad.addColorStop(1, 'rgba(56, 189, 248, 0.02)');
+
+          window._ujHomeCharts.push(new Chart(gctx, {
              type: 'line',
              data: {
                 labels: serieLabels,
                 datasets: [{
-                   label: 'Total',
-                   data: serieData,
+                   label: 'ACTUAL',
+                   data: dataActual,
                    borderColor: accent,
-                   backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                   backgroundColor: grad,
                    fill: true,
-                   tension: 0.25,
+                   tension: 0.45,
+                   cubicInterpolationMode: 'monotone',
+                   borderWidth: 3,
                    pointRadius: 0,
                    pointHoverRadius: 4,
+                }, {
+                   label: 'ANTERIOR',
+                   data: dataPrev,
+                   borderColor: prevColor,
+                   backgroundColor: 'rgba(148, 163, 184, 0.05)',
+                   fill: false,
+                   tension: 0.45,
+                   cubicInterpolationMode: 'monotone',
+                   borderWidth: 2,
+                   borderDash: [6, 6],
+                   pointRadius: 0,
+                   pointHoverRadius: 3,
                 }],
              },
              options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                   legend: { display: false },
+                   tooltip: {
+                      callbacks: {
+                         label: function (ctx) {
+                            return (ctx.dataset.label || '') + ': $ ' + formatMoneyHome(ctx.parsed.y);
+                         },
+                      },
+                   },
+                },
                 scales: {
-                   x: { ticks: { color: tickColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { color: gridColor } },
+                   x: { ticks: { color: tickColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { color: gridColor } },
                    y: { ticks: { color: tickColor }, grid: { color: gridColor } },
                 },
              },
           }));
-       }
-
-       if (showRanking) {
-          var rank = d.rankingVendedores || [];
-          var ctxR = document.getElementById('chartHomeRank');
-          if (ctxR) {
-             var labelsR = rank.map(function (x) { return x.vendedor || ''; });
-             var dataR = rank.map(function (x) { return Number(x.total) || 0; });
-             window._ujHomeCharts.push(new Chart(ctxR.getContext('2d'), {
-                type: 'bar',
-                data: {
-                   labels: labelsR,
-                   datasets: [{
-                      label: 'Total',
-                      data: dataR,
-                      backgroundColor: 'rgba(56, 189, 248, 0.45)',
-                      borderColor: accent,
-                      borderWidth: 1,
-                   }],
-                },
-                options: {
-                   indexAxis: 'y',
-                   responsive: true,
-                   maintainAspectRatio: false,
-                   plugins: { legend: { display: false } },
-                   scales: {
-                      x: { ticks: { color: tickColor }, grid: { color: gridColor } },
-                      y: { ticks: { color: tickColor }, grid: { display: false } },
-                   },
-                },
-             }));
-          }
        }
     }
 
@@ -718,17 +764,7 @@
                 <div class="home-dashboard-loading">Cargando datos…</div>
              </div>
           </div>
-          <div class="home-grid">`;
-
-       if (rol === 'VENDEDOR' || rol === 'VENDEDORGRAL') {
-          html += `<div class="home-card main-cat" onclick="navegar(null, 'MENU_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">trending_up</span></div><div class="home-title">VENTAS</div></div>`;
-       } else if (rol === 'ADMIN' || rol === 'ROOT') {
-          html += `<div class="home-card main-cat" onclick="navegar(null, 'MENU_ADMIN')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">domain</span></div><div class="home-title">ADMINISTRACIÓN</div></div>
-             <div class="home-card main-cat" onclick="navegar(null, 'MENU_STOCK')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">inventory_2</span></div><div class="home-title">STOCK</div></div>
-             <div class="home-card main-cat" onclick="navegar(null, 'MENU_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined" style="font-size:48px;">trending_up</span></div><div class="home-title">VENTAS</div></div>`;
-       }
-
-       html += `</div>`;
+          `;
        document.getElementById('app').innerHTML = html;
 
        google.script.run
