@@ -253,7 +253,7 @@
              let icono = v.nombre === 'Universal Jumps' ? 'storefront' : 'person';
              VIEW_AS_VENDEDORES.push(v.nombre);
              html += `<div class="menu-item vendor-item vendor-active" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
-                   <span class="material-symbols-outlined">${icono}</span> ${v.nombre}
+                   <span class="material-symbols-outlined">${icono}</span><span class="nav-text">${v.nombre}</span>
                 </div>`;
           });
  
@@ -268,7 +268,7 @@
                 let icono = v.nombre === 'Universal Jumps' ? 'storefront' : 'person';
                 VIEW_AS_VENDEDORES.push(v.nombre);
                 html += `<div class="menu-item vendor-item vendor-inactive" id="menu-${idNombre}" onclick="navegar(this, '${v.nombre}')">
-                      <span class="material-symbols-outlined">${icono}</span> ${v.nombre}
+                      <span class="material-symbols-outlined">${icono}</span><span class="nav-text">${v.nombre}</span>
                    </div>`;
              });
           }
@@ -316,11 +316,22 @@
        document.getElementById('selTrimestreHeader').value = obj;
  
        if (typeof poblarAnioConsolidado === 'function') poblarAnioConsolidado();
+       loadSidebarCollapsedState();
        initNavDropdowns();
+       if (!window._ujSidebarResizeBound) {
+          window._ujSidebarResizeBound = true;
+          window.addEventListener('resize', function () {
+             if (window.innerWidth <= 768) {
+                var sb = document.getElementById('app-sidebar');
+                if (sb) sb.classList.remove('sidebar-collapsed');
+             }
+          });
+       }
        navegar(null, 'HOME');
     }
  
     function initNavDropdowns() {
+       if (document.getElementById('app-sidebar')) return;
        if (window.innerWidth <= 768) return;
        var dropdowns = document.querySelectorAll('.top-nav-dropdown');
        var closeTimer = null;
@@ -360,10 +371,37 @@
  
  
     function toggleMenu() {
-       var menu = document.getElementById('top-nav-menu');
+       var sidebar = document.getElementById('app-sidebar');
        var overlay = document.getElementById('mobile-overlay');
-       if (menu) menu.classList.toggle('open');
+       if (sidebar) sidebar.classList.toggle('open');
        if (overlay) overlay.classList.toggle('active');
+    }
+
+    function toggleSidebarCollapsed() {
+       if (window.innerWidth <= 768) return;
+       var sb = document.getElementById('app-sidebar');
+       if (!sb) return;
+       sb.classList.toggle('sidebar-collapsed');
+       var col = sb.classList.contains('sidebar-collapsed');
+       try { localStorage.setItem('uj_sidebar_collapsed', col ? '1' : '0'); } catch (e) {}
+       var icon = document.querySelector('.sidebar-collapse-icon');
+       if (icon) icon.textContent = col ? 'chevron_right' : 'chevron_left';
+       document.querySelectorAll('.app-sidebar .top-nav-dropdown-content.open').forEach(function (el) {
+          el.classList.remove('open');
+          var tr = el.previousElementSibling;
+          if (tr && tr.classList && tr.classList.contains('top-nav-dropdown-trigger')) tr.classList.remove('active');
+       });
+    }
+
+    function loadSidebarCollapsedState() {
+       try {
+          if (localStorage.getItem('uj_sidebar_collapsed') !== '1') return;
+          var sb = document.getElementById('app-sidebar');
+          if (!sb || window.innerWidth <= 768) return;
+          sb.classList.add('sidebar-collapsed');
+          var icon = document.querySelector('.sidebar-collapse-icon');
+          if (icon) icon.textContent = 'chevron_right';
+       } catch (e) {}
     }
  
     function navegar(el, hoja) {
@@ -371,10 +409,20 @@
        if (NAVEGANDO) return;
        NAVEGANDO = true;
  
+       if (window.innerWidth > 768) {
+          var sbNav = document.getElementById('app-sidebar');
+          if (sbNav && sbNav.classList.contains('sidebar-collapsed') && el && (el.classList.contains('menu-item') || el.classList.contains('top-nav-item'))) {
+             sbNav.classList.remove('sidebar-collapsed');
+             try { localStorage.setItem('uj_sidebar_collapsed', '0'); } catch (e2) {}
+             var icNav = document.querySelector('.sidebar-collapse-icon');
+             if (icNav) icNav.textContent = 'chevron_left';
+          }
+       }
+ 
        if (window.innerWidth <= 768) {
-          var m = document.getElementById('top-nav-menu');
+          var s = document.getElementById('app-sidebar');
           var o = document.getElementById('mobile-overlay');
-          if (m) m.classList.remove('open');
+          if (s) s.classList.remove('open');
           if (o) o.classList.remove('active');
        }
        if (typeof debugLog === 'function') debugLog('NAV', 'Navegando', { hoja: hoja });

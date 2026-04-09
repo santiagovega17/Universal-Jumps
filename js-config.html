@@ -183,6 +183,13 @@
     }
 
     function toggleSection(id) {
+       var sb = document.getElementById('app-sidebar');
+       if (sb && sb.classList.contains('sidebar-collapsed') && window.innerWidth > 768) {
+          sb.classList.remove('sidebar-collapsed');
+          try { localStorage.setItem('uj_sidebar_collapsed', '0'); } catch (e) {}
+          var ic = document.querySelector('.sidebar-collapse-icon');
+          if (ic) ic.textContent = 'chevron_left';
+       }
        let el = document.getElementById(id);
        let cat = el.previousElementSibling;
        if (el.classList.contains('open')) { el.classList.remove('open'); cat.classList.remove('active'); }

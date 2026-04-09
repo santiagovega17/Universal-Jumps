@@ -42,78 +42,86 @@
    <div id="app-container" style="display:none; width:100%; flex-direction:column;">
       <div id="mobile-overlay" onclick="toggleMenu()"></div>
 
-      <nav class="top-nav" id="top-nav">
-         <div class="top-nav-inner">
-            <a href="#" class="top-nav-logo" onclick="navegar(null, 'HOME'); return false;">
-               <img src="https://i.postimg.cc/mDrtkkwV/logo-UJ.png" alt="Universal Jumps"
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-               <span id="txt-logo" class="top-nav-logo-text" style="display:none;">UNIVERSAL JUMPS</span>
-            </a>
+      <div class="app-shell">
+         <aside class="app-sidebar" id="app-sidebar">
+            <div class="sidebar-header">
+               <a href="#" class="sidebar-logo" onclick="navegar(null, 'HOME'); return false;">
+                  <img src="https://i.postimg.cc/mDrtkkwV/logo-UJ.png" alt="Universal Jumps"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                  <span id="txt-logo" class="sidebar-logo-text" style="display:none;">UJ</span>
+               </a>
+               <button type="button" class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebarCollapsed()"
+                  aria-label="Contraer o expandir menú" title="Contraer menú">
+                  <span class="material-symbols-outlined sidebar-collapse-icon">chevron_left</span>
+               </button>
+            </div>
 
-            <button class="top-nav-toggle" id="top-nav-toggle" onclick="toggleMenu()" aria-label="Menú">
-               <span class="material-symbols-outlined">menu</span>
-            </button>
-
-            <div class="top-nav-menu" id="top-nav-menu">
+            <nav class="sidebar-nav top-nav-menu" id="top-nav-menu">
                <div class="menu-item top-nav-item" onclick="navegar(null, 'HOME')">
-                  <span class="material-symbols-outlined">home</span> Inicio
+                  <span class="material-symbols-outlined">home</span><span class="nav-text">Inicio</span>
                </div>
 
                <div class="top-nav-dropdown" id="nav-admin-group">
-                  <button class="top-nav-dropdown-trigger" onclick="toggleSection('admin-section')">
-                     Administración <span class="menu-arrow material-symbols-outlined">expand_less</span>
+                  <button type="button" class="top-nav-dropdown-trigger" onclick="toggleSection('admin-section')">
+                     <span class="material-symbols-outlined sidebar-section-icon">admin_panel_settings</span>
+                     <span class="nav-text">Administración</span>
+                     <span class="menu-arrow material-symbols-outlined">expand_more</span>
                   </button>
                   <div id="admin-section" class="top-nav-dropdown-content submenu">
                      <div class="menu-item" onclick="navegar(this, 'CAJA')">
-                        <span class="material-symbols-outlined">account_balance_wallet</span> Balance de Caja
+                        <span class="material-symbols-outlined">account_balance_wallet</span><span class="nav-text">Balance de Caja</span>
                      </div>
                      <div class="menu-item" onclick="navegar(this, 'GESTION_USUARIOS')">
-                        <span class="material-symbols-outlined">groups</span> Gestionar Usuarios
+                        <span class="material-symbols-outlined">groups</span><span class="nav-text">Gestionar Usuarios</span>
                      </div>
                   </div>
                </div>
 
                <div class="top-nav-dropdown" id="nav-inventario-group">
-                  <button class="top-nav-dropdown-trigger" onclick="toggleSection('inventario-section')">
-                     Inventario <span class="menu-arrow material-symbols-outlined">expand_less</span>
+                  <button type="button" class="top-nav-dropdown-trigger" onclick="toggleSection('inventario-section')">
+                     <span class="material-symbols-outlined sidebar-section-icon">inventory_2</span>
+                     <span class="nav-text">Inventario</span>
+                     <span class="menu-arrow material-symbols-outlined">expand_more</span>
                   </button>
                   <div id="inventario-section" class="top-nav-dropdown-content submenu">
                      <div class="menu-item" onclick="navegar(this, 'STOCK')">
-                        <span class="material-symbols-outlined">inventory_2</span> Stock de Botas
+                        <span class="material-symbols-outlined">inventory_2</span><span class="nav-text">Stock de Botas</span>
                      </div>
                   </div>
                </div>
 
                <div class="top-nav-dropdown" id="nav-ventas-group">
-                  <button class="top-nav-dropdown-trigger" onclick="toggleSection('ventas-section')">
-                     Ventas <span class="menu-arrow material-symbols-outlined">expand_less</span>
+                  <button type="button" class="top-nav-dropdown-trigger" onclick="toggleSection('ventas-section')">
+                     <span class="material-symbols-outlined sidebar-section-icon">trending_up</span>
+                     <span class="nav-text">Ventas</span>
+                     <span class="menu-arrow material-symbols-outlined">expand_more</span>
                   </button>
                   <div id="ventas-section" class="top-nav-dropdown-content submenu">
                      <div class="menu-sublabel">General</div>
                      <div class="menu-item" id="menu-consolidado" onclick="navegar(this, 'CONSOLIDADO')">
-                        <span class="material-symbols-outlined">leaderboard</span> Consolidado
+                        <span class="material-symbols-outlined">leaderboard</span><span class="nav-text">Consolidado</span>
                      </div>
                      <div class="menu-item" id="menu-comisiones" onclick="navegar(this, '%')">
-                        <span class="material-symbols-outlined">trending_up</span> Comisiones (%)
+                        <span class="material-symbols-outlined">trending_up</span><span class="nav-text">Comisiones (%)</span>
                      </div>
                      <div class="menu-item" id="btnObjetivos" onclick="navegar(this, 'OBJETIVOS')">
-                        <span class="material-symbols-outlined">track_changes</span> Objetivos
+                        <span class="material-symbols-outlined">track_changes</span><span class="nav-text">Objetivos</span>
                      </div>
                      <div class="menu-item" id="menu-clientes" onclick="navegar(this, 'CLIENTES')">
-                        <span class="material-symbols-outlined">contacts</span> Clientes
+                        <span class="material-symbols-outlined">contacts</span><span class="nav-text">Clientes</span>
                      </div>
                      <div class="menu-item" id="menu-config-ventas" onclick="navegar(this, 'CONFIGURACION_VENTAS')">
-                        <span class="material-symbols-outlined">tune</span> Configuración
+                        <span class="material-symbols-outlined">tune</span><span class="nav-text">Configuración</span>
                      </div>
                      <div class="menu-sublabel" id="cat-vendedores">Vendedores</div>
                      <div id="vendor-list-container"></div>
                   </div>
                </div>
-            </div>
+            </nav>
 
-            <div class="top-nav-right">
-               <span class="top-nav-version" id="sidebar-version">v1.0.0</span>
-               <div class="top-nav-viewas" id="viewas-container" style="display:none;">
+            <div class="sidebar-footer">
+               <span class="sidebar-version" id="sidebar-version">v1.0.0</span>
+               <div class="sidebar-viewas top-nav-viewas" id="viewas-container" style="display:none;">
                   <select id="viewas-role" class="top-nav-viewas-select" title="Ver como (solo ROOT)">
                      <option value="">Ver como: ROOT</option>
                      <option value="ADMIN">Ver como: ADMIN</option>
@@ -124,16 +132,19 @@
                      <option value="">Vendedor...</option>
                   </select>
                </div>
-               <div class="top-nav-user">
+               <div class="sidebar-user top-nav-user">
                   <div id="user-display-name" class="user-name">...</div>
                   <div id="user-display-role" class="user-role">...</div>
                </div>
             </div>
-         </div>
-      </nav>
+         </aside>
 
+         <div class="app-main-column">
       <div class="main">
          <div class="header">
+            <button type="button" class="header-menu-toggle" id="header-menu-toggle" onclick="toggleMenu()" aria-label="Abrir menú">
+               <span class="material-symbols-outlined">menu</span>
+            </button>
             <div class="header-left">
                <h2 id="titulo">HOME</h2>
                <select id="selTrimestreHeader" class="header-select" onchange="navegar(null, 'CAMBIAR_TRIMESTRE')">
@@ -190,6 +201,8 @@
             <span class="material-symbols-outlined">add</span>
             Agregar Movimiento
          </button>
+      </div>
+         </div>
       </div>
    </div>
 
