@@ -947,7 +947,7 @@
  
     /* --- HOME DASHBOARD --- */
     .home-dashboard {
-       max-width: 1000px;
+       max-width: 1100px;
        margin: 0 auto 36px;
        padding: 0 4px;
     }
@@ -984,9 +984,15 @@
        gap: 16px;
     }
 
-    @media (min-width: 920px) {
+    @media (min-width: 640px) {
        .dash-kpi-grid {
           grid-template-columns: 1fr 1fr;
+       }
+    }
+ 
+    @media (min-width: 1024px) {
+       .dash-kpi-grid {
+          grid-template-columns: repeat(3, 1fr);
        }
     }
  
@@ -1057,6 +1063,20 @@
 
     .dash-chart-canvas-wrap {
        height: 260px;
+    }
+ 
+    .dash-chart-x-hint {
+       font-size: 12px;
+       color: #94a3b8;
+       line-height: 1.45;
+       margin-top: 12px;
+       padding: 0 8px 4px;
+       text-align: center;
+    }
+ 
+    .dash-chart-x-hint strong {
+       color: #cbd5e1;
+       font-weight: 600;
     }
 
     .dash-chart-title {

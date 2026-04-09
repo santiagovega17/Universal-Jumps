@@ -608,6 +608,24 @@
        return '<div class="dash-kpi-trend dash-kpi-trend--flat"><span class="material-symbols-outlined dash-kpi-trend-ic">horizontal_rule</span>0% vs ayer</div>';
     }
 
+    /** Comparación del total del mes en pantalla vs el mes calendario anterior. */
+    function formatDashKpiVsMesAnterior(totalMes, totalMesPrev) {
+       var mes = Number(totalMes) || 0;
+       var prev = Number(totalMesPrev) || 0;
+       if (prev > 0) {
+          var pct = ((mes - prev) / prev) * 100;
+          var up = pct >= 0;
+          var cls = up ? 'dash-kpi-trend dash-kpi-trend--up' : 'dash-kpi-trend dash-kpi-trend--down';
+          var ic = up ? 'trending_up' : 'trending_down';
+          var absPct = Math.abs(pct).toFixed(1);
+          return '<div class="' + cls + '"><span class="material-symbols-outlined dash-kpi-trend-ic">' + ic + '</span>' + absPct + '% vs mes anterior</div>';
+       }
+       if (mes > 0) {
+          return '<div class="dash-kpi-trend dash-kpi-trend--up"><span class="material-symbols-outlined dash-kpi-trend-ic">trending_up</span> Sin ventas mes anterior</div>';
+       }
+       return '<div class="dash-kpi-trend dash-kpi-trend--flat"><span class="material-symbols-outlined dash-kpi-trend-ic">horizontal_rule</span>0% vs mes anterior</div>';
+    }
+
     function monthNameEs(m) {
        var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
        return meses[(Number(m || 1) - 1)] || '';
@@ -675,18 +693,40 @@
           return;
        }
        var d = res.data;
-       var tituloMes = monthNameEs(d.mes || 1) + ' ' + (d.anio || '');
-       var tituloHoy = 'Hoy (' + formatFechaHome(d.hoyIso || '') + ')';
 
        destroyHomeCharts();
 
+       var hid = (d.hoyIso || '').toString().slice(0, 10);
+       var semanaActualIdx = -1;
+       if (hid.length === 10) {
+          var hy = parseInt(hid.slice(0, 4), 10);
+          var hm = parseInt(hid.slice(5, 7), 10);
+          var hd = parseInt(hid.slice(8, 10), 10);
+          if (hy === (d.anio || 0) && hm === (d.mes || 0) && hd >= 1 && hd <= 31) {
+             semanaActualIdx = Math.floor((hd - 1) / 7);
+          }
+       }
+       var nSemGraf = (d.serieSemanalActual || []).length;
+       var lastDMes = Number(d.lastDayMes) || 31;
+       var chartHintHtml = '';
+       if (semanaActualIdx >= 0 && semanaActualIdx < nSemGraf) {
+          var r0 = semanaActualIdx * 7 + 1;
+          var r1 = Math.min((semanaActualIdx + 1) * 7, lastDMes);
+          chartHintHtml = '<div class="dash-chart-x-hint">En el eje X estás en la <strong>semana ' + (semanaActualIdx + 1) + '</strong> del mes (aprox. días ' + r0 + '–' + r1 + '). La etiqueta «· hoy» y el punto en la línea azul marcan esa semana.</div>';
+       } else if (nSemGraf > 0) {
+          chartHintHtml = '<div class="dash-chart-x-hint">Eje X: ventas por semana dentro del mes (SEM 01 ≈ días 1–7, SEM 02 ≈ 8–14, etc.), comparadas con el mismo esquema del mes anterior.</div>';
+       }
+
        var kpiBlock =
           '<div class="dash-kpi-grid">' +
-             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido (' + tituloMes + ')</div>' +
-                '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalMes) + '</div></div>' +
-             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido ' + tituloHoy + '</div>' +
+             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total mensual</div>' +
+                '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalMes) + '</div>' +
+                formatDashKpiVsMesAnterior(d.totalMes, d.totalMesPrev) + '</div>' +
+             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total vendido hoy</div>' +
                 '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalHoy) + '</div>' +
                 formatDashKpiVsAyer(d.totalHoy, d.totalAyer) + '</div>' +
+             '<div class="dash-kpi-card"><div class="dash-kpi-label">Total anual (acumulado)</div>' +
+                '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalAnualYtd != null ? d.totalAnualYtd : 0) + '</div></div>' +
           '</div>';
 
        var serieCard =
@@ -699,6 +739,7 @@
                 '</span>' +
              '</div>' +
              '<div class="dash-chart-canvas-wrap"><canvas id="chartHomeSerie" height="240"></canvas></div>' +
+             chartHintHtml +
           '</div>';
 
        var rankBlock = '';
@@ -762,8 +803,9 @@
        var accent = '#38bdf8';
        var prevColor = 'rgba(148, 163, 184, 0.65)';
 
-       var serieLabels = (d.serieSemanalActual || []).map(function (p) {
-          return 'SEM ' + String(p.semana).padStart(2, '0');
+       var serieLabels = (d.serieSemanalActual || []).map(function (p, i) {
+          var base = 'SEM ' + String(p.semana).padStart(2, '0');
+          return (i === semanaActualIdx && semanaActualIdx >= 0) ? base + ' · hoy' : base;
        });
        var dataActual = (d.serieSemanalActual || []).map(function (p) { return Number(p.total) || 0; });
        var dataPrev = (d.serieSemanalAnterior || []).map(function (p) { return Number(p.total) || 0; });
@@ -789,8 +831,15 @@
                    tension: 0.42,
                    cubicInterpolationMode: 'monotone',
                    borderWidth: 3,
-                   pointRadius: 0,
-                   pointHoverRadius: 4,
+                   pointRadius: (d.serieSemanalActual || []).map(function (_, i) {
+                      return (i === semanaActualIdx && semanaActualIdx >= 0) ? 6 : 0;
+                   }),
+                   pointHoverRadius: (d.serieSemanalActual || []).map(function (_, i) {
+                      return (i === semanaActualIdx && semanaActualIdx >= 0) ? 8 : 4;
+                   }),
+                   pointBackgroundColor: accent,
+                   pointBorderColor: '#0f172a',
+                   pointBorderWidth: 2,
                 }, {
                    label: 'ANTERIOR',
                    data: dataPrev,
