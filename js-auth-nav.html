@@ -929,7 +929,7 @@
        if (typeof Chart === 'undefined') return;
 
        var tickColor = '#64748b';
-       var accent = '#38bdf8';
+       var accent = '#5db1df';
        var prevColor = 'rgba(100, 116, 139, 0.45)';
 
        var serieLabels = (d.serieSemanalActual || []).map(function (p, i) {
@@ -969,8 +969,8 @@
                    pointHoverRadius: (d.serieSemanalActual || []).map(function (_, i) {
                       return (i === semanaActualIdx && semanaActualIdx >= 0) ? 8 : 4;
                    }),
-                   pointBackgroundColor: '#22d3ee',
-                   pointBorderColor: '#0f172a',
+                   pointBackgroundColor: '#3d9ac4',
+                   pointBorderColor: '#0a0a0a',
                    pointBorderWidth: 2,
                 }, {
                    label: 'ANTERIOR',

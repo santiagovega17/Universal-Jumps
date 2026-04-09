@@ -351,12 +351,12 @@
           var descrHtml = producto.descripcion ? ('<div style="color:#64748b; font-size:12px; flex:1; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.4; max-height:2.8em;">' + producto.descripcion + '</div>') : '';
           var colorProd = producto.color || '';
           html += '<div class="card" style="overflow:hidden; display:flex; flex-direction:column; width:calc(20% - 12px); min-width:220px; max-width:220px; flex-shrink:0;">' +
-             '<div style="position:relative; width:100%; padding-top:100%; background:#0f172a; border-radius:8px 8px 0 0; overflow:hidden;">' +
+             '<div style="position:relative; width:100%; padding-top:100%; background:#0a0a0a; border-radius:8px 8px 0 0; overflow:hidden;">' +
              '<img src="' + imagenUrl + '" alt="' + (producto.modelo || '') + '" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;" onerror="this.src=\'https://via.placeholder.com/300x300?text=Sin+Imagen\';">' +
-             '<div style="position:absolute; top:10px; right:10px; width:18px; height:18px; border-radius:50%; background:' + circuloColor + '; border:2px solid #1e293b; ' + circuloEstilo + '" ' + circuloOnclick + '></div></div>' +
+             '<div style="position:absolute; top:10px; right:10px; width:18px; height:18px; border-radius:50%; background:' + circuloColor + '; border:2px solid #121212; ' + circuloEstilo + '" ' + circuloOnclick + '></div></div>' +
              '<div style="padding:15px; flex:1; display:flex; flex-direction:column; gap:12px;">' +
              '<h3 style="margin:0; color:white; font-size:16px; font-weight:600;">' + tituloProducto + '</h3>' + descrHtml +
-             '<div style="border-top:1px solid #1e293b; padding-top:12px; margin-top:0;">' +
+             '<div style="border-top:1px solid #242424; padding-top:12px; margin-top:0;">' +
              '<table class="ventas-historial-table stock-talles-mini"><tbody>' + tallesHtml + '</tbody></table></div>' +
              '<button class="btn-submit" onclick="abrirModalAjusteStock(\'' + producto.id + '\', \'' + (producto.modelo || '') + '\', \'' + String(colorProd).replace(/'/g, '&#39;') + '\', ' + (producto.divideTalles === 'NO') + ')" style="width:100%; background:var(--accent); margin-top:0;">' +
              '<span class="material-symbols-outlined" style="font-size:18px; vertical-align:middle;">edit</span> Ajustar Stock</button></div></div>';
@@ -982,7 +982,7 @@
                          var colorBtn = puedeEliminar ? '#ef4444' : '#64748b';
                          var cursorBtn = puedeEliminar ? 'pointer' : 'not-allowed';
                          var titleBtn = puedeEliminar ? 'Eliminar' : 'Tiene productos activos';
-                         html += '<div style="display:flex; align-items:center; gap:8px; background:#1e293b; padding:6px 12px; border-radius:6px;">' +
+                         html += '<div style="display:flex; align-items:center; gap:8px; background:#121212; padding:6px 12px; border-radius:6px;">' +
                             '<span style="color:#94a3b8; font-size:13px;">' + modelo + '</span>' +
                             '<button onclick="eliminarMarcaModeloFrontend(\'' + esc(marca) + '\',\'' + esc(tipo) + '\',\'' + esc(modelo) + '\')" ' +
                             'style="background:transparent; border:none; color:' + colorBtn + '; cursor:' + cursorBtn + '; padding:0; font-size:16px;" title="' + titleBtn + '">' +
