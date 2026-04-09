@@ -662,44 +662,6 @@
        return meses[(Number(m || 1) - 1)] || '';
     }
 
-    /** Eje Y: 4 marcas (0 y 3 saltos). Cada salto es un número redondo (1/2/2.5/5/10 × 10ⁿ). */
-    function homeChartYAxisConfig(dataActual, dataPrev) {
-       var maxVal = 0;
-       var all = (dataActual || []).concat(dataPrev || []);
-       for (var i = 0; i < all.length; i++) maxVal = Math.max(maxVal, Number(all[i]) || 0);
-       if (maxVal <= 0) return { max: 3000000, stepSize: 1000000 };
-
-       function niceMoneyStepFromRough(rough) {
-          if (!isFinite(rough) || rough <= 0) return 1;
-          var pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
-          var norm = rough / pow10;
-          var mult = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
-          return Math.round(mult * pow10);
-       }
-
-       var padded = maxVal * 1.15;
-       var target = padded / 3;
-       var stepSize = niceMoneyStepFromRough(target);
-       if (stepSize < 1) stepSize = 1;
-       var guard = 0;
-       while (3 * stepSize < padded && guard++ < 40) {
-          target *= 1.12;
-          stepSize = niceMoneyStepFromRough(target);
-          if (stepSize < 1) stepSize = 1;
-       }
-       var niceMax = 3 * stepSize;
-       return { max: niceMax, stepSize: stepSize };
-    }
-
-    function homeChartFormatYAxisMoney(value) {
-       var n = Math.round(Number(value));
-       var fmt = new Intl.NumberFormat('es-AR', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-       }).format(n);
-       return '$ ' + fmt;
-    }
-
     function escHtmlHome(s) {
        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
@@ -809,16 +771,6 @@
 
        destroyHomeCharts();
 
-       var hid = (d.hoyIso || '').toString().slice(0, 10);
-       var semanaActualIdx = -1;
-       if (hid.length === 10) {
-          var hy = parseInt(hid.slice(0, 4), 10);
-          var hm = parseInt(hid.slice(5, 7), 10);
-          var hd = parseInt(hid.slice(8, 10), 10);
-          if (hy === (d.anio || 0) && hm === (d.mes || 0) && hd >= 1 && hd <= 31) {
-             semanaActualIdx = Math.floor((hd - 1) / 7);
-          }
-       }
        var kpiBlock =
           '<div class="dash-kpi-grid">' +
              '<div class="dash-kpi-card">' +
@@ -832,18 +784,6 @@
              '<div class="dash-kpi-card">' +
                 '<div class="dash-kpi-head"><span class="dash-kpi-label">Total acumulado anual</span></div>' +
                 '<div class="dash-kpi-value">$ ' + formatMoneyHome(d.totalAnualYtd != null ? d.totalAnualYtd : 0) + '</div></div>' +
-          '</div>';
-
-       var serieCard =
-          '<div class="dash-chart-card dash-chart-card--hero">' +
-             '<div class="dash-chart-title">' +
-                '<span>Ventas vs Mes Anterior</span>' +
-                '<span class="dash-chart-legend">' +
-                   '<span class="dash-legend-item"><span class="dash-legend-dot dash-legend-dot-actual"></span>Actual</span>' +
-                   '<span class="dash-legend-item"><span class="dash-legend-dot dash-legend-dot-prev"></span>Anterior</span>' +
-                '</span>' +
-             '</div>' +
-             '<div class="dash-chart-canvas-wrap dash-chart-canvas-wrap--hero"><canvas id="chartHomeSerie" height="420"></canvas></div>' +
           '</div>';
 
        var rankBlock = '';
@@ -887,13 +827,14 @@
              '</div>' +
           '</aside>';
        var rankingCol = (showRanking && rankBlock) ? '<div class="dash-home-ranking-wrap">' + rankBlock + '</div>' : '';
-       var mainGridClass = 'dash-home-main-grid' + (rankingCol ? '' : ' dash-home-main-grid--no-rank');
+       var midRowClass = 'dash-home-mid-row' + (rankingCol ? '' : ' dash-home-mid-row--solo-venc');
        var midBlock =
-          '<div class="' + mainGridClass + '">' +
+          '<div class="dash-home-main-grid">' +
              '<div class="dash-home-kpi-wrap">' + kpiBlock + '</div>' +
-             rankingCol +
-             '<div class="dash-home-chart-main">' + serieCard + '</div>' +
-             '<div class="dash-home-venc-aside">' + vencWidget + '</div>' +
+             '<div class="' + midRowClass + '">' +
+                rankingCol +
+                '<div class="dash-home-venc-wrap">' + vencWidget + '</div>' +
+             '</div>' +
           '</div>';
 
        var rows = d.ultimasVentas || [];
@@ -921,130 +862,6 @@
           tableHead + '</thead><tbody>' + tableBody + '</tbody></table></div></div>';
 
        cargarProximosVencimientosHome();
-
-       if (typeof Chart === 'undefined') return;
-
-       var tickColor = '#64748b';
-       var accent = '#5db1df';
-       var prevColor = 'rgba(100, 116, 139, 0.45)';
-
-       var serieLabels = (d.serieSemanalActual || []).map(function (p, i) {
-          var n = (d.serieSemanalActual || []).length;
-          if (n <= 1) return 'INICIO';
-          if (i === 0) return 'INICIO';
-          if (i === n - 1) return 'FIN';
-          return '';
-       });
-       var dataActual = (d.serieSemanalActual || []).map(function (p) { return Number(p.total) || 0; });
-       var dataPrev = (d.serieSemanalAnterior || []).map(function (p) { return Number(p.total) || 0; });
-       while (dataPrev.length < serieLabels.length) dataPrev.push(0);
-       if (dataPrev.length > serieLabels.length) dataPrev = dataPrev.slice(0, serieLabels.length);
-
-       var yScale = homeChartYAxisConfig(dataActual, dataPrev);
-
-       var ctxS = document.getElementById('chartHomeSerie');
-       if (ctxS) {
-          var gctx = ctxS.getContext('2d');
-
-          window._ujHomeCharts.push(new Chart(gctx, {
-             type: 'line',
-             data: {
-                labels: serieLabels,
-                datasets: [{
-                   label: 'ACTUAL',
-                   data: dataActual,
-                   borderColor: accent,
-                   backgroundColor: 'transparent',
-                   fill: false,
-                   tension: 0.42,
-                   cubicInterpolationMode: 'monotone',
-                   borderWidth: 3,
-                   pointRadius: (d.serieSemanalActual || []).map(function (_, i) {
-                      return (i === semanaActualIdx && semanaActualIdx >= 0) ? 6 : 0;
-                   }),
-                   pointHoverRadius: (d.serieSemanalActual || []).map(function (_, i) {
-                      return (i === semanaActualIdx && semanaActualIdx >= 0) ? 8 : 4;
-                   }),
-                   pointBackgroundColor: '#3d9ac4',
-                   pointBorderColor: '#0a0a0a',
-                   pointBorderWidth: 2,
-                }, {
-                   label: 'ANTERIOR',
-                   data: dataPrev,
-                   borderColor: prevColor,
-                   backgroundColor: 'transparent',
-                   fill: false,
-                   tension: 0.42,
-                   cubicInterpolationMode: 'monotone',
-                   borderWidth: 2,
-                   borderDash: [5, 5],
-                   pointRadius: 0,
-                   pointHoverRadius: 3,
-                }],
-             },
-             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 10, right: 6, left: 10, bottom: 6 } },
-                interaction: { mode: 'index', intersect: false },
-                elements: {
-                   line: { borderJoinStyle: 'round', borderCapStyle: 'round' },
-                },
-                plugins: {
-                   legend: { display: false },
-                   tooltip: {
-                      callbacks: {
-                         title: function (items) {
-                            if (!items || !items.length) return '';
-                            var i = items[0].dataIndex;
-                            var p = (d.serieSemanalActual || [])[i];
-                            if (p && p.semana != null) return 'Semana ' + p.semana + ' del mes';
-                            return '';
-                         },
-                         label: function (ctx) {
-                            return (ctx.dataset.label || '') + ': $ ' + formatMoneyHome(ctx.parsed.y);
-                         },
-                      },
-                   },
-                },
-                scales: {
-                   x: {
-                      offset: true,
-                      ticks: {
-                         color: tickColor,
-                         maxRotation: 0,
-                         autoSkip: false,
-                         padding: 8,
-                         callback: function (val) {
-                            var idx = typeof val === 'number' ? val : parseInt(val, 10);
-                            if (!Number.isFinite(idx) || idx < 0 || idx >= serieLabels.length) return '';
-                            var lab = serieLabels[idx];
-                            return lab != null && lab !== '' ? lab : '';
-                         },
-                      },
-                      grid: { display: false, drawBorder: false },
-                      border: { display: false },
-                   },
-                   y: {
-                      min: 0,
-                      max: yScale.max,
-                      ticks: {
-                         color: tickColor,
-                         stepSize: yScale.stepSize,
-                         maxTicksLimit: 5,
-                         autoSkip: false,
-                         padding: 10,
-                         font: { size: 10 },
-                         maxRotation: 0,
-                         callback: function (v) { return homeChartFormatYAxisMoney(v); },
-                      },
-                      grid: { display: false, drawBorder: false },
-                      border: { display: false },
-                   },
-                },
-             },
-          }));
-       }
     }
 
     function renderMainMenu() {

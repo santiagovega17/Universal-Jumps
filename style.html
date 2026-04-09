@@ -989,7 +989,7 @@
        border-radius: 0;
        box-sizing: border-box;
        min-height: 100%;
-       --home-main-grid-row-gap: 0;
+       --home-main-grid-row-gap: 16px;
        --home-main-grid-col-gap: 12px;
        /* Tabla respecto al bloque superior */
        --home-chart-venc-gap: 20px;
@@ -1036,7 +1036,6 @@
     }
  
     .home-dashboard .dash-kpi-card,
-    .home-dashboard .dash-chart-card,
     .home-dashboard .dash-ranking-card,
     .home-dashboard .dash-table-section {
        background: var(--card-surface);
@@ -1048,7 +1047,6 @@
     }
  
     .home-dashboard .dash-kpi-card::before,
-    .home-dashboard .dash-chart-card::before,
     .home-dashboard .dash-ranking-card::before,
     .home-dashboard .dash-table-section::before {
        display: none;
@@ -1105,93 +1103,53 @@
        color: #e57373;
     }
  
-    .home-dashboard .dash-chart-card {
-       padding: 18px 18px 14px 20px;
-       min-width: 0;
-       max-width: 100%;
-       box-sizing: border-box;
-    }
- 
-    .home-dashboard .dash-chart-card.dash-chart-card--hero {
-       padding: 20px 22px 18px;
-    }
- 
-    .home-dashboard .dash-chart-canvas-wrap--hero {
-       min-height: 320px;
-       height: clamp(320px, 42vh, 520px);
-    }
- 
-    @media (min-width: 900px) {
-       .home-dashboard .dash-chart-canvas-wrap--hero {
-          min-height: 380px;
-          height: clamp(380px, 46vh, 560px);
-       }
-    }
- 
-    /* Bloque 2×2: KPI+gráfico (izq.) · ranking+venc (der.) */
+    /* Inicio: fila totales → fila ranking|venc → tabla */
     .dash-home-main-grid {
        display: grid;
+       grid-template-columns: minmax(0, 1fr);
        row-gap: var(--home-main-grid-row-gap);
-       column-gap: var(--home-main-grid-col-gap);
-       align-items: stretch;
        width: 100%;
-    }
- 
-    @media (min-width: 900px) {
-       /* Izquierda flexible; derecha acotada en px (evita que rank/venc crezcan en fr y desborden) */
-       .dash-home-main-grid:not(.dash-home-main-grid--no-rank) {
-          grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
-       }
- 
-       .dash-home-main-grid--no-rank {
-          grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-       }
- 
-       .dash-home-main-grid--no-rank .dash-home-kpi-wrap {
-          grid-column: 1 / -1;
-       }
- 
-       /* Tres KPI en una fila (evita que el tercero ocupe todo el ancho entre 900–1023px) */
-       .dash-home-main-grid--no-rank .dash-home-kpi-wrap .dash-kpi-grid {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-       }
     }
  
     .dash-home-kpi-wrap {
        min-width: 0;
     }
  
+    .dash-home-mid-row {
+       display: grid;
+       gap: var(--home-main-grid-col-gap);
+       align-items: stretch;
+       min-width: 0;
+    }
+ 
+    @media (min-width: 900px) {
+       .dash-home-mid-row:not(.dash-home-mid-row--solo-venc) {
+          grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+       }
+ 
+       .dash-home-mid-row:not(.dash-home-mid-row--solo-venc) .dash-home-ranking-wrap {
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+       }
+ 
+       .dash-home-mid-row:not(.dash-home-mid-row--solo-venc) .dash-home-ranking-wrap .dash-ranking-card {
+          flex: 1;
+          min-height: 0;
+       }
+ 
+       .dash-home-mid-row--solo-venc {
+          grid-template-columns: minmax(0, 1fr);
+       }
+ 
+       .dash-home-main-grid .dash-home-kpi-wrap .dash-kpi-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+       }
+    }
+ 
     .dash-home-ranking-wrap {
        min-width: 0;
        max-width: 100%;
-    }
- 
-    /* Si el ranking es más alto que la franja de KPIs, estirar la zona de totales hacia abajo (sin hueco) */
-    @media (min-width: 900px) {
-       .dash-home-main-grid:not(.dash-home-main-grid--no-rank) .dash-home-kpi-wrap {
-          display: flex;
-          flex-direction: column;
-          min-height: 0;
-       }
- 
-       .dash-home-main-grid:not(.dash-home-main-grid--no-rank) .dash-home-kpi-wrap .dash-kpi-grid {
-          flex: 1;
-          min-height: 0;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          grid-template-rows: 1fr;
-          align-items: stretch;
-       }
- 
-       .dash-home-main-grid:not(.dash-home-main-grid--no-rank) .dash-home-ranking-wrap {
-          display: flex;
-          flex-direction: column;
-          min-height: 0;
-       }
- 
-       .dash-home-main-grid:not(.dash-home-main-grid--no-rank) .dash-home-ranking-wrap .dash-ranking-card {
-          flex: 1;
-          min-height: 0;
-       }
     }
  
     .home-dashboard .dash-home-ranking-wrap .dash-ranking-card {
@@ -1203,27 +1161,10 @@
        flex: 1;
        min-height: 0;
        overflow: auto;
-       max-height: 340px;
+       max-height: 360px;
     }
  
-    .dash-home-chart-main {
-       min-width: 0;
-       max-width: 100%;
-       width: 100%;
-       display: flex;
-       flex-direction: column;
-    }
- 
-    .dash-home-chart-main .dash-chart-card {
-       flex: 1;
-       min-height: 0;
-       min-width: 0;
-       max-width: 100%;
-       width: 100%;
-       box-sizing: border-box;
-    }
- 
-    .dash-home-venc-aside {
+    .dash-home-venc-wrap {
        display: flex;
        flex-direction: column;
        justify-content: flex-start;
@@ -1233,7 +1174,7 @@
        min-height: 0;
     }
  
-    .home-dashboard .dash-home-venc-aside .home-caja-venc-widget {
+    .home-dashboard .dash-home-venc-wrap .home-caja-venc-widget {
        flex: 1;
        min-height: 0;
     }
@@ -1261,48 +1202,6 @@
  
     .home-dashboard .dash-table-section {
        padding: 18px 18px 20px 20px;
-    }
- 
-    .home-dashboard .dash-chart-title {
-       display: flex;
-       align-items: center;
-       justify-content: space-between;
-       gap: 12px;
-       flex-wrap: wrap;
-       color: #94a3b8;
-       font-weight: 800;
-       letter-spacing: 0.09em;
-       text-transform: uppercase;
-       font-size: 15px;
-       margin-bottom: 14px;
-       padding-bottom: 0;
-       border-bottom: none;
-    }
- 
-    .home-dashboard .dash-chart-title > span:first-child {
-       color: var(--title-accent);
-       font-size: 16px;
-       letter-spacing: 0.1em;
-       padding-left: 12px;
-       border-left: 3px solid var(--accent);
-       text-shadow: none;
-       text-align: left;
-    }
- 
-    .home-dashboard .dash-chart-legend {
-       color: #94a3b8;
-       text-transform: uppercase;
-       font-size: 13px;
-       font-weight: 700;
-       letter-spacing: 0.06em;
-    }
- 
-    .home-dashboard .dash-legend-dot-actual {
-       background: var(--accent);
-    }
- 
-    .home-dashboard .dash-legend-dot-prev {
-       background: rgba(100, 116, 139, 0.55);
     }
  
     .home-dashboard .dash-ranking-title {
