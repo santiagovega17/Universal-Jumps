@@ -393,11 +393,16 @@
     function syncSidebarExpandedForHome() {
        var sb = document.getElementById('app-sidebar');
        if (!sb) return;
+       var h = typeof HOJA_ACTUAL !== 'undefined' ? HOJA_ACTUAL : '';
+       var cont = document.querySelector('.content');
+       if (cont) {
+          if (h === 'HOME') cont.classList.add('content--home');
+          else cont.classList.remove('content--home');
+       }
        if (window.innerWidth <= 768) {
           sb.classList.remove('sidebar-collapsed');
           return;
        }
-       var h = typeof HOJA_ACTUAL !== 'undefined' ? HOJA_ACTUAL : '';
        if (h === 'HOME') {
           sb.classList.remove('sidebar-collapsed');
        } else {
@@ -832,7 +837,7 @@
           '</div>';
 
        var serieCard =
-          '<div class="dash-chart-card">' +
+          '<div class="dash-chart-card dash-chart-card--hero">' +
              '<div class="dash-chart-title">' +
                 '<span>Ventas vs Mes Anterior</span>' +
                 '<span class="dash-chart-legend">' +
@@ -840,7 +845,7 @@
                    '<span class="dash-legend-item"><span class="dash-legend-dot dash-legend-dot-prev"></span>Anterior</span>' +
                 '</span>' +
              '</div>' +
-             '<div class="dash-chart-canvas-wrap"><canvas id="chartHomeSerie" height="240"></canvas></div>' +
+             '<div class="dash-chart-canvas-wrap dash-chart-canvas-wrap--hero"><canvas id="chartHomeSerie" height="420"></canvas></div>' +
           '</div>';
 
        var rankBlock = '';
@@ -872,7 +877,6 @@
           }
        }
 
-       var chartsInner = '<div class="dash-charts-grid dash-charts-compare">' + serieCard + rankBlock + '</div>';
        var vencWidget =
           '<aside id="home-caja-venc-root" class="home-caja-venc-widget home-caja-venc-widget--loading" aria-label="Próximos vencimientos de caja">' +
              '<div class="home-caja-venc-inner">' +
@@ -884,7 +888,10 @@
                 '<button type="button" class="home-caja-venc-btn" onclick="navegar(null, \'CAJA\')">IR AL BALANCE DE CAJA</button>' +
              '</div>' +
           '</aside>';
-       var midBlock = '<div class="dash-home-mid">' + chartsInner + vencWidget + '</div>';
+       var chartRow = '<div class="dash-home-chart-row">' + serieCard + '</div>';
+       var sideRowClass = 'dash-home-side-row' + (showRanking && rankBlock ? '' : ' dash-home-side-row--single');
+       var sideRow = '<div class="' + sideRowClass + '">' + vencWidget + rankBlock + '</div>';
+       var midBlock = chartRow + sideRow;
 
        var rows = d.ultimasVentas || [];
        var colSpan = vendedorFiltrado ? 4 : 5;
