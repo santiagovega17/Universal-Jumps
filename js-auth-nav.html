@@ -875,7 +875,18 @@
     }
 
     function homePaisPieColors(n) {
-       var palette = ['#5db1df', '#3d9ac4', '#014665', '#22c55e', '#a78bfa', '#f472b6', '#fbbf24', '#94a3b8', '#fb923c', '#2dd4bf'];
+       var palette = [
+          '#F94144',
+          '#577590',
+          '#F8961E',
+          '#43AA8B',
+          '#9B5DE5',
+          '#00BBF9',
+          '#F15BB5',
+          '#90BE6D',
+          '#EE6C4D',
+          '#3D5A80',
+       ];
        var out = [];
        for (var i = 0; i < n; i++) out.push(palette[i % palette.length]);
        return out;
@@ -929,15 +940,17 @@
              options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: { padding: { top: 4, right: 4, bottom: 4, left: 4 } },
+                layout: { padding: { top: 8, right: 8, bottom: 8, left: 8 } },
                 plugins: {
                    legend: {
-                      position: 'bottom',
+                      position: 'right',
+                      align: 'center',
                       labels: {
-                         color: '#94a3b8',
-                         boxWidth: 10,
-                         padding: 10,
-                         font: { size: 11, weight: '600' },
+                         color: '#cbd5e1',
+                         boxWidth: 14,
+                         boxHeight: 14,
+                         padding: 12,
+                         font: { size: 12, weight: '600', family: 'system-ui, sans-serif' },
                          generateLabels: function (chart) {
                             var data = chart.data;
                             if (!data.labels || !data.labels.length || !data.datasets.length) return [];
@@ -947,16 +960,24 @@
                                var pct = totalSum > 0 ? ((v / totalSum) * 100).toFixed(1) : '0';
                                var fill = Array.isArray(ds.backgroundColor) ? ds.backgroundColor[i] : ds.backgroundColor;
                                return {
-                                  text: label + ' · ' + pct + '%',
+                                  text: label + '  ' + pct + '%',
                                   fillStyle: fill,
+                                  strokeStyle: fill,
+                                  fontColor: '#cbd5e1',
                                   hidden: false,
                                   index: i,
+                                  datasetIndex: 0,
                                };
                             });
                          },
                       },
                    },
                    tooltip: {
+                      backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                      titleColor: '#f1f5f9',
+                      bodyColor: '#e2e8f0',
+                      borderColor: 'rgba(148, 163, 184, 0.35)',
+                      borderWidth: 1,
                       callbacks: {
                          label: function (ctx) {
                             var v = typeof ctx.parsed === 'number' ? ctx.parsed : Number(ctx.raw) || 0;

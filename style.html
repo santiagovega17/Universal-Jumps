@@ -1126,9 +1126,9 @@
     }
  
     @media (min-width: 900px) {
-       /* ranking | torta países | vencimientos */
+       /* ranking | torta (más ancha) | vencimientos (más ancha) */
        .dash-home-mid-row--con-ranking {
-          grid-template-columns: minmax(0, 1fr) minmax(200px, 260px) minmax(260px, 320px);
+          grid-template-columns: minmax(180px, 0.85fr) minmax(300px, 2.35fr) minmax(300px, 400px);
        }
  
        .dash-home-mid-row--con-ranking .dash-home-ranking-wrap,
@@ -1146,7 +1146,7 @@
  
        /* torta | vencimientos (sin ranking) */
        .dash-home-mid-row--sin-ranking {
-          grid-template-columns: minmax(220px, 280px) minmax(260px, 320px);
+          grid-template-columns: minmax(300px, 2.35fr) minmax(300px, 400px);
        }
  
        .dash-home-mid-row--sin-ranking .dash-home-pais-wrap {
@@ -1211,8 +1211,8 @@
     .home-dashboard .dash-pais-chart-wrap {
        position: relative;
        flex: 1;
-       min-height: 200px;
-       height: 240px;
+       min-height: 260px;
+       height: min(340px, 42vh);
        width: 100%;
     }
  
