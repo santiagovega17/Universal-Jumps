@@ -326,6 +326,44 @@
        cont.innerHTML = html;
     }
 
+    /** Solo lectura: mismas tarjetas que edición, sin inputs (consulta por mes). */
+    function pintarGrillaObjetivosConsultaSoloLectura(data, contEl) {
+       if (!contEl) return;
+       var rows = dedupeObjetivosPorRango(Array.isArray(data) ? data.slice() : []);
+       rows.sort(function (a, b) { return (Number(a.rango) || 0) - (Number(b.rango) || 0); });
+       if (!rows.length) {
+          contEl.innerHTML = '<div class="card" style="padding:20px;color:#64748b;">Sin objetivos para ese mes.</div>';
+          return;
+       }
+       var html = '<div class="obj-grid-container">';
+       rows.forEach(function (row) {
+          var rg = Number(row.rango);
+          if (!Number.isFinite(rg)) return;
+          var factB = formatNumberAr(row.factBotas || 0);
+          var factC = formatNumberAr(row.factCerts || 0);
+          var metaTot = (Number(row.factBotas) || 0) + (Number(row.factCerts) || 0);
+          html += '<div class="obj-card">' +
+             '<div class="obj-header-row"><div class="obj-title">' + tituloRangoObjetivoVendedor(rg) + '</div></div>' +
+             '<div class="obj-row" style="margin:0 0 10px 0;padding:8px;background:rgba(255,255,255,0.04);border-radius:6px;">' +
+             '<span class="obj-label">Facturación total:</span> <span class="obj-val">' + formatNumberAr(metaTot) + '</span></div>' +
+             '<div class="obj-content">' +
+             '<div class="obj-sub-section">' +
+             '<div class="obj-sub-title"><span class="material-symbols-outlined">steps</span> BOTAS</div>' +
+             '<div class="obj-row"><span class="obj-label">% Comisión:</span> <span class="obj-val">' + (row.pctBotas || 0) + ' %</span></div>' +
+             '<div class="obj-row"><span class="obj-label">Unidades:</span> <span class="obj-val">' + row.botas + '</span></div>' +
+             '<div class="obj-row"><span class="obj-label">Facturación:</span> <span class="obj-val">' + factB + '</span></div>' +
+             '</div>' +
+             '<div class="obj-sub-section">' +
+             '<div class="obj-sub-title"><span class="material-symbols-outlined">verified</span> CERTIFICACIONES</div>' +
+             '<div class="obj-row"><span class="obj-label">% Comisión:</span> <span class="obj-val">' + (row.pctCerts || 0) + ' %</span></div>' +
+             '<div class="obj-row"><span class="obj-label">Unidades:</span> <span class="obj-val">' + row.certs + '</span></div>' +
+             '<div class="obj-row"><span class="obj-label">Facturación:</span> <span class="obj-val">' + factC + '</span></div>' +
+             '</div></div></div>';
+       });
+       html += '</div>';
+       contEl.innerHTML = html;
+    }
+
     function actualizarVobjMetaTotalRow(rango) {
        var suf = 'r' + rango;
        var el = document.getElementById('vobj-meta-total-' + suf);
@@ -402,12 +440,100 @@
           }
           pintarGrillaObjetivosVendedor(window.VENTAS_VOBJ_LAST_DATA, nom);
           actualizarEstadoChkVobjRangoMin();
-          if (typeof pintarHistorialObjetivosVendedor === 'function') pintarHistorialObjetivosVendedor();
+          if (typeof sincronizarSelectoresConsultaObjetivosConEdicion === 'function') sincronizarSelectoresConsultaObjetivosConEdicion();
+          if (typeof refrescarConsultaObjetivosMesVendedor === 'function') refrescarConsultaObjetivosMesVendedor();
        }).withFailureHandler(function () {
           var c = document.getElementById('vobj-grid-container');
           if (c) c.innerHTML = '<div class="card" style="padding:16px;color:#ef4444;">Error de conexión</div>';
           var avF = document.getElementById('vobj-aviso-heredado');
           if (avF) { avF.style.display = 'none'; avF.innerHTML = ''; }
+       }).obtenerObjetivosBackend(anio, mes, nom);
+    }
+
+    function sincronizarSelectoresConsultaObjetivosConEdicion() {
+       var sm = document.getElementById('selVobjMes');
+       var sa = document.getElementById('selVobjAnio');
+       var hm = document.getElementById('selVobjHistMes');
+       var ha = document.getElementById('selVobjHistAnio');
+       if (sm && hm && sm.value) hm.value = sm.value;
+       if (sa && ha && sa.value) ha.value = sa.value;
+    }
+
+    function refrescarConsultaObjetivosMesVendedor() {
+       var nom = window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE;
+       var hm = document.getElementById('selVobjHistMes');
+       var ha = document.getElementById('selVobjHistAnio');
+       var aviso = document.getElementById('vobj-historial-aviso');
+       var prog = document.getElementById('vobj-historial-progreso');
+       var grid = document.getElementById('vobj-historial-objetivos');
+       if (!nom || !hm || !ha) return;
+       var mes = parseInt(hm.value, 10);
+       var anio = parseInt(ha.value, 10);
+       var baseAnio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       if (!Number.isFinite(mes) || mes < 1 || mes > 12) mes = new Date().getMonth() + 1;
+       if (!Number.isFinite(anio)) anio = baseAnio;
+
+       var MESES_CAL = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+       var nombreMes = MESES_CAL[mes - 1];
+       var filas = typeof HISTORIAL_CACHE !== 'undefined' ? HISTORIAL_CACHE : [];
+       var comboPorMes = calcTotalesBotasCertsPorMes(filas, anio);
+       var combo = comboPorMes[nombreMes] || { botas: 0, certs: 0, total: 0 };
+       var totalCombinado = combo.total != null ? combo.total : (combo.botas + combo.certs);
+
+       if (aviso) {
+          aviso.style.display = 'none';
+          aviso.innerHTML = '';
+       }
+       if (prog) prog.innerHTML = '<div style="padding:8px;color:#94a3b8;font-size:13px;">Cargando…</div>';
+       if (grid) grid.innerHTML = '';
+
+       google.script.run.withSuccessHandler(function (res) {
+          if (!document.getElementById('vobj-historial-progreso')) return;
+          var pEl = document.getElementById('vobj-historial-progreso');
+          var gEl = document.getElementById('vobj-historial-objetivos');
+          var aEl = document.getElementById('vobj-historial-aviso');
+          if (res && res.error) {
+             if (pEl) pEl.innerHTML = '<div style="color:#ef4444;">' + escapeHtmlText(res.mensaje || 'Error al cargar objetivos') + '</div>';
+             if (gEl) gEl.innerHTML = '';
+             return;
+          }
+          var raw = (res && res.data) ? res.data.slice() : [];
+          var listaObj = dedupeObjetivosPorRango(raw);
+          pintarGrillaObjetivosConsultaSoloLectura(listaObj, gEl);
+          var p = aplicarProgresoSobreListaObjetivos(totalCombinado, listaObj, nombreMes);
+          if (pEl) {
+             if (p.sinObjetivos) {
+                pEl.innerHTML = '<div style="font-size:13px;color:#64748b;">Sin metas cargadas para comparar el avance.</div>';
+             } else {
+                var nombresCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                var mesTit = nombresCortos[mes - 1] + ' ' + anio;
+                pEl.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;font-size:13px;color:#e2e8f0;">' +
+                   '<span><span style="color:#94a3b8;">Período:</span> ' + escapeHtmlText(mesTit) + '</span>' +
+                   '<span><span style="color:#94a3b8;">Fact. botas+certs:</span> <strong>' + formatNumberAr(p.totalCombinado) + '</strong></span>' +
+                   '<span><span style="color:#94a3b8;">Meta combinada:</span> <strong>' + formatNumberAr(p.metaCombinada) + '</strong></span>' +
+                   '<span><span style="color:#94a3b8;">Avance:</span> <strong style="color:var(--accent);">' + (p.metaCombinada > 0 ? p.pct.toFixed(0) + '%' : '—') + '</strong></span>' +
+                   '<span><span style="color:#94a3b8;">Rango:</span> <strong>' + escapeHtmlText(String(p.rangoLabel)) + '</strong></span>' +
+                   '</div>';
+             }
+          }
+          if (aEl) {
+             if (res && res.objetivosDesdeMesAnterior) {
+                var nmes = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                var mi = (res.mesObjetivosOrigen != null ? parseInt(res.mesObjetivosOrigen, 10) : 1) - 1;
+                if (mi < 0 || mi > 11) mi = 0;
+                aEl.style.display = 'block';
+                aEl.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:6px;opacity:0.85;">info</span> No había objetivos para este mes; se muestran valores tomados del mes anterior (' +
+                   nmes[mi] + ' ' + (res.anioObjetivosOrigen != null ? res.anioObjetivosOrigen : '') + ').';
+             } else {
+                aEl.style.display = 'none';
+                aEl.innerHTML = '';
+             }
+          }
+       }).withFailureHandler(function (err) {
+          var pEl = document.getElementById('vobj-historial-progreso');
+          if (pEl) pEl.innerHTML = '<div style="color:#ef4444;">' + escapeHtmlText(err && err.message ? err.message : 'Error de conexión') + '</div>';
+          var gEl = document.getElementById('vobj-historial-objetivos');
+          if (gEl) gEl.innerHTML = '';
        }).obtenerObjetivosBackend(anio, mes, nom);
     }
 
@@ -527,9 +653,13 @@
        for (var vya = baseAnioVobj - 2; vya <= baseAnioVobj + 1; vya++) {
           optsVobjAnio += '<option value="' + vya + '"' + (vya === vobjAmAnio ? ' selected' : '') + '>' + vya + '</option>';
        }
+       var optsVobjHistMes = '';
+       for (var vhm = 1; vhm <= 12; vhm++) {
+          optsVobjHistMes += '<option value="' + vhm + '"' + (vhm === vobjAmMes ? ' selected' : '') + '>' + nombresMesVobj[vhm - 1] + '</option>';
+       }
        var optsVobjHistAnio = '';
        for (var vhy = baseAnioVobj - 4; vhy <= baseAnioVobj + 1; vhy++) {
-          optsVobjHistAnio += '<option value="' + vhy + '"' + (vhy === baseAnioVobj ? ' selected' : '') + '>' + vhy + '</option>';
+          optsVobjHistAnio += '<option value="' + vhy + '"' + (vhy === vobjAmAnio ? ' selected' : '') + '>' + vhy + '</option>';
        }
        var puedeEditarObjVentas = puedeEditarObjetivosVentas(nombreVendedor);
        var btnObjetivosHtml = puedeEditarObjVentas
@@ -648,13 +778,18 @@
              <div id="vobj-grid-container"></div>
              <div style="margin-top:24px; border-top:1px solid var(--border-color); padding-top:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-                   <div style="font-weight:700; color:#64748b; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Historial · progreso por mes</div>
-                   <select id="selVobjHistAnio" class="header-select" onchange="pintarHistorialObjetivosVendedor();">${optsVobjHistAnio}</select>
+                   <div style="font-weight:700; color:#64748b; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Consulta por mes</div>
+                   <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                      <select id="selVobjHistMes" class="header-select" onchange="refrescarConsultaObjetivosMesVendedor();">${optsVobjHistMes}</select>
+                      <select id="selVobjHistAnio" class="header-select" onchange="refrescarConsultaObjetivosMesVendedor();">${optsVobjHistAnio}</select>
+                   </div>
                 </div>
                 <div style="font-size:11px; color:#64748b; margin-bottom:12px; line-height:1.45;">
-                   Comparación mes a mes del año elegido: facturación botas+certs (ARS) frente a la meta combinada del rango de referencia (misma lógica que en resumen y objetivos; si no hay filas en caché de objetivos, verás guiones).
+                   Objetivos y progreso del mes y año elegidos: facturación botas+certs (ARS) del historial frente a las metas devueltas por el mismo criterio que el panel de edición.
                 </div>
-                <div class="card"><div class="card-scroll" id="vobj-historial-container" style="padding:0 4px 8px 4px;"></div></div>
+                <div id="vobj-historial-aviso" class="card" style="display:none; margin-bottom:14px; padding:12px 14px; font-size:12px; color:#94a3b8; border:1px solid rgba(148,163,184,0.35);"></div>
+                <div id="vobj-historial-progreso" class="card" style="margin-bottom:14px; padding:14px;"></div>
+                <div id="vobj-historial-objetivos"></div>
              </div>
          </div>`;
 
@@ -873,28 +1008,16 @@
     }
 
     /**
-     * Progreso de objetivos para un mes calendario concreto (ARS botas+certs vs meta combinada del rango objetivo).
-     * Usa los mismos criterios que el resumen mensual y el fallback de objetivos por mes anterior.
+     * Avance ARS vs lista de rangos (misma lógica que resumen/objetivos).
+     * `objsTrim` debe estar ordenada por rango; puede venir del backend o de ALL_OBJECTIVES.
      */
-    function calcularProgresoObjetivoMes(filas, anio, mesNum, nombreVendedor) {
-       var MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-       var mn = parseInt(mesNum, 10);
-       var ai = parseInt(anio, 10);
-       if (!Number.isFinite(mn) || mn < 1 || mn > 12) {
-          return { totalCombinado: 0, metaCombinada: 0, pct: 0, rangoLabel: '-', sinObjetivos: true, mesNombre: '' };
-       }
-       if (!Number.isFinite(ai)) ai = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
-       var nombreMes = MESES[mn - 1];
-       var comboPorMes = calcTotalesBotasCertsPorMes(filas || [], ai);
-       var combo = comboPorMes[nombreMes] || { botas: 0, certs: 0, total: 0 };
-       var totalCombinado = combo.total != null ? combo.total : (combo.botas + combo.certs);
-
-       var objsTrim = obtenerObjetivosPorVendedorMes(ai, mn, nombreVendedor);
+    function aplicarProgresoSobreListaObjetivos(totalCombinado, objsTrim, nombreMes) {
+       var lista = Array.isArray(objsTrim) ? objsTrim : [];
        var rangoAlcanzadoNum = null;
        var targetObj = null;
        var i;
-       for (i = objsTrim.length - 1; i >= 0; i--) {
-          var o = objsTrim[i];
+       for (i = lista.length - 1; i >= 0; i--) {
+          var o = lista[i];
           var metaComb = (Number(o.factBotas) || 0) + (Number(o.factCerts) || 0);
           if (totalCombinado >= metaComb && metaComb > 0) {
              rangoAlcanzadoNum = o.rango;
@@ -902,8 +1025,8 @@
              break;
           }
        }
-       if (targetObj == null && objsTrim.length > 0) {
-          targetObj = objsTrim[0];
+       if (targetObj == null && lista.length > 0) {
+          targetObj = lista[0];
        }
        var metaCombinada = 0;
        if (targetObj) {
@@ -917,48 +1040,34 @@
        if (rangoAlcanzadoNum !== null && rangoAlcanzadoNum !== undefined) {
           rangoLabel = rangoAlcanzadoNum === 0 ? 'MÍNIMO' : ('RANGO ' + rangoAlcanzadoNum);
        }
-       var sinObjetivos = !objsTrim || objsTrim.length === 0;
+       var sinObjetivos = lista.length === 0;
        return {
           totalCombinado: totalCombinado,
           metaCombinada: metaCombinada,
           pct: pct,
           rangoLabel: rangoLabel,
           sinObjetivos: sinObjetivos,
-          mesNombre: nombreMes
+          mesNombre: nombreMes || ''
        };
     }
 
-    function pintarHistorialObjetivosVendedor() {
-       var nom = window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE;
-       var cont = document.getElementById('vobj-historial-container');
-       var sel = document.getElementById('selVobjHistAnio');
-       if (!cont || !nom) return;
-       var anio = sel && sel.value ? parseInt(sel.value, 10) : NaN;
-       if (!Number.isFinite(anio)) anio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
-       var filas = typeof HISTORIAL_CACHE !== 'undefined' ? HISTORIAL_CACHE : [];
-       var nombresCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-       var html = '<table class="ventas-historial-table" style="width:100%; font-size:12px; border-collapse:collapse;"><thead><tr style="border-bottom:1px solid var(--border-color);">' +
-          '<th style="text-align:left;padding:8px 6px;color:#94a3b8;font-weight:600;">Mes</th>' +
-          '<th style="text-align:right;padding:8px 6px;color:#94a3b8;font-weight:600;">Fact. botas+certs</th>' +
-          '<th style="text-align:right;padding:8px 6px;color:#94a3b8;font-weight:600;">Meta combinada</th>' +
-          '<th style="text-align:right;padding:8px 6px;color:#94a3b8;font-weight:600;">Avance</th>' +
-          '<th style="text-align:left;padding:8px 6px;color:#94a3b8;font-weight:600;">Rango</th></tr></thead><tbody>';
-       var m;
-       for (m = 12; m >= 1; m--) {
-          var p = calcularProgresoObjetivoMes(filas, anio, m, nom);
-          var mesLbl = nombresCortos[m - 1] + ' ' + anio;
-          var fact = formatNumberAr(p.totalCombinado);
-          var meta = p.sinObjetivos ? '<span style="color:#64748b">—</span>' : formatNumberAr(p.metaCombinada);
-          var pctStr = p.sinObjetivos ? '<span style="color:#64748b">—</span>' : (p.metaCombinada > 0 ? '<span style="color:var(--accent);font-weight:600;">' + p.pct.toFixed(0) + '%</span>' : '<span style="color:#64748b">—</span>');
-          var rango = p.sinObjetivos ? '<span style="color:#64748b">—</span>' : escapeHtmlText(p.rangoLabel);
-          html += '<tr style="border-bottom:1px solid rgba(148,163,184,0.15);"><td style="padding:8px 6px;">' + escapeHtmlText(mesLbl) + '</td>' +
-             '<td style="text-align:right;padding:8px 6px;">' + fact + '</td>' +
-             '<td style="text-align:right;padding:8px 6px;">' + meta + '</td>' +
-             '<td style="text-align:right;padding:8px 6px;">' + pctStr + '</td>' +
-             '<td style="padding:8px 6px;">' + rango + '</td></tr>';
+    /**
+     * Progreso para un mes calendario usando caché ALL_OBJECTIVES + historial (p. ej. resúmenes).
+     */
+    function calcularProgresoObjetivoMes(filas, anio, mesNum, nombreVendedor) {
+       var MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+       var mn = parseInt(mesNum, 10);
+       var ai = parseInt(anio, 10);
+       if (!Number.isFinite(mn) || mn < 1 || mn > 12) {
+          return { totalCombinado: 0, metaCombinada: 0, pct: 0, rangoLabel: '-', sinObjetivos: true, mesNombre: '' };
        }
-       html += '</tbody></table>';
-       cont.innerHTML = html;
+       if (!Number.isFinite(ai)) ai = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var nombreMes = MESES[mn - 1];
+       var comboPorMes = calcTotalesBotasCertsPorMes(filas || [], ai);
+       var combo = comboPorMes[nombreMes] || { botas: 0, certs: 0, total: 0 };
+       var totalCombinado = combo.total != null ? combo.total : (combo.botas + combo.certs);
+       var objsTrim = obtenerObjetivosPorVendedorMes(ai, mn, nombreVendedor);
+       return aplicarProgresoSobreListaObjetivos(totalCombinado, objsTrim, nombreMes);
     }
 
     function generarMatrizResumenCompleja(filas, tipoGrupo, nombreVendedor, anioResumen, totalesComboPorMes) {
