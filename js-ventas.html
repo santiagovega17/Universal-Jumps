@@ -239,10 +239,21 @@
        return 'RANGO ' + n;
     }
 
+    /** Una sola fila por número de rango (evita tarjetas duplicadas si el backend repite identificador). */
+    function dedupeObjetivosPorRango(arr) {
+       var map = {};
+       (arr || []).forEach(function (r) {
+          var k = Number(r.rango);
+          if (!Number.isFinite(k)) return;
+          if (!map[k]) map[k] = r;
+       });
+       return Object.keys(map).sort(function (a, b) { return Number(a) - Number(b); }).map(function (k) { return map[k]; });
+    }
+
     function pintarGrillaObjetivosVendedor(data, nombreVendedor) {
        var cont = document.getElementById('vobj-grid-container');
        if (!cont) return;
-       var src = Array.isArray(data) ? data.slice() : [];
+       var src = dedupeObjetivosPorRango(Array.isArray(data) ? data.slice() : []);
        var puede = puedeEditarObjetivosVentas(nombreVendedor);
        var chk = document.getElementById('chkVobjRangoMin');
        var wantMin = chk && chk.checked;
@@ -252,6 +263,7 @@
        } else if (!rows.some(function (r) { return Number(r.rango) === 0; }) && puede) {
           rows = [{ rango: 0, pctBotas: 0, pctCerts: 0, botas: 0, certs: 0, factBotas: 0, factCerts: 0 }].concat(rows);
        }
+       rows = dedupeObjetivosPorRango(rows);
        rows.sort(function (a, b) { return (Number(a.rango) || 0) - (Number(b.rango) || 0); });
 
        var html = '<div class="obj-grid-container">';
@@ -277,7 +289,7 @@
           html += '<div class="obj-card" data-rango="' + rg + '">' +
              '<div class="obj-header-row"><div class="obj-title">' + tituloRangoObjetivoVendedor(rg) + '</div></div>' +
              '<div class="obj-row" style="margin:0 0 10px 0;padding:8px;background:rgba(255,255,255,0.04);border-radius:6px;">' +
-             '<span class="obj-label">Meta total (botas + certs):</span> ' +
+             '<span class="obj-label">Facturación total:</span> ' +
              '<span class="obj-val" id="vobj-meta-total-' + suf + '">' + formatNumberAr(metaTot) + '</span></div>' +
              '<div class="obj-content">' +
              '<div class="obj-sub-section">' +
@@ -288,10 +300,10 @@
              '<div class="obj-row"><span class="obj-label">Unidades:</span> ' +
              '<div><span class="view-mode obj-val">' + row.botas + '</span>' +
              '<input type="number" class="obj-input edit-mode hidden" value="' + row.botas + '" id="vobj-botas-' + suf + '"></div></div>' +
-             '<div class="obj-row"><span class="obj-label">$ Meta mensual:</span> ' +
+             '<div class="obj-row"><span class="obj-label">Facturación:</span> ' +
              '<div><span class="view-mode obj-val">' + factB + '</span>' +
              '<input type="text" class="obj-input edit-mode hidden" value="' + factBEdit + '" id="vobj-factB-' + suf + '" onkeyup="formatoMoneda(this); calcObjMetaObjetivosVendedor(this, \'vobj-mensB-' + suf + '\'); actualizarVobjMetaTotalRow(' + rg + ')"></div></div>' +
-             '<div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensB-' + suf + '">' + factB + '</span></div>' +
+             '<div class="obj-row edit-mode hidden"><span class="obj-label" title="Mientras editás, acá se ve el mismo importe formateado en pesos (ARS), para confirmar el valor sin leer el texto crudo del campo.">Vista previa:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensB-' + suf + '">' + factB + '</span></div>' +
              '</div>' +
              '<div class="obj-sub-section">' +
              '<div class="obj-sub-title"><span class="material-symbols-outlined">verified</span> CERTIFICACIONES</div>' +
@@ -301,10 +313,10 @@
              '<div class="obj-row"><span class="obj-label">Unidades:</span> ' +
              '<div><span class="view-mode obj-val">' + row.certs + '</span>' +
              '<input type="number" class="obj-input edit-mode hidden" value="' + row.certs + '" id="vobj-certs-' + suf + '"></div></div>' +
-             '<div class="obj-row"><span class="obj-label">$ Meta mensual:</span> ' +
+             '<div class="obj-row"><span class="obj-label">Facturación:</span> ' +
              '<div><span class="view-mode obj-val">' + factC + '</span>' +
              '<input type="text" class="obj-input edit-mode hidden" value="' + factCEdit + '" id="vobj-factC-' + suf + '" onkeyup="formatoMoneda(this); calcObjMetaObjetivosVendedor(this, \'vobj-mensC-' + suf + '\'); actualizarVobjMetaTotalRow(' + rg + ')"></div></div>' +
-             '<div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensC-' + suf + '">' + factC + '</span></div>' +
+             '<div class="obj-row edit-mode hidden"><span class="obj-label" title="Mientras editás, acá se ve el mismo importe formateado en pesos (ARS), para confirmar el valor sin leer el texto crudo del campo.">Vista previa:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensC-' + suf + '">' + factC + '</span></div>' +
              '</div></div></div>';
        });
        html += '</div>';
@@ -349,11 +361,9 @@
              if (avE) avE.style.display = 'none';
              return;
           }
-          window.VENTAS_VOBJ_LAST_DATA = (res && res.data) ? res.data.slice() : [];
+          window.VENTAS_VOBJ_LAST_DATA = dedupeObjetivosPorRango((res && res.data) ? res.data.slice() : []);
           var chk = document.getElementById('chkVobjRangoMin');
-          if (chk) {
-             chk.checked = window.VENTAS_VOBJ_LAST_DATA.some(function (r) { return Number(r.rango) === 0; });
-          }
+          if (chk) chk.checked = false;
           var av = document.getElementById('vobj-aviso-heredado');
           if (av) {
              if (res && res.objetivosDesdeMesAnterior) {
@@ -493,7 +503,7 @@
           ? '<button type="button" id="btnVobjEdit" class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditModeObjetivosVendedor()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar objetivos</button>'
           : '';
        var chkRangoMinHtml = puedeEditarObjVentas
-          ? '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;cursor:pointer;user-select:none;"><input type="checkbox" id="chkVobjRangoMin" onchange="onChkVobjRangoMinChange()"> Rango mínimo (antes del 1)</label>'
+          ? '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;cursor:pointer;user-select:none;"><input type="checkbox" id="chkVobjRangoMin" onchange="onChkVobjRangoMinChange()"> Rango mínimo</label>'
           : '';
 
        let filas = [];
