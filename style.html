@@ -4192,7 +4192,52 @@
     }
  
     /* Historial caja: una sola tabla, acordeón dentro de la tabla para grupos con >1 movimiento */
-    .caja-historial-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .caja-historial-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; }
+
+    /* Tabla balance/historial caja: auto + ancho intrínseco para que no se fundan OBSERVACION / ESTADO / VENCIMIENTO / ACCIONES (scroll horizontal OK) */
+    .caja-historial-table-wrap > table.caja-balance-historial-table {
+       table-layout: auto !important;
+       width: max-content !important;
+       min-width: 100% !important;
+    }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th.ventas-historial-th {
+       white-space: nowrap;
+    }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(1),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(1) { min-width: 92px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(2),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(2) { min-width: 76px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(3),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(3) { min-width: 104px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(4),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(4) { min-width: 200px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(5),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(5) { min-width: 128px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(6),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(6) { min-width: 104px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(7),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(7) { min-width: 220px; max-width: 340px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(8),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(8) { min-width: 112px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(9),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(9) { min-width: 128px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(10),
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(10) { min-width: 88px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table td:last-child {
+       min-width: 88px !important;
+       padding-left: 8px !important;
+       padding-right: 8px !important;
+    }
+    .caja-historial-table-wrap > table.caja-balance-historial-table td.caja-h-obs-cell {
+       overflow: hidden;
+       vertical-align: top;
+    }
+    .caja-historial-table-wrap > table.caja-balance-historial-table td.caja-h-obs-cell .obs-container {
+       max-width: 100%;
+       min-width: 0;
+       box-sizing: border-box;
+       vertical-align: top;
+    }
     .caja-historial-table,
     .caja-summary-inline-table,
     .caja-accordion-inner-table { table-layout: fixed; width: 100%; }

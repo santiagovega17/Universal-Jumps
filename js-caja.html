@@ -586,7 +586,7 @@
        var descEsc = escCaja(descRaw);
        var descTitle = escCaja(descRaw.replace(/\r?\n/g, ' '));
        var descCell = '<td><span class="ventas-historial-clip ventas-historial-clip-caja-desc" title="' + descTitle + '">' + descEsc + '</span></td>';
-       return '<tr><td class="ventas-h-col-fecha">' + (mov.fecha || '') + '</td><td class="ventas-h-col-estado"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td>' + (mov.concepto || '') + '</td>' + descCell + '<td>' + formaPagoHtml + '</td><td class="ventas-h-col-num">' + montoHtml + '</td><td>' + obsHtml + '</td><td class="ventas-h-col-estado"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td class="ventas-h-col-fecha">' + vencHtml + '</td><td class="ventas-h-col-acc">' + accionesWrap + '</td></tr>';
+       return '<tr><td class="ventas-h-col-fecha">' + (mov.fecha || '') + '</td><td class="ventas-h-col-estado"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td>' + (mov.concepto || '') + '</td>' + descCell + '<td>' + formaPagoHtml + '</td><td class="ventas-h-col-num">' + montoHtml + '</td><td class="ventas-h-col-obs caja-h-obs-cell">' + obsHtml + '</td><td class="ventas-h-col-estado"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td class="ventas-h-col-fecha">' + vencHtml + '</td><td class="ventas-h-col-acc">' + accionesWrap + '</td></tr>';
     }
 
     function renderHistorialMovimientos(data) {
@@ -612,13 +612,12 @@
           return descA.localeCompare(descB);
        });
 
-       var colgroup = '<colgroup><col style="width:7%"><col style="width:6%"><col style="width:9%"><col style="width:22%"><col style="width:9%"><col style="width:9%"><col style="width:14%"><col style="width:7%"><col style="width:7%"><col style="width:10%"></colgroup>';
        var thLabels = ['FECHA', 'TIPO', 'CONCEPTO', 'DESCRIPCIÓN', 'FORMA DE PAGO', 'MONTO', 'OBSERVACION', 'ESTADO', 'VENCIMIENTO', 'ACCIONES'];
        var thRow = '<tr>' + thLabels.map(function (lbl) {
           return '<th class="ventas-historial-th"><span class="ventas-historial-th-inner">' + lbl + '</span></th>';
        }).join('') + '</tr>';
 
-       var html = '<div class="caja-historial-table-wrap"><table class="caja-historial-table ventas-historial-table">' + colgroup + '<thead>' + thRow + '</thead><tbody>';
+       var html = '<div class="caja-historial-table-wrap"><table class="caja-historial-table ventas-historial-table caja-balance-historial-table"><thead>' + thRow + '</thead><tbody>';
        dataFiltrada.forEach(function(mov) {
           html += buildRowHistorialCaja(mov);
        });
