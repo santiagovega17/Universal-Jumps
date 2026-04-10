@@ -286,30 +286,63 @@
  
           let html = `<div class="back-nav" onclick="navegar(null, 'MENU_ADMIN')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
              <div class="dash-section-title">GESTIÓN DE USUARIOS</div>
-             <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; margin-top: 20px;">
-                <button class="btn-submit" onclick="abrirModalVendedor('crear')" style="padding: 8px 16px; font-size: 13px; width: auto; flex-shrink: 0;">
-                   <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">add</span>
-                   Agregar Usuario
+             <div class="usuarios-gestion-toolbar">
+                <button class="btn-submit" type="button" onclick="abrirModalVendedor('crear')">
+                   <span class="material-symbols-outlined">add</span>
+                   Agregar usuario
                 </button>
              </div>
-             <div class="caja-historial-table-wrap" style="border-radius: 12px; margin: 0;">
-                <table class="caja-historial-table ventas-historial-table usuarios-gestion-table caja-balance-historial-table">
-                   <thead>
-                      <tr>
-                         <th class="ventas-historial-th col-sm"><span class="ventas-historial-th-inner">Nombre</span></th>
-                         <th class="ventas-historial-th col-md"><span class="ventas-historial-th-inner">Email</span></th>
-                         <th class="ventas-historial-th col-sm"><span class="ventas-historial-th-inner">Rol</span></th>
-                         <th class="ventas-historial-th col-sm"><span class="ventas-historial-th-inner">Estado</span></th>
-                         <th class="ventas-historial-th col-sm"><span class="ventas-historial-th-inner">Tipo Objetivo</span></th>
-                         <th class="ventas-historial-th col-min ventas-h-col-acc"><span class="ventas-historial-th-inner">Acciones</span></th>
-                      </tr>
-                   </thead>
-                   <tbody id="vendor-management-table">
-                   </tbody>
-                </table>
+             <div class="usuarios-gestion-wrap">
+                <section class="usuarios-gestion-section" id="usuarios-gestion-activos-section">
+                   <h3 class="usuarios-gestion-section-title">Usuarios activos</h3>
+                   <div class="usuarios-gestion-grid" id="usuarios-gestion-grid-activos"></div>
+                </section>
+                <section class="usuarios-gestion-section usuarios-gestion-section--inactivos" id="usuarios-gestion-inactivos-section" hidden>
+                   <h3 class="usuarios-gestion-section-title">Usuarios inactivos</h3>
+                   <div class="usuarios-gestion-grid" id="usuarios-gestion-grid-inactivos"></div>
+                </section>
              </div>`;
  
           document.getElementById('app').innerHTML = html;
+ 
+          function escHtmlUsuariosGestion(s) {
+             return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          }
+          function escAttrUsuariosGestion(s) {
+             return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
+          }
+          function tarjetaUsuarioGestion(u, activo) {
+             var rolEff = USUARIO_ACTUAL ? (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) : '';
+             var puedeEditar = USUARIO_ACTUAL && (String(rolEff).toUpperCase() === 'ADMIN' || String(rolEff).toUpperCase() === 'ROOT');
+             var tipoObjDisplay = u.rol === 'VENDEDOR' ? (u.tipoObjetivo || 'RANGO') : '-';
+             var nombreEsc = escHtmlUsuariosGestion(u.nombre);
+             var emailEsc = escHtmlUsuariosGestion(u.email || '');
+             var emailAttr = escAttrUsuariosGestion(u.email || '');
+             var rolEsc = escHtmlUsuariosGestion(u.rol || 'VENDEDOR');
+             var tipoEsc = escHtmlUsuariosGestion(tipoObjDisplay);
+             var nombreAttr = escAttrUsuariosGestion(u.nombre);
+             var tipoObjAttr = escAttrUsuariosGestion(u.tipoObjetivo || 'RANGO');
+             var rolAttr = escAttrUsuariosGestion(u.rol || 'VENDEDOR');
+             var inactiveMod = activo ? '' : ' usuarios-gestion-card--inactive';
+             var badgeCls = activo ? 'usuarios-gestion-card-badge--activo' : 'usuarios-gestion-card-badge--inactivo';
+             var badgeTxt = activo ? 'Activo' : 'Inactivo';
+             var btnToggle = activo
+                ? '<button type="button" class="usuarios-gestion-card-btn usuarios-gestion-card-btn--danger" onclick="cambiarEstadoUsuario(\'' + emailAttr + '\', false)">Desactivar</button>'
+                : '<button type="button" class="usuarios-gestion-card-btn usuarios-gestion-card-btn--ok" onclick="cambiarEstadoUsuario(\'' + emailAttr + '\', true)">Activar</button>';
+             var btnEdit = puedeEditar
+                ? '<button type="button" class="action-btn btn-edit usuarios-gestion-card-btn-icon" title="Editar" aria-label="Editar" onclick="abrirModalVendedor(\'editar\', \'' + nombreAttr + '\', \'' + emailAttr + '\', \'' + tipoObjAttr + '\', \'' + rolAttr + '\')"><span class="material-symbols-outlined">edit</span></button>'
+                : '';
+             return '<article class="usuarios-gestion-card' + inactiveMod + '">' +
+                '<div class="usuarios-gestion-card-head">' +
+                '<span class="usuarios-gestion-card-name">' + nombreEsc + '</span>' +
+                '<span class="usuarios-gestion-card-badge ' + badgeCls + '">' + badgeTxt + '</span></div>' +
+                '<dl class="usuarios-gestion-card-meta">' +
+                '<div class="usuarios-gestion-card-row"><dt>Email</dt><dd>' + emailEsc + '</dd></div>' +
+                '<div class="usuarios-gestion-card-row"><dt>Rol</dt><dd>' + rolEsc + '</dd></div>' +
+                '<div class="usuarios-gestion-card-row"><dt>Tipo objetivo</dt><dd>' + tipoEsc + '</dd></div>' +
+                '</dl>' +
+                '<div class="usuarios-gestion-card-actions">' + btnEdit + btnToggle + '</div></article>';
+          }
  
           // Cargar todos los usuarios
           google.script.run.withSuccessHandler(usuariosRes => {
@@ -318,58 +351,22 @@
                 return;
              }
  
-             let tableBody = document.getElementById('vendor-management-table');
-             let tableHtml = '';
+             var gridAct = document.getElementById('usuarios-gestion-grid-activos');
+             var gridInact = document.getElementById('usuarios-gestion-grid-inactivos');
+             var secInact = document.getElementById('usuarios-gestion-inactivos-section');
+             if (!gridAct || !gridInact) return;
  
-             // Separar activos e inactivos (excluir ROOT)
-             let activos = usuariosRes.usuarios.filter(u => u.activo && u.rol !== 'ROOT');
-             let inactivos = usuariosRes.usuarios.filter(u => !u.activo && u.rol !== 'ROOT');
+             var activos = usuariosRes.usuarios.filter(function (u) { return u.activo && u.rol !== 'ROOT'; });
+             var inactivos = usuariosRes.usuarios.filter(function (u) { return !u.activo && u.rol !== 'ROOT'; });
  
-             // Renderizar activos primero
-             activos.forEach(u => {
-                let tipoObjDisplay = u.rol === 'VENDEDOR' ? (u.tipoObjetivo || 'RANGO') : '-';
-                tableHtml += `
-                      <tr>
-                         <td class="col-sm" style="color: white; font-weight: 500;">${u.nombre}</td>
-                         <td class="col-md">${u.email || ''}</td>
-                         <td class="col-sm">${u.rol || 'VENDEDOR'}</td>
-                         <td class="col-sm"><span style="color: var(--grass-green); font-weight: 600;">● Activo</span></td>
-                         <td class="col-sm">${tipoObjDisplay}</td>
-                         <td class="col-min ventas-h-col-acc">
-                           ${(USUARIO_ACTUAL && ((typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ADMIN' || (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ROOT')) ? `<button class="action-btn btn-edit" style="margin-right: 8px;" onclick="abrirModalVendedor('editar', '${u.nombre}', '${u.email || ''}', '${u.tipoObjetivo || 'RANGO'}', '${u.rol}')" title="Editar">
-                               <span class="material-symbols-outlined">edit</span>
-                            </button>` : ''}
-                            <button class="action-btn" style="background: var(--danger); color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;" onclick="cambiarEstadoUsuario('${u.email}', false)">
-                               Desactivar
-                            </button>
-                         </td>
-                      </tr>
-                   `;
-             });
+             var htmlAct = '';
+             activos.forEach(function (u) { htmlAct += tarjetaUsuarioGestion(u, true); });
+             gridAct.innerHTML = htmlAct || '<p class="usuarios-gestion-empty">No hay usuarios activos.</p>';
  
-             // Usuarios inactivos
-             inactivos.forEach(u => {
-                let tipoObjDisplay = u.rol === 'VENDEDOR' ? (u.tipoObjetivo || 'RANGO') : '-';
-                tableHtml += `
-                      <tr class="usuarios-gestion-row-inactive">
-                         <td class="col-sm">${u.nombre}</td>
-                         <td class="col-md">${u.email || ''}</td>
-                         <td class="col-sm">${u.rol || 'VENDEDOR'}</td>
-                         <td class="col-sm"><span style="color: #64748b; font-weight: 600;">● Inactivo</span></td>
-                         <td class="col-sm">${tipoObjDisplay}</td>
-                         <td class="col-min ventas-h-col-acc">
-                           ${(USUARIO_ACTUAL && ((typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ADMIN' || (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) === 'ROOT')) ? `<button class="action-btn btn-edit" style="margin-right: 8px;" onclick="abrirModalVendedor('editar', '${u.nombre}', '${u.email || ''}', '${u.tipoObjetivo || 'RANGO'}', '${u.rol}')" title="Editar">
-                               <span class="material-symbols-outlined">edit</span>
-                            </button>` : ''}
-                            <button class="action-btn" style="background: var(--grass-green); color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;" onclick="cambiarEstadoUsuario('${u.email}', true)">
-                               Activar
-                            </button>
-                         </td>
-                      </tr>
-                   `;
-             });
- 
-             tableBody.innerHTML = tableHtml;
+             var htmlInact = '';
+             inactivos.forEach(function (u) { htmlInact += tarjetaUsuarioGestion(u, false); });
+             gridInact.innerHTML = htmlInact || '<p class="usuarios-gestion-empty">No hay usuarios inactivos.</p>';
+             if (secInact) secInact.hidden = inactivos.length === 0;
           }).withFailureHandler(function (err) {
              if (typeof getHtmlErrorRedConReintentar === 'function') {
                 window._reintentarCarga = function () { renderGestionUsuarios(); };
