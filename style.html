@@ -698,6 +698,44 @@
        letter-spacing: 1.2px;
        opacity: 0.85;
     }
+
+    /* Submenús del sidebar: mismo espacio entre todas las filas (como junto a Consolidado) */
+    .app-sidebar .top-nav-dropdown-content.submenu {
+       display: flex;
+       flex-direction: column;
+       align-items: stretch;
+       gap: 10px;
+    }
+
+    .app-sidebar .top-nav-dropdown-content.submenu > .menu-sublabel {
+       margin: 0 !important;
+    }
+
+    .app-sidebar .top-nav-dropdown-content.submenu > .menu-item {
+       margin-top: 0 !important;
+       margin-bottom: 0 !important;
+    }
+
+    .app-sidebar #vendor-list-container {
+       display: flex;
+       flex-direction: column;
+       gap: 10px;
+    }
+
+    .app-sidebar #vendor-list-container .menu-item {
+       margin-top: 0 !important;
+       margin-bottom: 0 !important;
+    }
+
+    .app-sidebar #vendor-list-container > .menu-sublabel {
+       margin: 0 !important;
+    }
+
+    .app-sidebar .menu-sublabel.menu-sublabel--vendedores-inactivos {
+       margin-top: 6px !important;
+       padding-top: 12px !important;
+       border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
  
     .app-sidebar .menu-item {
        padding: 10px 14px;

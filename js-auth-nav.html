@@ -259,7 +259,7 @@
  
           // Separador si hay inactivos
           if ((res.inactivos || []).length > 0) {
-             html += `<div class="menu-sublabel" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">VENDEDORES INACTIVOS</div>`;
+             html += `<div class="menu-sublabel menu-sublabel--vendedores-inactivos">VENDEDORES INACTIVOS</div>`;
  
              // Vendedores inactivos (ordenados alfabéticamente)
              let inactivosOrdenados = (res.inactivos || []).sort((a, b) => a.nombre.localeCompare(b.nombre));
