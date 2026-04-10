@@ -402,6 +402,7 @@
           }
           pintarGrillaObjetivosVendedor(window.VENTAS_VOBJ_LAST_DATA, nom);
           actualizarEstadoChkVobjRangoMin();
+          if (typeof pintarHistorialObjetivosVendedor === 'function') pintarHistorialObjetivosVendedor();
        }).withFailureHandler(function () {
           var c = document.getElementById('vobj-grid-container');
           if (c) c.innerHTML = '<div class="card" style="padding:16px;color:#ef4444;">Error de conexión</div>';
@@ -526,6 +527,10 @@
        for (var vya = baseAnioVobj - 2; vya <= baseAnioVobj + 1; vya++) {
           optsVobjAnio += '<option value="' + vya + '"' + (vya === vobjAmAnio ? ' selected' : '') + '>' + vya + '</option>';
        }
+       var optsVobjHistAnio = '';
+       for (var vhy = baseAnioVobj - 4; vhy <= baseAnioVobj + 1; vhy++) {
+          optsVobjHistAnio += '<option value="' + vhy + '"' + (vhy === baseAnioVobj ? ' selected' : '') + '>' + vhy + '</option>';
+       }
        var puedeEditarObjVentas = puedeEditarObjetivosVentas(nombreVendedor);
        var btnObjetivosHtml = puedeEditarObjVentas
           ? '<button type="button" id="btnVobjEdit" class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditModeObjetivosVendedor()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar objetivos</button>'
@@ -641,6 +646,16 @@
              </div>
              <div id="vobj-aviso-heredado" class="card" style="display:none; margin-bottom:14px; padding:12px 14px; font-size:12px; color:#94a3b8; border:1px solid rgba(148,163,184,0.35);"></div>
              <div id="vobj-grid-container"></div>
+             <div style="margin-top:24px; border-top:1px solid var(--border-color); padding-top:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                   <div style="font-weight:700; color:#64748b; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Historial · progreso por mes</div>
+                   <select id="selVobjHistAnio" class="header-select" onchange="pintarHistorialObjetivosVendedor();">${optsVobjHistAnio}</select>
+                </div>
+                <div style="font-size:11px; color:#64748b; margin-bottom:12px; line-height:1.45;">
+                   Comparación mes a mes del año elegido: facturación botas+certs (ARS) frente a la meta combinada del rango de referencia (misma lógica que en resumen y objetivos; si no hay filas en caché de objetivos, verás guiones).
+                </div>
+                <div class="card"><div class="card-scroll" id="vobj-historial-container" style="padding:0 4px 8px 4px;"></div></div>
+             </div>
          </div>`;
 
        document.getElementById('app').innerHTML = html;
@@ -855,6 +870,95 @@
           L = lista(py, pm);
        }
        return L;
+    }
+
+    /**
+     * Progreso de objetivos para un mes calendario concreto (ARS botas+certs vs meta combinada del rango objetivo).
+     * Usa los mismos criterios que el resumen mensual y el fallback de objetivos por mes anterior.
+     */
+    function calcularProgresoObjetivoMes(filas, anio, mesNum, nombreVendedor) {
+       var MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+       var mn = parseInt(mesNum, 10);
+       var ai = parseInt(anio, 10);
+       if (!Number.isFinite(mn) || mn < 1 || mn > 12) {
+          return { totalCombinado: 0, metaCombinada: 0, pct: 0, rangoLabel: '-', sinObjetivos: true, mesNombre: '' };
+       }
+       if (!Number.isFinite(ai)) ai = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var nombreMes = MESES[mn - 1];
+       var comboPorMes = calcTotalesBotasCertsPorMes(filas || [], ai);
+       var combo = comboPorMes[nombreMes] || { botas: 0, certs: 0, total: 0 };
+       var totalCombinado = combo.total != null ? combo.total : (combo.botas + combo.certs);
+
+       var objsTrim = obtenerObjetivosPorVendedorMes(ai, mn, nombreVendedor);
+       var rangoAlcanzadoNum = null;
+       var targetObj = null;
+       var i;
+       for (i = objsTrim.length - 1; i >= 0; i--) {
+          var o = objsTrim[i];
+          var metaComb = (Number(o.factBotas) || 0) + (Number(o.factCerts) || 0);
+          if (totalCombinado >= metaComb && metaComb > 0) {
+             rangoAlcanzadoNum = o.rango;
+             targetObj = o;
+             break;
+          }
+       }
+       if (targetObj == null && objsTrim.length > 0) {
+          targetObj = objsTrim[0];
+       }
+       var metaCombinada = 0;
+       if (targetObj) {
+          metaCombinada = (Number(targetObj.factBotas) || 0) + (Number(targetObj.factCerts) || 0);
+       }
+       var pct = 0;
+       if (metaCombinada > 0) {
+          pct = Math.min(100, (totalCombinado / metaCombinada) * 100);
+       }
+       var rangoLabel = '-';
+       if (rangoAlcanzadoNum !== null && rangoAlcanzadoNum !== undefined) {
+          rangoLabel = rangoAlcanzadoNum === 0 ? 'MÍNIMO' : ('RANGO ' + rangoAlcanzadoNum);
+       }
+       var sinObjetivos = !objsTrim || objsTrim.length === 0;
+       return {
+          totalCombinado: totalCombinado,
+          metaCombinada: metaCombinada,
+          pct: pct,
+          rangoLabel: rangoLabel,
+          sinObjetivos: sinObjetivos,
+          mesNombre: nombreMes
+       };
+    }
+
+    function pintarHistorialObjetivosVendedor() {
+       var nom = window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE;
+       var cont = document.getElementById('vobj-historial-container');
+       var sel = document.getElementById('selVobjHistAnio');
+       if (!cont || !nom) return;
+       var anio = sel && sel.value ? parseInt(sel.value, 10) : NaN;
+       if (!Number.isFinite(anio)) anio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var filas = typeof HISTORIAL_CACHE !== 'undefined' ? HISTORIAL_CACHE : [];
+       var nombresCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+       var html = '<table class="ventas-historial-table" style="width:100%; font-size:12px; border-collapse:collapse;"><thead><tr style="border-bottom:1px solid var(--border-color);">' +
+          '<th style="text-align:left;padding:8px 6px;color:#94a3b8;font-weight:600;">Mes</th>' +
+          '<th style="text-align:right;padding:8px 6px;color:#94a3b8;font-weight:600;">Fact. botas+certs</th>' +
+          '<th style="text-align:right;padding:8px 6px;color:#94a3b8;font-weight:600;">Meta combinada</th>' +
+          '<th style="text-align:right;padding:8px 6px;color:#94a3b8;font-weight:600;">Avance</th>' +
+          '<th style="text-align:left;padding:8px 6px;color:#94a3b8;font-weight:600;">Rango</th></tr></thead><tbody>';
+       var m;
+       for (m = 12; m >= 1; m--) {
+          var p = calcularProgresoObjetivoMes(filas, anio, m, nom);
+          var mesLbl = nombresCortos[m - 1] + ' ' + anio;
+          var fact = formatNumberAr(p.totalCombinado);
+          var meta = p.sinObjetivos ? '<span style="color:#64748b">—</span>' : formatNumberAr(p.metaCombinada);
+          var pctStr = p.sinObjetivos ? '<span style="color:#64748b">—</span>' : (p.metaCombinada > 0 ? '<span style="color:var(--accent);font-weight:600;">' + p.pct.toFixed(0) + '%</span>' : '<span style="color:#64748b">—</span>');
+          var rango = p.sinObjetivos ? '<span style="color:#64748b">—</span>' : escapeHtmlText(p.rangoLabel);
+          html += '<tr style="border-bottom:1px solid rgba(148,163,184,0.15);"><td style="padding:8px 6px;">' + escapeHtmlText(mesLbl) + '</td>' +
+             '<td style="text-align:right;padding:8px 6px;">' + fact + '</td>' +
+             '<td style="text-align:right;padding:8px 6px;">' + meta + '</td>' +
+             '<td style="text-align:right;padding:8px 6px;">' + pctStr + '</td>' +
+             '<td style="padding:8px 6px;">' + rango + '</td></tr>';
+       }
+       html += '</tbody></table>';
+       cont.innerHTML = html;
     }
 
     function generarMatrizResumenCompleja(filas, tipoGrupo, nombreVendedor, anioResumen, totalesComboPorMes) {
