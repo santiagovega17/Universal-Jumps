@@ -29,6 +29,14 @@
        --danger: #ef4444;
        --grass-green: #22c55e;
        --table-green: #14532d;
+
+       /* Filas de tablas: mismo padding vertical e interlineado en toda la app */
+       --table-row-py: 7px;
+       --table-row-px: 10px;
+       --table-row-lh: 1.28;
+       --table-head-py: 6px;
+       --table-card-head-pt: 4px;
+       --table-card-head-pb: 8px;
     }
  
     body,
@@ -1335,8 +1343,9 @@
        text-transform: uppercase;
        text-align: left !important;
        border-bottom: none;
-       padding-top: 4px;
-       padding-bottom: 12px;
+       padding-top: var(--table-card-head-pt);
+       padding-bottom: var(--table-card-head-pb);
+       line-height: var(--table-row-lh);
     }
  
     .home-dashboard table.ventas-historial-table.dash-ventas-table .ventas-historial-th-inner {
@@ -1347,8 +1356,9 @@
     .home-dashboard table.ventas-historial-table.dash-ventas-table tbody td {
        border-bottom: none !important;
        background: transparent !important;
-       padding-top: 12px !important;
-       padding-bottom: 12px !important;
+       padding-top: var(--table-row-py) !important;
+       padding-bottom: var(--table-row-py) !important;
+       line-height: var(--table-row-lh);
     }
  
     .home-dashboard table.ventas-historial-table.dash-ventas-table tbody tr + tr td {
@@ -2366,6 +2376,7 @@
        border-collapse: separate;
        border-spacing: 0;
        font-size: 12px;
+       line-height: var(--table-row-lh);
     }
     .ventas-historial-table thead th.ventas-historial-th {
        background: var(--sidebar) !important;
@@ -2373,11 +2384,12 @@
        font-weight: 700;
        font-size: 10px;
        letter-spacing: 0.06em;
-       padding: 10px 8px;
+       padding: var(--table-head-py) var(--table-row-px);
        text-align: center;
        vertical-align: middle;
        border-bottom: 1px solid var(--input-border);
        white-space: nowrap;
+       line-height: var(--table-row-lh);
     }
     .ventas-historial-th-inner {
        display: inline-flex;
@@ -2386,11 +2398,12 @@
        gap: 4px;
     }
     .ventas-historial-table tbody td {
-       padding: 8px 8px !important;
+       padding: var(--table-row-py) var(--table-row-px) !important;
        vertical-align: middle !important;
        border-bottom: 1px solid var(--sidebar);
        font-size: 12px;
        text-align: left !important;
+       line-height: var(--table-row-lh);
     }
     .ventas-historial-table tbody tr:nth-child(odd) td {
        background: var(--bg) !important;
@@ -2431,7 +2444,7 @@
        display: inline-flex;
        align-items: center;
        gap: 4px;
-       padding: 3px 8px;
+       padding: 2px 6px;
        border-radius: 999px;
        font-size: 10px;
        font-weight: 700;
@@ -2546,6 +2559,7 @@
        text-overflow: ellipsis;
        white-space: nowrap;
        color: #94a3b8;
+       line-height: var(--table-row-lh);
     }
     .ventas-historial-acc-row {
        display: flex;
@@ -2660,7 +2674,7 @@
     }
  
     thead th {
-       padding: 12px 10px;
+       padding: var(--table-head-py) var(--table-row-px);
        color: #94a3b8;
        font-weight: 700;
        text-transform: uppercase;
@@ -2669,10 +2683,11 @@
        white-space: nowrap;
        min-width: 60px;
        background: var(--header);
+       line-height: var(--table-row-lh);
     }
  
     td {
-       padding: 12px 10px;
+       padding: var(--table-row-py) var(--table-row-px);
        text-align: center;
        border: none !important;
        vertical-align: middle;
@@ -2680,7 +2695,7 @@
        z-index: 1;
        white-space: nowrap;
        color: #f1f5f9;
-       line-height: 1.4;
+       line-height: var(--table-row-lh);
     }
  
     /* Mantener botones de acciones en una sola línea */
@@ -3767,8 +3782,9 @@
     }
     .clientes-table-wrap .clientes-table th,
     .clientes-table-wrap .clientes-table td {
-       padding: 8px 10px;
+       padding: var(--table-row-py) var(--table-row-px);
        font-size: 13px;
+       line-height: var(--table-row-lh);
     }
     .clientes-table-wrap .clientes-table th {
        white-space: nowrap;
@@ -4202,12 +4218,14 @@
     }
     .caja-historial-table-wrap > table.caja-historial-table.caja-balance-historial-table.ventas-historial-table thead th.ventas-historial-th {
        white-space: nowrap;
-       padding: 4px 5px 10px !important;
+       padding: var(--table-card-head-pt) 5px var(--table-card-head-pb) !important;
        letter-spacing: 0.035em !important;
        font-size: 12px !important;
+       line-height: var(--table-row-lh) !important;
     }
     .caja-historial-table-wrap > table.caja-historial-table.caja-balance-historial-table.ventas-historial-table tbody td {
-       padding: 12px 5px !important;
+       padding: var(--table-row-py) 5px !important;
+       line-height: var(--table-row-lh) !important;
     }
     .caja-historial-table-wrap > table.caja-historial-table.caja-balance-historial-table.ventas-historial-table .ventas-historial-th-inner {
        gap: 2px;
@@ -4251,7 +4269,7 @@
        white-space: nowrap;
        box-sizing: border-box;
        font-size: 12px;
-       line-height: 1.35;
+       line-height: var(--table-row-lh);
        color: #e2e8f0;
     }
 
@@ -4263,12 +4281,14 @@
     }
     .caja-historial-table-wrap > table.caja-historial-table.ventas-vendedor-historial-table.ventas-historial-table thead th.ventas-historial-th {
        white-space: nowrap;
-       padding: 4px 5px 10px !important;
+       padding: var(--table-card-head-pt) 5px var(--table-card-head-pb) !important;
        letter-spacing: 0.035em !important;
        font-size: 12px !important;
+       line-height: var(--table-row-lh) !important;
     }
     .caja-historial-table-wrap > table.caja-historial-table.ventas-vendedor-historial-table.ventas-historial-table tbody td {
-       padding: 12px 5px !important;
+       padding: var(--table-row-py) 5px !important;
+       line-height: var(--table-row-lh) !important;
     }
     .caja-historial-table-wrap > table.caja-historial-table.ventas-vendedor-historial-table.ventas-historial-table .ventas-historial-th-inner {
        gap: 2px;
@@ -4309,7 +4329,7 @@
        display: block;
        max-width: 100%;
        font-size: 14px;
-       line-height: 1.35;
+       line-height: var(--table-row-lh);
        overflow: hidden;
        text-overflow: ellipsis;
        white-space: nowrap;
@@ -4325,7 +4345,7 @@
        white-space: nowrap;
        box-sizing: border-box;
        font-size: 12px;
-       line-height: 1.35;
+       line-height: var(--table-row-lh);
        color: #e2e8f0;
     }
 
@@ -4373,6 +4393,9 @@
        text-transform: uppercase !important;
        text-align: left !important;
        border-bottom: none !important;
+       padding-top: var(--table-card-head-pt) !important;
+       padding-bottom: var(--table-card-head-pb) !important;
+       line-height: var(--table-row-lh) !important;
     }
  
     /* Balance caja / consolidado: misma piel que tabla del dashboard */
@@ -4389,7 +4412,8 @@
        text-transform: uppercase !important;
        text-align: left !important;
        border-bottom: none !important;
-       padding: 4px 6px 12px !important;
+       padding: var(--table-card-head-pt) 6px var(--table-card-head-pb) !important;
+       line-height: var(--table-row-lh) !important;
     }
  
     .caja-historial-table-wrap .caja-historial-table.ventas-historial-table .ventas-historial-th-inner {
@@ -4404,14 +4428,15 @@
  
     .caja-historial-table-wrap .caja-historial-table.ventas-historial-table tbody td {
        border-bottom: none !important;
-       padding: 12px 8px !important;
+       padding: var(--table-row-py) 8px !important;
+       line-height: var(--table-row-lh) !important;
     }
 
     .caja-historial-table-wrap .ventas-historial-clip-caja-desc {
        display: block;
        max-width: 100%;
        font-size: 14px;
-       line-height: 1.35;
+       line-height: var(--table-row-lh);
        overflow: hidden;
        text-overflow: ellipsis;
        white-space: nowrap;
@@ -4439,7 +4464,8 @@
        letter-spacing: 0.06em !important;
        text-transform: uppercase !important;
        border-bottom: none !important;
-       padding: 4px 6px 12px !important;
+       padding: var(--table-card-head-pt) 6px var(--table-card-head-pb) !important;
+       line-height: var(--table-row-lh) !important;
     }
  
     .caja-consolidado-split .ventas-historial-table tbody tr:nth-child(odd) td,
@@ -4449,8 +4475,9 @@
  
     .caja-consolidado-split .ventas-historial-table tbody td {
        border-bottom: none !important;
-       padding-top: 12px !important;
-       padding-bottom: 12px !important;
+       padding-top: var(--table-row-py) !important;
+       padding-bottom: var(--table-row-py) !important;
+       line-height: var(--table-row-lh) !important;
     }
  
     .caja-consolidado-split .ventas-historial-table tbody tr + tr td {
