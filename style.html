@@ -4099,15 +4099,15 @@
        display: flex;
        width: 100%;
        overflow: hidden;
-       border-radius: 10px;
-       border: 1px solid var(--input-border);
-       background: var(--bg);
+       border-radius: 16px;
+       border: 1px solid var(--border-brand-soft);
+       background: var(--card-surface);
     }
  
     .caja-consolidado-concept-wrap {
        flex-shrink: 0;
-       border-right: 1px solid var(--input-border);
-       background: var(--bg);
+       border-right: 1px solid rgba(255, 255, 255, 0.06);
+       background: transparent;
     }
  
     .caja-consolidado-scroll {
@@ -4115,7 +4115,7 @@
        overflow-x: auto;
        min-width: 0;
        -webkit-overflow-scrolling: touch;
-       background: var(--bg);
+       background: transparent;
     }
  
     .caja-consolidado-table--concept {
@@ -4196,9 +4196,9 @@
     .caja-historial-table,
     .caja-summary-inline-table,
     .caja-accordion-inner-table { table-layout: fixed; width: 100%; }
-    .caja-accordion-row { background: rgba(0, 0, 0, 0.45); }
-    .caja-accordion-row .caja-summary-inline-table tr { background: rgba(0, 0, 0, 0.35); }
-    .caja-historial-table thead th { text-align: center !important; }
+    .caja-accordion-row { background: rgba(255, 255, 255, 0.02); }
+    .caja-accordion-row .caja-summary-inline-table tr { background: transparent; }
+    .caja-historial-table thead th { text-align: left !important; }
     .caja-acciones-wrap { display: inline-flex; justify-content: center; align-items: center; gap: 2px; flex-wrap: nowrap; min-width: 40px; }
     .caja-acciones-dropdown { position: relative; display: inline-block; }
     .caja-acciones-menu { display: none; position: absolute; right: 0; top: 100%; margin-top: 2px; background: var(--sidebar); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); z-index: 10002; min-width: 140px; padding: 6px 0; }
@@ -4228,5 +4228,113 @@
     .caja-accordion-inline[open] .caja-accordion-icon { transform: rotate(180deg); }
     .caja-accordion-body { padding: 0; overflow-x: auto; }
     .caja-accordion-inner-table { margin: 0; }
-    .caja-accordion-inner-table thead th { background: rgba(255,255,255,0.04); }
+    .caja-accordion-inner-table thead th {
+       background: var(--card-surface) !important;
+       color: #a1a1aa !important;
+       font-weight: 800 !important;
+       font-size: 13px !important;
+       letter-spacing: 0.09em !important;
+       text-transform: uppercase !important;
+       text-align: left !important;
+       border-bottom: none !important;
+    }
+ 
+    /* Balance caja / consolidado: misma piel que tabla del dashboard */
+    .caja-historial-table-wrap .caja-historial-table.ventas-historial-table thead tr {
+       background: var(--card-surface) !important;
+    }
+ 
+    .caja-historial-table-wrap .caja-historial-table.ventas-historial-table thead th.ventas-historial-th {
+       background: var(--card-surface) !important;
+       color: #a1a1aa !important;
+       font-weight: 800 !important;
+       font-size: 13px !important;
+       letter-spacing: 0.09em !important;
+       text-transform: uppercase !important;
+       text-align: left !important;
+       border-bottom: none !important;
+       padding-top: 4px !important;
+       padding-bottom: 12px !important;
+    }
+ 
+    .caja-historial-table-wrap .caja-historial-table.ventas-historial-table .ventas-historial-th-inner {
+       justify-content: flex-start;
+       width: 100%;
+    }
+ 
+    .caja-historial-table-wrap .caja-historial-table.ventas-historial-table tbody tr:nth-child(odd) td,
+    .caja-historial-table-wrap .caja-historial-table.ventas-historial-table tbody tr:nth-child(even) td {
+       background: transparent !important;
+    }
+ 
+    .caja-historial-table-wrap .caja-historial-table.ventas-historial-table tbody td {
+       border-bottom: none !important;
+       padding-top: 12px !important;
+       padding-bottom: 12px !important;
+    }
+ 
+    .caja-historial-table-wrap .caja-historial-table.ventas-historial-table tbody tr + tr td {
+       border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+ 
+    .caja-historial-table-wrap .caja-historial-table.ventas-historial-table tbody tr:hover td {
+       background: rgba(255, 255, 255, 0.04) !important;
+    }
+ 
+    .caja-consolidado-split .ventas-historial-table thead tr {
+       background: var(--card-surface) !important;
+    }
+ 
+    .caja-consolidado-split .ventas-historial-table thead th.ventas-historial-th {
+       background: var(--card-surface) !important;
+       color: #a1a1aa !important;
+       font-weight: 800 !important;
+       font-size: 13px !important;
+       letter-spacing: 0.09em !important;
+       text-transform: uppercase !important;
+       border-bottom: none !important;
+       padding-top: 4px !important;
+       padding-bottom: 12px !important;
+    }
+ 
+    .caja-consolidado-split .ventas-historial-table tbody tr:nth-child(odd) td,
+    .caja-consolidado-split .ventas-historial-table tbody tr:nth-child(even) td {
+       background: transparent !important;
+    }
+ 
+    .caja-consolidado-split .ventas-historial-table tbody td {
+       border-bottom: none !important;
+       padding-top: 12px !important;
+       padding-bottom: 12px !important;
+    }
+ 
+    .caja-consolidado-split .ventas-historial-table tbody tr + tr td {
+       border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+ 
+    .caja-consolidado-split .ventas-historial-table tbody tr:not(.caja-consolidado-row-total):hover td {
+       background: rgba(255, 255, 255, 0.04) !important;
+    }
+ 
+    .caja-consolidado-split .ventas-historial-table tbody tr.caja-consolidado-row-total td {
+       border-top: 2px solid var(--border-brand) !important;
+       background: var(--sidebar) !important;
+    }
+ 
+    .caja-consolidado-split .ventas-historial-table tbody tr.caja-consolidado-row-total:hover td {
+       background: var(--sidebar) !important;
+    }
+ 
+    .caja-accordion-inner-table tbody td {
+       border-bottom: none !important;
+       background: transparent !important;
+    }
+ 
+    .caja-accordion-inner-table tbody tr + tr td {
+       border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+ 
+    .caja-accordion-inner-table tbody tr:hover td {
+       background: rgba(255, 255, 255, 0.04) !important;
+    }
  </style>
