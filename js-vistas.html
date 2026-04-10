@@ -1,29 +1,67 @@
 <script>
+    function obtenerVendedorObjetivosSeleccionado() {
+       var rolEffObj = (typeof getRolEfectivo === 'function') ? getRolEfectivo() : (USUARIO_ACTUAL && USUARIO_ACTUAL.rol);
+       if (rolEffObj === 'VENDEDOR') return (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) ? USUARIO_ACTUAL.hoja : '';
+       return (typeof OBJETIVOS_VENDEDOR_ACTIVO !== 'undefined' && OBJETIVOS_VENDEDOR_ACTIVO) ? OBJETIVOS_VENDEDOR_ACTIVO : '';
+    }
+
+    function obtenerAnioMesObjetivosActivos() {
+      var anio = typeof OBJETIVOS_ANIO_ACTIVO !== 'undefined' ? OBJETIVOS_ANIO_ACTIVO : (typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear());
+      var mes = typeof OBJETIVOS_MES_ACTIVO !== 'undefined' ? OBJETIVOS_MES_ACTIVO : (new Date().getMonth() + 1);
+      return { anio: parseInt(anio, 10) || new Date().getFullYear(), mes: parseInt(mes, 10) || 1 };
+    }
+
+    function cargarSelectorVendedorObjetivos() {
+      var sel = document.getElementById('selVendedorObjetivos');
+      if (!sel) return;
+      var vendedorActual = (typeof OBJETIVOS_VENDEDOR_ACTIVO !== 'undefined') ? OBJETIVOS_VENDEDOR_ACTIVO : '';
+      google.script.run.withSuccessHandler(function (res) {
+        var activos = Array.isArray(res && res.activos) ? res.activos : [];
+        sel.innerHTML = '<option value="">OBJETIVO GLOBAL (DEFAULT)</option>';
+        activos
+          .map(function (v) { return (v && v.nombre ? v.nombre : '').toString().trim(); })
+          .filter(Boolean)
+          .sort(function (a, b) { return a.localeCompare(b); })
+          .forEach(function (nombre) {
+            var opt = document.createElement('option');
+            opt.value = nombre;
+            opt.textContent = nombre;
+            sel.appendChild(opt);
+          });
+        sel.value = vendedorActual || '';
+      }).withFailureHandler(function () {
+        sel.innerHTML = '<option value="">OBJETIVO GLOBAL (DEFAULT)</option>';
+        sel.value = vendedorActual || '';
+      }).obtenerListaVendedores();
+    }
+
     function cargar(hoja) {
-       if (hoja.includes('OBJETIVOS')) {
+       if (hoja === 'OBJETIVOS') {
+          var am = obtenerAnioMesObjetivosActivos();
+          let vendedorObjetivo = obtenerVendedorObjetivosSeleccionado();
           google.script.run.withSuccessHandler(res => {
              NAVEGANDO = false;
              if (HOJA_ACTUAL !== 'OBJETIVOS' && HOJA_ACTUAL !== 'CAMBIAR_TRIMESTRE') return;
              if (res.error) {
                 if (typeof getHtmlErrorRedConReintentar === 'function') {
-                   window._reintentarCarga = function () { cargar(hoja); };
+                   window._reintentarCarga = function () { cargar('OBJETIVOS'); };
                    document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">OBJETIVOS</div>' + getHtmlErrorRedConReintentar(res.mensaje || 'Error al cargar');
                 } else {
                    document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">OBJETIVOS</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (res.mensaje || '') + '</div>';
                 }
              } else {
-                renderObjetivos(res.data, res.especiales || []);
+                renderObjetivos(res.data);
              }
           }).withFailureHandler(err => {
              NAVEGANDO = false;
              if (HOJA_ACTUAL !== 'OBJETIVOS' && HOJA_ACTUAL !== 'CAMBIAR_TRIMESTRE') return;
              if (typeof getHtmlErrorRedConReintentar === 'function') {
-                window._reintentarCarga = function () { cargar(hoja); };
+                window._reintentarCarga = function () { cargar('OBJETIVOS'); };
                 document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">OBJETIVOS</div>' + getHtmlErrorRedConReintentar(err && err.message ? err.message : 'Error de conexión');
              } else {
                 document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">OBJETIVOS</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (err && err.message ? err.message : '') + '</div>';
              }
-          }).obtenerObjetivosBackend(hoja);
+          }).obtenerObjetivosBackend(am.anio, am.mes, vendedorObjetivo);
           return;
        }
  
@@ -92,27 +130,15 @@
        google.script.run.withSuccessHandler(resObjs => {
           // Validar que resObjs existe y tiene data
           if (resObjs && !resObjs.error && resObjs.data && Array.isArray(resObjs.data)) {
-             ALL_OBJECTIVES = resObjs.data.filter(o => o && !o.esEspecial); // Solo rangos comunes
-             // Organizar objetivos especiales por trimestre y vendedor
-             ALL_OBJECTIVES_ESPECIALES = {};
-             resObjs.data.filter(o => o && o.esEspecial).forEach(obj => {
-                if (obj.trimestre && obj.vendedor) {
-                   if (!ALL_OBJECTIVES_ESPECIALES[obj.trimestre]) {
-                      ALL_OBJECTIVES_ESPECIALES[obj.trimestre] = {};
-                   }
-                   ALL_OBJECTIVES_ESPECIALES[obj.trimestre][obj.vendedor] = obj;
-                }
-             });
+             ALL_OBJECTIVES = resObjs.data.filter(o => o && o.rango && o.anio != null && o.mes != null);
           } else {
              // Si hay error o no hay datos, inicializar vacío
              ALL_OBJECTIVES = [];
-             ALL_OBJECTIVES_ESPECIALES = {};
           }
        }).withFailureHandler(err => {
           // Si falla obtenerTodosLosObjetivos, inicializar vacío
           console.error('Error al obtener objetivos:', err);
           ALL_OBJECTIVES = [];
-          ALL_OBJECTIVES_ESPECIALES = {};
        }).obtenerTodosLosObjetivos();
  
        // Cargar datos del vendedor de forma independiente (no espera a los objetivos)
@@ -1523,46 +1549,40 @@
     }
  
     // --- OBJETIVOS (NUEVO DISEÑO TARJETAS + FACT SEPARADA) ---
-    function renderObjetivos(data, objetivosEspeciales) {
-       objetivosEspeciales = objetivosEspeciales || [];
-       let sel = document.getElementById('selTrimestreHeader');
-       let textTrimestre = sel ? sel.options[sel.selectedIndex].text : '';
+    function renderObjetivos(data) {
+       var am = obtenerAnioMesObjetivosActivos();
+       var baseAnio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var optsAnio = '';
+       for (var ya = baseAnio - 2; ya <= baseAnio + 1; ya++) {
+          optsAnio += '<option value="' + ya + '"' + (ya === am.anio ? ' selected' : '') + '>' + ya + '</option>';
+       }
+       var nombresMes = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+       var optsMes = '';
+       for (var mi = 1; mi <= 12; mi++) {
+          optsMes += '<option value="' + mi + '"' + (mi === am.mes ? ' selected' : '') + '>' + nombresMes[mi - 1] + '</option>';
+       }
        var rolEff = (typeof getRolEfectivo === 'function') ? getRolEfectivo() : (USUARIO_ACTUAL && USUARIO_ACTUAL.rol);
        let isAdmin = (rolEff === 'ADMIN' || rolEff === 'ROOT');
        let isSuperVendedor = (rolEff === 'VENDEDORGRAL');
-       let esVendedor = (rolEff === 'VENDEDOR');
        let puedeEditar = isAdmin;
- 
-       // Si es vendedor, verificar si tiene objetivos especiales
-       let objetivoEspecialVendedor = null;
-       if (esVendedor) {
-          objetivoEspecialVendedor = objetivosEspeciales.find(esp =>
-             esp.vendedor && esp.vendedor.toString().toUpperCase() === (USUARIO_ACTUAL.hoja || '').toString().toUpperCase()
-          );
-       }
- 
+
        let html = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-              <div></div> 
-              <div style="display:flex; gap:10px;">
-                 ${puedeEditar ? '<button class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditMode()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar Objetivos</button>' : ''}
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+              <div style="font-size:13px; color:#64748b; font-weight:600;">Objetivos mensuales · ${am.anio} · ${nombresMes[am.mes - 1]}</div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <select id="selObjetivosMes" class="header-select" onchange="OBJETIVOS_MES_ACTIVO = parseInt(this.value,10)||1; cargar('OBJETIVOS');">${optsMes}</select>
+                <select id="selObjetivosAnio" class="header-select" onchange="OBJETIVOS_ANIO_ACTIVO = parseInt(this.value,10)||${baseAnio}; cargar('OBJETIVOS');">${optsAnio}</select>
+                ${isAdmin ? '<select id="selVendedorObjetivos" class="header-select" style="min-width:260px;" onchange="OBJETIVOS_VENDEDOR_ACTIVO = this.value || \'\'; cargar(\'OBJETIVOS\');"><option value="">OBJETIVO GLOBAL (DEFAULT)</option></select>' : ''}
+                ${puedeEditar ? '<button class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditMode()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar Objetivos</button>' : ''}
               </div>
           </div>
           
           <div class="obj-grid-container">`;
- 
-       // Si es vendedor con objetivos especiales, mostrar solo esos
-       // Si es vendedor sin objetivos especiales, mostrar solo rangos
-       // Si es ADMIN/VENDEDORGRAL/ROOT, mostrar ambos
-       let mostrarRangos = esVendedor ? !objetivoEspecialVendedor : true;
-       let mostrarEspeciales = (isAdmin || isSuperVendedor) ? objetivosEspeciales.length > 0 : (esVendedor && objetivoEspecialVendedor);
- 
-       // Renderizar objetivos por rango
-       if (mostrarRangos) {
+
+       if (isSuperVendedor && (!data || data.length === 0)) {
+          html += '<div class="card" style="padding:20px; color:#64748b;">No hay objetivos configurados para este mes.</div>';
+       } else {
           data.forEach((row, index) => {
-             let mensBotas = row.factBotas ? row.factBotas / 3 : 0;
-             let mensCerts = row.factCerts ? row.factCerts / 3 : 0;
- 
              html += `
                  <div class="obj-card">
                     <div class="obj-header-row">
@@ -1577,12 +1597,12 @@
                           <div class="obj-row"><span class="obj-label">Unidades:</span> 
                               <div><span class="view-mode obj-val">${row.botas}</span><input type="number" class="obj-input edit-mode hidden" value="${row.botas}" id="botas-${index}"></div>
                           </div>
-                          <div class="obj-row"><span class="obj-label">$ Trimestral:</span> 
-                              <div><span class="view-mode obj-val">${formatNumberAr(row.factBotas)}</span><input type="text" class="obj-input edit-mode hidden" value="${formatNumberAr(row.factBotas).replace('ARS', '').trim()}" id="factB-${index}" onkeyup="formatoMoneda(this); calcMens(this, 'mensB-${index}')"></div>
+                          <div class="obj-row"><span class="obj-label">$ Meta mensual:</span> 
+                              <div><span class="view-mode obj-val">${formatNumberAr(row.factBotas)}</span><input type="text" class="obj-input edit-mode hidden" value="${formatNumberAr(row.factBotas).replace('ARS', '').trim()}" id="factB-${index}" onkeyup="formatoMoneda(this); calcObjMetaMensual(this, 'mensB-${index}')"></div>
                           </div>
-                          <div class="obj-row"><span class="obj-label">$ Mensual:</span> <span class="obj-val" style="color:var(--accent)" id="mensB-${index}">${formatNumberAr(mensBotas)}</span></div>
+                          <div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="mensB-${index}">${formatNumberAr(row.factBotas || 0)}</span></div>
                        </div>
- 
+
                        <div class="obj-sub-section">
                           <div class="obj-sub-title"><span class="material-symbols-outlined">verified</span> CERTIFICACIONES</div>
                           <div class="obj-row"><span class="obj-label">% Comisión:</span> 
@@ -1591,64 +1611,10 @@
                           <div class="obj-row"><span class="obj-label">Unidades:</span> 
                               <div><span class="view-mode obj-val">${row.certs}</span><input type="number" class="obj-input edit-mode hidden" value="${row.certs}" id="certs-${index}"></div>
                           </div>
-                          <div class="obj-row"><span class="obj-label">$ Trimestral:</span> 
-                              <div><span class="view-mode obj-val">${formatNumberAr(row.factCerts)}</span><input type="text" class="obj-input edit-mode hidden" value="${formatNumberAr(row.factCerts).replace('ARS', '').trim()}" id="factC-${index}" onkeyup="formatoMoneda(this); calcMens(this, 'mensC-${index}')"></div>
+                          <div class="obj-row"><span class="obj-label">$ Meta mensual:</span> 
+                              <div><span class="view-mode obj-val">${formatNumberAr(row.factCerts)}</span><input type="text" class="obj-input edit-mode hidden" value="${formatNumberAr(row.factCerts).replace('ARS', '').trim()}" id="factC-${index}" onkeyup="formatoMoneda(this); calcObjMetaMensual(this, 'mensC-${index}')"></div>
                           </div>
-                          <div class="obj-row"><span class="obj-label">$ Mensual:</span> <span class="obj-val" style="color:var(--accent)" id="mensC-${index}">${formatNumberAr(mensCerts)}</span></div>
-                       </div>
-                    </div>
-                 </div>`;
-          });
-       }
- 
-       // Renderizar objetivos especiales (como tarjetas debajo de los rangos, con mismo formato)
-       if (mostrarEspeciales) {
-          let especialesAmostrar = esVendedor && objetivoEspecialVendedor ? [objetivoEspecialVendedor] : objetivosEspeciales;
-          especialesAmostrar.forEach((esp, index) => {
-             let mensBotas = esp.factBotas ? esp.factBotas / 3 : 0;
-             let mensCerts = esp.factCerts ? esp.factCerts / 3 : 0;
-             let idx = 'esp-' + index;
- 
-             // Obtener el nombre del vendedor (priorizar vendedor sobre id)
-             let nombreVendedor = esp.vendedor || esp.id || '';
-             // Si el nombre está vacío o es "ESPECIAL", mostrar mensaje
-             if (!nombreVendedor || nombreVendedor.toString().trim() === '' || nombreVendedor.toString().toUpperCase() === 'ESPECIAL') {
-                nombreVendedor = 'Vendedor no especificado';
-             }
-             // Almacenar el nombre original del vendedor en un atributo data para poder recuperarlo al guardar
-             let vendedorOriginal = (esp.vendedor || esp.id || '').toString().trim();
-             html += `
-                 <div class="obj-card" style="border: 2px solid var(--accent);" data-vendedor="${vendedorOriginal}">
-                    <div class="obj-header-row">
-                       <div class="obj-title">⭐ ESPECIAL - ${nombreVendedor}</div>
-                    </div>
-                    <div class="obj-content">
-                       <div class="obj-sub-section">
-                          <div class="obj-sub-title"><span class="material-symbols-outlined">steps</span> BOTAS</div>
-                          <div class="obj-row"><span class="obj-label">% Comisión:</span> 
-                              <div><span class="view-mode obj-val">${esp.pctBotas || 0}</span><input type="number" class="obj-input edit-mode hidden" value="${esp.pctBotas || 0}" id="pctB-${idx}"> %</div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">Unidades:</span> 
-                              <div><span class="view-mode obj-val">${esp.botas || 0}</span><input type="number" class="obj-input edit-mode hidden" value="${esp.botas || 0}" id="botas-${idx}"></div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">$ Trimestral:</span> 
-                              <div><span class="view-mode obj-val">${formatNumberAr(esp.factBotas || 0)}</span><input type="text" class="obj-input edit-mode hidden" value="${formatNumberAr(esp.factBotas || 0).replace('ARS', '').trim()}" id="factB-${idx}" onkeyup="formatoMoneda(this); calcMens(this, 'mensB-${idx}')"></div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">$ Mensual:</span> <span class="obj-val" style="color:var(--accent)" id="mensB-${idx}">${formatNumberAr(mensBotas)}</span></div>
-                       </div>
- 
-                       <div class="obj-sub-section">
-                          <div class="obj-sub-title"><span class="material-symbols-outlined">verified</span> CERTIFICACIONES</div>
-                          <div class="obj-row"><span class="obj-label">% Comisión:</span> 
-                              <div><span class="view-mode obj-val">${esp.pctCerts || 0}</span><input type="number" class="obj-input edit-mode hidden" value="${esp.pctCerts || 0}" id="pctC-${idx}"> %</div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">Unidades:</span> 
-                              <div><span class="view-mode obj-val">${esp.certs || 0}</span><input type="number" class="obj-input edit-mode hidden" value="${esp.certs || 0}" id="certs-${idx}"></div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">$ Trimestral:</span> 
-                              <div><span class="view-mode obj-val">${formatNumberAr(esp.factCerts || 0)}</span><input type="text" class="obj-input edit-mode hidden" value="${formatNumberAr(esp.factCerts || 0).replace('ARS', '').trim()}" id="factC-${idx}" onkeyup="formatoMoneda(this); calcMens(this, 'mensC-${idx}')"></div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">$ Mensual:</span> <span class="obj-val" style="color:var(--accent)" id="mensC-${idx}">${formatNumberAr(mensCerts)}</span></div>
+                          <div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="mensC-${index}">${formatNumberAr(row.factCerts || 0)}</span></div>
                        </div>
                     </div>
                  </div>`;
@@ -1659,6 +1625,7 @@
  
  
        document.getElementById('app').innerHTML = html;
+       if (isAdmin) cargarSelectorVendedorObjetivos();
     }
  
     function toggleEditMode() {
@@ -1685,14 +1652,14 @@
        }
     }
  
-    function calcMens(input, targetId) {
+    function calcObjMetaMensual(input, targetId) {
        let num = parseCurrency(input.value);
-       let mens = num / 3;
-       document.getElementById(targetId).innerText = formatNumberAr(mens);
+       var el = document.getElementById(targetId);
+       if (el) el.innerText = formatNumberAr(num);
     }
- 
+
     function guardarObjetivosFrontend() {
-       let trimestre = document.getElementById('selTrimestreHeader').value;
+       var am = obtenerAnioMesObjetivosActivos();
        let filas = [];
  
        // Guardar objetivos por rango (si existen)
@@ -1712,93 +1679,26 @@
           }
        }
  
-       // Guardar objetivos especiales (si existen y están en modo edición)
-       let objetivosEspeciales = [];
-       // Buscar todos los elementos con IDs que empiezan con "pctB-esp-" o "pctC-esp-"
-       let allInputs = document.querySelectorAll('.obj-input[id^="pctB-esp-"], .obj-input[id^="pctC-esp-"]');
-       let especialIds = new Set();
-       allInputs.forEach(el => {
-          let id = el.id;
-          if (id.startsWith('pctB-esp-') || id.startsWith('pctC-esp-')) {
-             // Los IDs son pctB-esp-0, pctC-esp-0, etc.
-             let match = id.match(/^(pctB|pctC)-esp-(\d+)$/);
-             if (match) especialIds.add(match[2]);
-          }
-       });
- 
-       especialIds.forEach(idStr => {
-          let idx = 'esp-' + idStr;
-          let elPctB = document.getElementById(`pctB-${idx}`);
-          let elPctC = document.getElementById(`pctC-${idx}`);
-          if (!elPctB && !elPctC) return;
- 
-          // Obtener el vendedor del atributo data-vendedor de la tarjeta
-          let objCard = elPctB ? elPctB.closest('.obj-card') : (elPctC ? elPctC.closest('.obj-card') : null);
-          let vendedor = '';
-          if (objCard) {
-             // Primero intentar obtener del atributo data-vendedor
-             vendedor = objCard.getAttribute('data-vendedor') || '';
-             // Si no está en el atributo, intentar extraer del título como fallback
-             if (!vendedor || vendedor.trim() === '') {
-                let titleEl = objCard.querySelector('.obj-title');
-                if (titleEl) {
-                   let titleText = titleEl.textContent || '';
-                   // Extraer el nombre del vendedor del título "⭐ ESPECIAL - NOMBRE"
-                   let match = titleText.match(/ESPECIAL\s*-\s*(.+)/);
-                   if (match) vendedor = match[1].trim();
-                }
-             }
-          }
- 
-          objetivosEspeciales.push({
-             vendedor: vendedor,
-             trimestre: trimestre,
-             pctBotas: parseFloat(elPctB ? elPctB.value || "0" : "0"),
-             pctCerts: parseFloat(elPctC ? elPctC.value || "0" : "0"),
-             botas: document.getElementById(`botas-${idx}`) ? document.getElementById(`botas-${idx}`).value || "0" : "0",
-             certs: document.getElementById(`certs-${idx}`) ? document.getElementById(`certs-${idx}`).value || "0" : "0",
-             factBotas: parseCurrency(document.getElementById(`factB-${idx}`) ? document.getElementById(`factB-${idx}`).value || "0" : "0"),
-             factCerts: parseCurrency(document.getElementById(`factC-${idx}`) ? document.getElementById(`factC-${idx}`).value || "0" : "0")
-          });
-       });
- 
        let btn = document.querySelector('button[onclick*="guardarObjetivosFrontend"]');
        if (btn) {
           btn.disabled = true;
           btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">hourglass_empty</span> Guardando...';
        }
  
-       // Guardar objetivos por rango primero
-       let promesaRangos = new Promise((resolve, reject) => {
-          if (filas.length > 0) {
-             google.script.run.withSuccessHandler(res => {
-                if (res.error) reject(res.mensaje);
-                else resolve(res);
-             }).withFailureHandler(err => reject(err.message)).guardarObjetivosBackend(trimestre, filas);
-          } else {
-             resolve({ error: false });
-          }
-       });
- 
-       // Guardar objetivos especiales
-       let promesasEspeciales = objetivosEspeciales.map(obj => {
-          return new Promise((resolve, reject) => {
-             google.script.run.withSuccessHandler(res => {
-                if (res.error) reject(res.mensaje);
-                else resolve(res);
-             }).withFailureHandler(err => reject(err.message)).guardarObjetivoEspecial(obj);
-          });
-       });
- 
-       Promise.all([promesaRangos, ...promesasEspeciales]).then(() => {
+       let vendedorObjetivo = obtenerVendedorObjetivosSeleccionado();
+       Promise.resolve().then(() => new Promise((resolve, reject) => {
+          google.script.run.withSuccessHandler(res => {
+             if (res.error) reject(res.mensaje);
+             else resolve(res);
+          }).withFailureHandler(err => reject(err.message)).guardarObjetivosBackend(am.anio, am.mes, filas, vendedorObjetivo);
+       })).then(() => {
           if (btn) {
              btn.disabled = false;
              btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar Objetivos';
           }
           mostrarAlerta("Objetivos actualizados correctamente.");
           toggleEditMode();
-          let trim = document.getElementById('selTrimestreHeader').value;
-          cargar(trim);
+          cargar('OBJETIVOS');
        }).catch(err => {
           if (btn) {
              btn.disabled = false;

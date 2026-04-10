@@ -307,13 +307,16 @@
        let selAnioBalance = document.getElementById('selAnioBalance');
        if (selMesBalance) selMesBalance.value = (hoy.getMonth() + 1).toString(); // Mes actual (1-12)
        if (selAnioBalance) selAnioBalance.value = hoy.getFullYear();
- 
+
        const mesActual = hoy.getMonth();
        let obj = 'OBJETIVOS 1°T';
        if (mesActual >= 3 && mesActual <= 5) obj = 'OBJETIVOS 2°T';
        else if (mesActual >= 6 && mesActual <= 8) obj = 'OBJETIVOS 3°T';
        else if (mesActual >= 9) obj = 'OBJETIVOS 4°T';
-       document.getElementById('selTrimestreHeader').value = obj;
+       var selTri = document.getElementById('selTrimestreHeader');
+       if (selTri) selTri.value = obj;
+       if (typeof OBJETIVOS_MES_ACTIVO !== 'undefined') OBJETIVOS_MES_ACTIVO = hoy.getMonth() + 1;
+       if (typeof OBJETIVOS_ANIO_ACTIVO !== 'undefined') OBJETIVOS_ANIO_ACTIVO = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : hoy.getFullYear();
  
        if (typeof poblarAnioConsolidado === 'function') poblarAnioConsolidado();
        loadSidebarCollapsedState();
@@ -486,10 +489,10 @@
           cargarStock();
        }
        else if (hoja === 'OBJETIVOS') {
-          selVentas.style.display = 'block';
+          if (selVentas) selVentas.style.display = 'none';
           document.getElementById('titulo').innerText = 'OBJETIVOS';
           mostrarEstadoCarga('OBJETIVOS', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'OBJETIVOS');
-          cargar(selVentas.value);
+          cargar('OBJETIVOS');
        }
        else if (hoja === 'CAMBIAR_TRIMESTRE') {
           selVentas.style.display = 'block';
@@ -510,8 +513,9 @@
           } else {
              document.getElementById('titulo').innerText = 'OBJETIVOS';
              document.getElementById('btnObjetivos').classList.add('active');
+             if (selVentas) selVentas.style.display = 'none';
              mostrarEstadoCarga('OBJETIVOS', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'OBJETIVOS');
-             cargar(selVentas.value);
+             cargar('OBJETIVOS');
           }
        }
        else if (hoja === 'GESTION_USUARIOS') {

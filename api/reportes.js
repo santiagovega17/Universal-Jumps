@@ -26,9 +26,16 @@ module.exports = async (req, res) => {
   try {
     if (method === 'GET') {
       if (action === 'objetivos-backend') {
-        const trimestre = req.query.trimestre || '';
-        if (!trimestre) return res.status(400).json({ error: true, mensaje: 'trimestre es requerido' });
-        const result = await obtenerObjetivosBackendService(trimestre);
+        const anio = req.query.anio;
+        const mes = req.query.mes;
+        const vendedor = req.query.vendedor || '';
+        if (anio === undefined || anio === null || anio === '') {
+          return res.status(400).json({ error: true, mensaje: 'anio es requerido' });
+        }
+        if (mes === undefined || mes === null || mes === '') {
+          return res.status(400).json({ error: true, mensaje: 'mes es requerido' });
+        }
+        const result = await obtenerObjetivosBackendService(anio, mes, vendedor);
         return res.status(200).json(result);
       }
 
@@ -55,7 +62,7 @@ module.exports = async (req, res) => {
       const body = getBody(req);
 
       if (action === 'guardar-objetivos') {
-        const result = await guardarObjetivosBackendService(body.trimestre, body.filas);
+        const result = await guardarObjetivosBackendService(body.anio, body.mes, body.filas, body.vendedor || '');
         return res.status(200).json(result);
       }
 

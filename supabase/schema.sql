@@ -75,13 +75,16 @@ CREATE TABLE IF NOT EXISTS public."configCotizacion" (
 );
 
 -- -----------------------------------------------------------------------------
--- ConfigObjetivo (objetivo por trimestre / rango o vendedor)
+-- ConfigObjetivo (objetivo mensual por rango; vendedor null = global)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public."configObjetivo" (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   trimestre text NOT NULL,
   trimestre_numero int,
+  anio int,
+  mes int,
   identificador text NOT NULL,
+  vendedor text,
   porcentaje_botas numeric DEFAULT 0,
   porcentaje_certs numeric DEFAULT 0,
   unidades_botas int DEFAULT 0,
@@ -92,6 +95,8 @@ CREATE TABLE IF NOT EXISTS public."configObjetivo" (
 );
 
 CREATE INDEX IF NOT EXISTS idx_configObjetivo_trimestre ON public."configObjetivo"(trimestre);
+CREATE INDEX IF NOT EXISTS idx_configObjetivo_trimestre_vendedor ON public."configObjetivo"(trimestre, vendedor);
+CREATE INDEX IF NOT EXISTS idx_configObjetivo_anio_mes_vendedor ON public."configObjetivo"(anio, mes, vendedor);
 
 -- -----------------------------------------------------------------------------
 -- Cliente

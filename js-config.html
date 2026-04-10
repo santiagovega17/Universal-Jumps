@@ -21,10 +21,12 @@
     let PAIS_CAJA_ACTUAL = 'ARGENTINA'; // País por defecto
     let PAIS_STOCK_ACTUAL = 'ARGENTINA'; // País por defecto para stock
     let VISTA_STOCK_ACTUAL = 'STOCK'; // Vista por defecto: 'STOCK' o 'MOVIMIENTOS'
-    let ALL_OBJECTIVES = []; // Cache de objetivos
-    let ALL_OBJECTIVES_ESPECIALES = {}; // Cache de objetivos especiales { trimestre: { vendedor: objetivo } }
+    let ALL_OBJECTIVES = []; // Cache de objetivos (globales y por vendedor)
     let COTIZACIONES = {};
     const TRIMESTRES = ["1° TRIMESTRE", "2° TRIMESTRE", "3° TRIMESTRE", "4° TRIMESTRE"];
+    let OBJETIVOS_VENDEDOR_ACTIVO = '';
+    var OBJETIVOS_ANIO_ACTIVO = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+    var OBJETIVOS_MES_ACTIVO = new Date().getMonth() + 1;
     let HOJA_ACTUAL = 'HOME';
     let USUARIO_ACTUAL = null;
     let HISTORIAL_CACHE = [];

@@ -172,14 +172,14 @@
           body: JSON.stringify(payload || {}),
         }),
 
-      obtenerObjetivosBackend: (trimestre) =>
-        requestJson(`/api/reportes?${buildQuery({ action: 'objetivos-backend', trimestre })}`),
+      obtenerObjetivosBackend: (anio, mes, vendedor) =>
+        requestJson(`/api/reportes?${buildQuery({ action: 'objetivos-backend', anio, mes, vendedor })}`),
       obtenerTodosLosObjetivos: () => requestJson('/api/reportes?action=todos-objetivos'),
-      guardarObjetivosBackend: (trimestre, filas) =>
+      guardarObjetivosBackend: (anio, mes, filas, vendedor) =>
         requestJson('/api/reportes?action=guardar-objetivos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ trimestre, filas }),
+          body: JSON.stringify({ anio, mes, filas, vendedor }),
         }),
       guardarObjetivoEspecial: (payload) =>
         requestJson('/api/reportes?action=guardar-objetivo-especial', {

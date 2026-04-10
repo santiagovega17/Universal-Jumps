@@ -238,8 +238,9 @@
           // ELIMINADO DE AQUÍ (Se movió a Balance de Caja)
           // actualizarAvisoPendientes(filas, nombreVendedor);
  
-          let resumenBotas = generarMatrizResumenCompleja(filas, 'GRUPO_BOTAS', nombreVendedor);
-       let resumenCerts = generarMatrizResumenCompleja(filas, 'GRUPO_CERTS', nombreVendedor);
+          var anioResVend = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+          let resumenBotas = generarMatrizResumenCompleja(filas, 'GRUPO_BOTAS', nombreVendedor, anioResVend);
+       let resumenCerts = generarMatrizResumenCompleja(filas, 'GRUPO_CERTS', nombreVendedor, anioResVend);
  
        let html = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="vendor-grid force-header-style">';
  
@@ -361,18 +362,20 @@
        if (!mes) mes = new Date().getMonth() + 1;
        mes = parseInt(mes);
  
-       const anioFiltro = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
- 
+       let fAnioEl = document.getElementById('fAnio');
+       let anioFiltro = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
+       if (fAnioEl && fAnioEl.value) anioFiltro = parseInt(fAnioEl.value, 10) || anioFiltro;
+
        // Filtrar las filas por año antes de generar la matriz
        let filasFiltradas = HISTORIAL_CACHE.filter(fila => {
           if (!fila || !fila[0]) return false;
           let fecha = parseFecha(fila[0]);
           return fecha.getFullYear() === anioFiltro;
        });
- 
+
        // Regenerar matrices solo con datos del año seleccionado
-       let resumenBotasFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_BOTAS', nombreVendedor);
-       let resumenCertsFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_CERTS', nombreVendedor);
+       let resumenBotasFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_BOTAS', nombreVendedor, anioFiltro);
+       let resumenCertsFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_CERTS', nombreVendedor, anioFiltro);
  
        const MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
        let nombreMes = MESES[mes - 1];
@@ -442,14 +445,30 @@
     }
  
     // --- LOGICA MATRIZ (REUTILIZADA) ---
-    function generarMatrizResumenCompleja(filas, tipoGrupo, nombreVendedor) {
+    function obtenerObjetivosPorVendedorMes(anio, mesNum, nombreVendedor) {
+       var ai = parseInt(anio, 10);
+       var mn = parseInt(mesNum, 10);
+       if (!Number.isFinite(ai) || !Number.isFinite(mn)) return [];
+       let vendedorKey = (nombreVendedor || '').toString().trim().toUpperCase();
+       let objetivosPersonalizados = ALL_OBJECTIVES
+          .filter(function (o) {
+             return o && o.rango && parseInt(o.anio, 10) === ai && parseInt(o.mes, 10) === mn &&
+                (o.vendedor || '').toString().trim().toUpperCase() === vendedorKey;
+          })
+          .sort(function (a, b) { return a.rango - b.rango; });
+       if (objetivosPersonalizados.length > 0) return objetivosPersonalizados;
+       return ALL_OBJECTIVES
+          .filter(function (o) {
+             return o && o.rango && parseInt(o.anio, 10) === ai && parseInt(o.mes, 10) === mn &&
+                (!o.vendedor || o.vendedor.toString().trim() === '');
+          })
+          .sort(function (a, b) { return a.rango - b.rango; });
+    }
+
+    function generarMatrizResumenCompleja(filas, tipoGrupo, nombreVendedor, anioResumen) {
        const MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
-       const GET_TRIM = (idx) => {
-          if (idx <= 2) return 'OBJETIVOS 1°T';
-          if (idx <= 5) return 'OBJETIVOS 2°T';
-          if (idx <= 8) return 'OBJETIVOS 3°T';
-          return 'OBJETIVOS 4°T';
-       };
+       var anioObj = parseInt(anioResumen, 10);
+       if (!Number.isFinite(anioObj)) anioObj = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
        const PAISES_STRUCT = [
           { key: 'ARGENTINA' }, { key: 'CHILE' }, { key: 'MEXICO' }, { key: 'ESPAÑA' },
           { key: 'BRASIL' }, { key: 'URUGUAY' }, { key: 'RDM' }, { key: 'EEUU' }
@@ -509,49 +528,33 @@
  
        for (let m in matriz) {
           let d = matriz[m];
-          let trimestreName = GET_TRIM(d.mesIndex);
- 
-          // Verificar si el vendedor tiene objetivo especial para este trimestre
-          let objetivoEspecial = null;
-          if (nombreVendedor && ALL_OBJECTIVES_ESPECIALES[trimestreName] && ALL_OBJECTIVES_ESPECIALES[trimestreName][nombreVendedor]) {
-             objetivoEspecial = ALL_OBJECTIVES_ESPECIALES[trimestreName][nombreVendedor];
-          }
- 
+          let mesCal = d.mesIndex + 1;
+
           let rangoAlcanzado = 0;
           let porcentajeRango = 0;
           let objetivoSiguiente = 0;
           let cantidadObjetivo = 0;
- 
-          if (objetivoEspecial) {
-             // Usar objetivo especial
-             let objetivoMensual = (tipoGrupo === 'GRUPO_BOTAS' ? objetivoEspecial.factBotas : objetivoEspecial.factCerts) / 3;
-             if (objetivoMensual > 0) {
-                porcentajeRango = (tipoGrupo === 'GRUPO_BOTAS' ? objetivoEspecial.pctBotas : objetivoEspecial.pctCerts) || 0;
-                objetivoSiguiente = objetivoMensual;
-                cantidadObjetivo = (tipoGrupo === 'GRUPO_BOTAS') ? objetivoEspecial.botas : objetivoEspecial.certs;
-                rangoAlcanzado = d.total >= objetivoMensual ? 1 : 0; // 1 si alcanzó, 0 si no
-             }
-          } else {
-             // Usar rangos comunes
-             let objsTrim = ALL_OBJECTIVES.filter(o => o.trimestre === trimestreName).sort((a, b) => a.rango - b.rango);
-             for (let i = objsTrim.length - 1; i >= 0; i--) {
-                let targetMensual = (tipoGrupo === 'GRUPO_BOTAS' ? objsTrim[i].factBotas : objsTrim[i].factCerts) / 3;
-                if (d.total >= targetMensual && targetMensual > 0) {
-                   rangoAlcanzado = objsTrim[i].rango;
-                   porcentajeRango = (tipoGrupo === 'GRUPO_BOTAS' ? objsTrim[i].pctBotas : objsTrim[i].pctCerts) || 0;
-                   break;
-                }
-             }
-             let nextRangeIndex = rangoAlcanzado;
-             if (nextRangeIndex >= objsTrim.length) nextRangeIndex = objsTrim.length - 1;
-             let targetObj = objsTrim[nextRangeIndex];
-             if (targetObj) {
-                objetivoSiguiente = (tipoGrupo === 'GRUPO_BOTAS' ? targetObj.factBotas : targetObj.factCerts) / 3;
-                cantidadObjetivo = (tipoGrupo === 'GRUPO_BOTAS') ? targetObj.botas : targetObj.certs;
+          let objsTrim = obtenerObjetivosPorVendedorMes(anioObj, mesCal, nombreVendedor);
+          for (let i = objsTrim.length - 1; i >= 0; i--) {
+             let targetMensual = (tipoGrupo === 'GRUPO_BOTAS' ? objsTrim[i].factBotas : objsTrim[i].factCerts);
+             if (d.total >= targetMensual && targetMensual > 0) {
+                rangoAlcanzado = objsTrim[i].rango;
+                porcentajeRango = (tipoGrupo === 'GRUPO_BOTAS' ? objsTrim[i].pctBotas : objsTrim[i].pctCerts) || 0;
+                break;
              }
           }
- 
-          d.rangoLabel = objetivoEspecial ? "ESPECIAL" : (rangoAlcanzado > 0 ? "RANGO " + rangoAlcanzado : "-");
+          let targetObj = null;
+          if (rangoAlcanzado > 0) {
+             targetObj = objsTrim.filter(function (o) { return o.rango === rangoAlcanzado; })[0];
+          } else if (objsTrim.length) {
+             targetObj = objsTrim[0];
+          }
+          if (targetObj) {
+             objetivoSiguiente = (tipoGrupo === 'GRUPO_BOTAS' ? targetObj.factBotas : targetObj.factCerts);
+             cantidadObjetivo = (tipoGrupo === 'GRUPO_BOTAS') ? targetObj.botas : targetObj.certs;
+          }
+
+          d.rangoLabel = (rangoAlcanzado > 0 ? "RANGO " + rangoAlcanzado : "-");
           d.objetivo = objetivoSiguiente;
           d.cantidadObjetivo = cantidadObjetivo;
           d.comision = d.total * (porcentajeRango / 100);
