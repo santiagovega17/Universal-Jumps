@@ -827,12 +827,21 @@
              '</div>' +
           '</aside>';
        var rankingCol = (showRanking && rankBlock) ? '<div class="dash-home-ranking-wrap">' + rankBlock + '</div>' : '';
-       var midRowClass = 'dash-home-mid-row' + (rankingCol ? '' : ' dash-home-mid-row--solo-venc');
+       var paisPieBlock =
+          '<div class="dash-home-pais-wrap">' +
+             '<div class="dash-pais-card">' +
+                '<div class="dash-pais-title">Ventas del mes por país</div>' +
+                '<div class="dash-pais-chart-wrap"><canvas id="chartHomePais" aria-label="Porcentaje de ventas por país"></canvas></div>' +
+                '<div class="dash-pais-empty" id="dash-pais-empty" hidden>Sin ventas con país en este mes.</div>' +
+             '</div>' +
+          '</div>';
+       var midRowClass = 'dash-home-mid-row' + (rankingCol ? ' dash-home-mid-row--con-ranking' : ' dash-home-mid-row--sin-ranking');
        var midBlock =
           '<div class="dash-home-main-grid">' +
              '<div class="dash-home-kpi-wrap">' + kpiBlock + '</div>' +
              '<div class="' + midRowClass + '">' +
                 rankingCol +
+                paisPieBlock +
                 '<div class="dash-home-venc-wrap">' + vencWidget + '</div>' +
              '</div>' +
           '</div>';
@@ -862,6 +871,105 @@
           tableHead + '</thead><tbody>' + tableBody + '</tbody></table></div></div>';
 
        cargarProximosVencimientosHome();
+       pintarHomeChartPorPais(d);
+    }
+
+    function homePaisPieColors(n) {
+       var palette = ['#5db1df', '#3d9ac4', '#014665', '#22c55e', '#a78bfa', '#f472b6', '#fbbf24', '#94a3b8', '#fb923c', '#2dd4bf'];
+       var out = [];
+       for (var i = 0; i < n; i++) out.push(palette[i % palette.length]);
+       return out;
+    }
+
+    function pintarHomeChartPorPais(d) {
+       var items = (d && d.ventasPorPais) || [];
+       var canvas = document.getElementById('chartHomePais');
+       var emptyEl = document.getElementById('dash-pais-empty');
+       var wrap = canvas && canvas.closest('.dash-pais-chart-wrap');
+       if (!canvas || !wrap) return;
+
+       if (typeof Chart === 'undefined') {
+          if (emptyEl) {
+             emptyEl.hidden = false;
+             emptyEl.textContent = 'Gráfico no disponible.';
+          }
+          wrap.style.display = 'none';
+          return;
+       }
+
+       if (!items.length) {
+          if (emptyEl) emptyEl.hidden = false;
+          wrap.style.display = 'none';
+          return;
+       }
+
+       if (emptyEl) emptyEl.hidden = true;
+       wrap.style.display = '';
+
+       var labels = items.map(function (x) { return (x.pais || '').toString(); });
+       var values = items.map(function (x) { return Number(x.total) || 0; });
+       var colors = homePaisPieColors(labels.length);
+       var totalSum = values.reduce(function (a, b) { return a + b; }, 0);
+
+       var ctx = canvas.getContext('2d');
+       window._ujHomeCharts.push(
+          new Chart(ctx, {
+             type: 'pie',
+             data: {
+                labels: labels,
+                datasets: [
+                   {
+                      data: values,
+                      backgroundColor: colors,
+                      borderColor: '#0b0c0d',
+                      borderWidth: 2,
+                   },
+                ],
+             },
+             options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 4, right: 4, bottom: 4, left: 4 } },
+                plugins: {
+                   legend: {
+                      position: 'bottom',
+                      labels: {
+                         color: '#94a3b8',
+                         boxWidth: 10,
+                         padding: 10,
+                         font: { size: 11, weight: '600' },
+                         generateLabels: function (chart) {
+                            var data = chart.data;
+                            if (!data.labels || !data.labels.length || !data.datasets.length) return [];
+                            var ds = data.datasets[0];
+                            return data.labels.map(function (label, i) {
+                               var v = Number(ds.data[i]) || 0;
+                               var pct = totalSum > 0 ? ((v / totalSum) * 100).toFixed(1) : '0';
+                               var fill = Array.isArray(ds.backgroundColor) ? ds.backgroundColor[i] : ds.backgroundColor;
+                               return {
+                                  text: label + ' · ' + pct + '%',
+                                  fillStyle: fill,
+                                  hidden: false,
+                                  index: i,
+                               };
+                            });
+                         },
+                      },
+                   },
+                   tooltip: {
+                      callbacks: {
+                         label: function (ctx) {
+                            var v = typeof ctx.parsed === 'number' ? ctx.parsed : Number(ctx.raw) || 0;
+                            var pct = totalSum > 0 ? ((v / totalSum) * 100).toFixed(1) : '0';
+                            var lab = ctx.label || '';
+                            return lab + ': $ ' + formatMoneyHome(v) + ' (' + pct + '%)';
+                         },
+                      },
+                   },
+                },
+             },
+          })
+       );
     }
 
     function renderMainMenu() {

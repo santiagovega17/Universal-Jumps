@@ -1037,6 +1037,7 @@
  
     .home-dashboard .dash-kpi-card,
     .home-dashboard .dash-ranking-card,
+    .home-dashboard .dash-pais-card,
     .home-dashboard .dash-table-section {
        background: var(--card-surface);
        border: 1px solid var(--border-brand-soft);
@@ -1048,6 +1049,7 @@
  
     .home-dashboard .dash-kpi-card::before,
     .home-dashboard .dash-ranking-card::before,
+    .home-dashboard .dash-pais-card::before,
     .home-dashboard .dash-table-section::before {
        display: none;
     }
@@ -1117,29 +1119,45 @@
  
     .dash-home-mid-row {
        display: grid;
+       grid-template-columns: minmax(0, 1fr);
        gap: var(--home-main-grid-col-gap);
        align-items: stretch;
        min-width: 0;
     }
  
     @media (min-width: 900px) {
-       .dash-home-mid-row:not(.dash-home-mid-row--solo-venc) {
-          grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+       /* ranking | torta países | vencimientos */
+       .dash-home-mid-row--con-ranking {
+          grid-template-columns: minmax(0, 1fr) minmax(200px, 260px) minmax(260px, 320px);
        }
  
-       .dash-home-mid-row:not(.dash-home-mid-row--solo-venc) .dash-home-ranking-wrap {
+       .dash-home-mid-row--con-ranking .dash-home-ranking-wrap,
+       .dash-home-mid-row--con-ranking .dash-home-pais-wrap {
           display: flex;
           flex-direction: column;
           min-height: 0;
        }
  
-       .dash-home-mid-row:not(.dash-home-mid-row--solo-venc) .dash-home-ranking-wrap .dash-ranking-card {
+       .dash-home-mid-row--con-ranking .dash-home-ranking-wrap .dash-ranking-card,
+       .dash-home-mid-row--con-ranking .dash-pais-card {
           flex: 1;
           min-height: 0;
        }
  
-       .dash-home-mid-row--solo-venc {
-          grid-template-columns: minmax(0, 1fr);
+       /* torta | vencimientos (sin ranking) */
+       .dash-home-mid-row--sin-ranking {
+          grid-template-columns: minmax(220px, 280px) minmax(260px, 320px);
+       }
+ 
+       .dash-home-mid-row--sin-ranking .dash-home-pais-wrap {
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+       }
+ 
+       .dash-home-mid-row--sin-ranking .dash-pais-card {
+          flex: 1;
+          min-height: 0;
        }
  
        .dash-home-main-grid .dash-home-kpi-wrap .dash-kpi-grid {
@@ -1162,6 +1180,47 @@
        min-height: 0;
        overflow: auto;
        max-height: 360px;
+    }
+ 
+    .dash-home-pais-wrap {
+       min-width: 0;
+       max-width: 100%;
+    }
+ 
+    .home-dashboard .dash-pais-card {
+       padding: 18px 16px 14px;
+       display: flex;
+       flex-direction: column;
+       min-height: 0;
+       box-sizing: border-box;
+    }
+ 
+    .home-dashboard .dash-pais-title {
+       color: var(--title-accent);
+       font-weight: 800;
+       letter-spacing: 0.1em;
+       text-transform: uppercase;
+       font-size: 14px;
+       margin-bottom: 12px;
+       padding-left: 12px;
+       border-left: 3px solid var(--accent);
+       text-shadow: none;
+       text-align: left;
+    }
+ 
+    .home-dashboard .dash-pais-chart-wrap {
+       position: relative;
+       flex: 1;
+       min-height: 200px;
+       height: 240px;
+       width: 100%;
+    }
+ 
+    .home-dashboard .dash-pais-empty {
+       font-size: 13px;
+       color: #64748b;
+       text-align: center;
+       padding: 24px 12px;
     }
  
     .dash-home-venc-wrap {
