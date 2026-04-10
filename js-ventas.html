@@ -531,23 +531,30 @@
  
        let html = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="vendor-grid force-header-style">';
  
-       // PESTAÑAS (TABS)
-       html += `<div class="view-toggle-container">
-            <div class="type-toggle" style="width:100%; max-width:780px; margin:0 auto 20px auto; flex-wrap:wrap;">
-               <div class="view-option active-view" onclick="switchView(this, 'general')">GENERAL</div>
-               <div class="view-option" onclick="switchView(this, 'botas')">BOTAS</div>
-               <div class="view-option" onclick="switchView(this, 'certs')">CERTIFICACIONES</div>
-               <div class="view-option" onclick="switchView(this, 'objetivos')">OBJETIVOS</div>
-            </div>
-         </div>`;
+      // PESTAÑAS (TABS)
+      html += `<div class="view-toggle-container">
+           <div style="display:flex; gap:12px; flex-wrap:wrap; margin:0 auto 20px auto; justify-content:center;">
+              <div class="view-option active-view" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'dashboard')">DASHBOARD</div>
+              <div class="view-option" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'ventas')">VENTAS</div>
+              <div class="view-option" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'botas')">BOTAS</div>
+              <div class="view-option" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'certs')">CERTIFICACIONES</div>
+              <div class="view-option" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'objetivos')">OBJETIVOS</div>
+           </div>
+        </div>`;
  
        // CONTENIDO PESTAÑAS
  
-          // 1. GENERAL: Tarjeta del mes actual (o seleccionado) + Historial
-          html += `<div id="tab-general">
-             <div id="general-cards-container"></div>
- 
-             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; margin-bottom: 16px;">
+         // 1. DASHBOARD (placeholder para nuevo dashboard)
+         html += `<div id="tab-dashboard">
+            <div class="card" style="padding:28px; text-align:center; color:#94a3b8;">
+               <div style="font-weight:700; color:white; margin-bottom:8px;">Nuevo dashboard en construcción</div>
+               <div style="font-size:13px;">Acá vamos a reemplazar las tarjetas actuales por la nueva vista.</div>
+            </div>
+         </div>`;
+
+         // 2. VENTAS: historial completo + filtros
+         html += `<div id="tab-ventas" style="display:none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; margin-bottom: 16px;">
                 <div style="font-weight: 700; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
                    <span class="material-symbols-outlined" style="font-size: 18px;">history</span>
                    HISTORIAL
@@ -557,11 +564,11 @@
                    Agregar Venta
                 </button>` : ''}
              </div>
-             <div class="filter-bar">
-                 <select id="fMes" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}'); actualizarTarjetasGeneral(this.value, '${nombreVendedor}');">
+            <div class="filter-bar">
+                <select id="fMes" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}');">
                      <option value="">Mes Actual...</option><option value="1">Ene</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Abr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Ago</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option>
                  </select>
-                 <select id="fAnio" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}'); actualizarTarjetasGeneral(document.getElementById('fMes').value || new Date().getMonth() + 1, '${nombreVendedor}');">
+                <select id="fAnio" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}');">
                      <option value="">Año...</option>${(function() { var anio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026; var opts = ''; for (var a = anio - 2; a <= anio; a++) { opts += '<option value="' + a + '"' + (a === anio ? ' selected' : '') + '>' + a + '</option>'; } return opts; })()}
                  </select>
                  <select id="fEstado" class="filter-select" onchange="aplicarFiltrosHistorial('${nombreVendedor}')">
@@ -580,15 +587,15 @@
              <div class="card"><div class="card-scroll" id="contenedorHistorial">
                  ${filas.length > 0 ? construirTablaHistorialAcciones(filas, nombreVendedor) : '<div style="padding:30px;text-align:center;color:#94a3b8;font-weight:400;">No hay movimientos registrados.</div>'}
              </div></div>
-         </div>`;
- 
-       // 2. BOTAS
+        </div>`;
+
+      // 3. BOTAS
        html += `<div id="tab-botas" style="display:none;">
              <div class="card-header"><span class="material-symbols-outlined">steps</span> RESUMEN BOTAS</div>
              <div class="month-grid">${construirGridTarjetas(resumenBotas, 'BOTAS')}</div>
          </div>`;
  
-       // 3. CERTIFICACIONES
+      // 4. CERTIFICACIONES
        html += `<div id="tab-certs" style="display:none;">
              <div class="card-header"><span class="material-symbols-outlined">verified</span> RESUMEN CERTIFICACIONES</div>
              <div class="month-grid">${construirGridTarjetas(resumenCerts, 'CERTIFICACIONES')}</div>
@@ -612,9 +619,8 @@
  
        poblarSelectFormasPagoVenta('fPago');
  
-       // Inicializar tarjeta General con mes actual
-       let mesActual = new Date().getMonth() + 1;
-       let anioActual = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
+      // Inicializar filtros de historial
+      let anioActual = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : 2026;
        window.resumenBotasGlobal = resumenBotas;
        window.resumenCertsGlobal = resumenCerts;
        setTimeout(() => {
@@ -624,7 +630,6 @@
              aplicarFiltrosHistorial(nombreVendedor);
           }
        }, 100);
-       actualizarTarjetasGeneral(mesActual, nombreVendedor);
     }
 
     /**
@@ -651,7 +656,8 @@
        document.querySelectorAll('.view-option').forEach(t => t.classList.remove('active-view'));
        el.classList.add('active-view');
 
-       document.getElementById('tab-general').style.display = 'none';
+      document.getElementById('tab-dashboard').style.display = 'none';
+      document.getElementById('tab-ventas').style.display = 'none';
        document.getElementById('tab-botas').style.display = 'none';
        document.getElementById('tab-certs').style.display = 'none';
        var tabObj = document.getElementById('tab-objetivos');
