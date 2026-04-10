@@ -722,7 +722,7 @@
  
     function construirTarjetaMes(d, nombreMes, titulo) {
        if (!d) return '';
-       let totalSinIva = d.totalSinIva != null ? d.totalSinIva : 0;
+       var totalSinIva = d.totalSinIva != null ? d.totalSinIva : 0;
        return `
            <div class="month-card">
                <div class="month-header">
@@ -731,21 +731,6 @@
                    <div class="month-total-siniva" style="font-size: 12px; color: #94a3b8; font-weight: 500; margin-top: 4px;">Sin IVA: ${formatNumberAr(totalSinIva)}</div>
                </div>
                <div class="month-body">
-                   <div class="prog-container">
-                       <div class="prog-labels">
-                           <span style="color:var(--accent)">${d.rangoLabel}</span>
-                           <span>Meta combinada: ${formatNumberAr(d.metaCombinada != null ? d.metaCombinada : d.objetivo)}</span>
-                       </div>
-                       <div class="prog-track">
-                          <div class="prog-fill" style="width:${d.pct}%"></div>
-                          <div class="prog-text">${d.pct.toFixed(0)}%</div>
-                       </div>
-                       <div class="prog-stats">
-                            <span>Total botas+certs: ${formatNumberAr(d.totalCombinado != null ? d.totalCombinado : d.total)} / ${formatNumberAr(d.metaCombinada != null ? d.metaCombinada : d.objetivo)}</span>
-                            <span>${d.cantidadObjetivo > 0 ? d.cantidad + ' / ' + d.cantidadObjetivo + ' u.' : (d.cantidad ? d.cantidad + ' u.' : '-')}</span>
-                       </div>
-                   </div>
- 
                    <div class="month-countries">
                        <div class="c-row"><span class="c-name">ARG</span> <span class="c-val">${formatNumberAr((d['ARGENTINA']||{}).original || 0)}</span></div>
                        <div class="c-row"><span class="c-name">CHL</span> <span class="c-val">${formatCurrency((d['CHILE']||{}).original || 0, 'CLP')}<span class="c-ars">(${formatNumberAr((d['CHILE']||{}).ars || 0)})</span></span></div>
@@ -756,10 +741,6 @@
                        <div class="c-row"><span class="c-name">EEUU</span> <span class="c-val">${formatCurrency((d['EEUU']||{}).original || 0, 'USD')}<span class="c-ars">(${formatNumberAr((d['EEUU']||{}).ars || 0)})</span></span></div>
                        <div class="c-row"><span class="c-name">RDM</span> <span class="c-val">${formatCurrency((d['RDM']||{}).original || 0, 'USD')}<span class="c-ars">(${formatNumberAr((d['RDM']||{}).ars || 0)})</span></span></div>
                    </div>
-               </div>
-               <div class="month-footer">
-                   <div class="comm-label">COMISIÓN GANADA</div>
-                   <div class="comm-total">${formatNumberAr(d.comision)}</div>
                </div>
            </div>`;
     }
