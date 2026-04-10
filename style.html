@@ -4219,13 +4219,13 @@
     .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(3),
     .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(3) { min-width: 104px; }
     .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(4),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(4) { min-width: 200px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(4) { min-width: 168px; max-width: 240px; }
     .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(5),
     .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(5) { min-width: 128px; }
     .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(6),
     .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(6) { min-width: 104px; }
     .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(7),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(7) { min-width: 220px; max-width: 340px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(7) { min-width: 120px; max-width: 180px; }
     .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(8),
     .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(8) { min-width: 112px; }
     .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(9),
@@ -4240,12 +4240,19 @@
     .caja-historial-table-wrap > table.caja-balance-historial-table td.caja-h-obs-cell {
        overflow: hidden;
        vertical-align: top;
+       white-space: nowrap !important;
     }
-    .caja-historial-table-wrap > table.caja-balance-historial-table td.caja-h-obs-cell .obs-container {
+    .caja-historial-table-wrap > table.caja-balance-historial-table td.caja-h-obs-cell .caja-balance-obs-clip {
+       display: block;
        max-width: 100%;
        min-width: 0;
+       overflow: hidden;
+       text-overflow: ellipsis;
+       white-space: nowrap;
        box-sizing: border-box;
-       vertical-align: top;
+       font-size: 12px;
+       line-height: 1.35;
+       color: #e2e8f0;
     }
     .caja-historial-table,
     .caja-summary-inline-table,

@@ -572,10 +572,13 @@
     function buildRowHistorialCaja(mov) {
        var tipoColor = mov.tipo === 'INGRESO' ? '#10b981' : '#ef4444';
        var estadoColor = mov.estado === 'PAGADO' ? '#10b981' : '#facc15';
-       var obs = mov.observaciones || '';
-       var obsHtml = obs.length > 20
-          ? '<div class="obs-container"><span class="obs-text">' + obs + '</span><span class="view-more-btn" onclick="toggleVerMasObs(this); event.stopPropagation();">Ver más...</span><div class="obs-full">' + obs + '</div></div>'
-          : obs;
+       var obs = (mov.observaciones || '').toString();
+       var obsHtml = '';
+       if (obs) {
+          var obsEsc = escCaja(obs);
+          var obsTitle = escCaja(obs.replace(/\r?\n/g, ' '));
+          obsHtml = '<span class="caja-balance-obs-clip" title="' + obsTitle + '">' + obsEsc + '</span>';
+       }
        var formaPagoHtml = mov.tipo === 'EGRESO' ? '<span style="color:white; font-size:13px;">' + (mov.formaPago || '') + '</span>' : (mov.formaPago || '');
        var montoHtml = '<span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + formatNumberAr(mov.monto || 0) + '</span>';
        var vencHtml = mov.tipo === 'EGRESO' ? '<span style="color:#94a3b8; font-size:13px;">' + (mov.vencimiento || '') + '</span>' : (mov.vencimiento || '');
