@@ -65,7 +65,7 @@
        google.script.run.withSuccessHandler(resObjs => {
           // Validar que resObjs existe y tiene data
           if (resObjs && !resObjs.error && resObjs.data && Array.isArray(resObjs.data)) {
-             ALL_OBJECTIVES = resObjs.data.filter(o => o && o.rango && o.anio != null && o.mes != null);
+             ALL_OBJECTIVES = resObjs.data.filter(o => o && o.anio != null && o.mes != null && Number.isFinite(Number(o.rango)));
           } else {
              // Si hay error o no hay datos, inicializar vacío
              ALL_OBJECTIVES = [];
@@ -143,6 +143,15 @@
        document.getElementById('app').innerHTML = html;
     }
  
+    function textoRangoComisionesUi(r) {
+       if (r === 0 || r === '0') return 'MIN';
+       if (r == null || r === undefined) return '-';
+       var n = Number(r);
+       if (!Number.isFinite(n)) return '-';
+       if (n > 0) return 'R' + n;
+       return '-';
+    }
+
     function renderComisiones(dataComisiones) {
        let html = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
           <div class="dash-section-title">COMISIONES</div>`;
@@ -161,20 +170,20 @@
              trimData.vendedores.forEach(v => {
                 let ventas = trimData.ventas[v.nombre] || {
                    mes1: 0, mes2: 0, mes3: 0, total: 0,
-                   rangoMes1: 0, porcentajeMes1: 0,
-                   rangoMes2: 0, porcentajeMes2: 0,
-                   rangoMes3: 0, porcentajeMes3: 0,
+                   rangoMes1: null, porcentajeMes1: 0,
+                   rangoMes2: null, porcentajeMes2: 0,
+                   rangoMes3: null, porcentajeMes3: 0,
                    nombreMes1: 'Mes 1',
                    nombreMes2: 'Mes 2',
                    nombreMes3: 'Mes 3'
                 };
  
-                let rangoTexto1 = ventas.rangoMes1 > 0 ? `R${ventas.rangoMes1}` : '-';
-                let porcentajeTexto1 = ventas.porcentajeMes1 > 0 ? `${ventas.porcentajeMes1.toFixed(1)}%` : '-';
-                let rangoTexto2 = ventas.rangoMes2 > 0 ? `R${ventas.rangoMes2}` : '-';
-                let porcentajeTexto2 = ventas.porcentajeMes2 > 0 ? `${ventas.porcentajeMes2.toFixed(1)}%` : '-';
-                let rangoTexto3 = ventas.rangoMes3 > 0 ? `R${ventas.rangoMes3}` : '-';
-                let porcentajeTexto3 = ventas.porcentajeMes3 > 0 ? `${ventas.porcentajeMes3.toFixed(1)}%` : '-';
+                let rangoTexto1 = textoRangoComisionesUi(ventas.rangoMes1);
+                let porcentajeTexto1 = Number(ventas.porcentajeMes1) > 0 ? `${Number(ventas.porcentajeMes1).toFixed(1)}%` : '-';
+                let rangoTexto2 = textoRangoComisionesUi(ventas.rangoMes2);
+                let porcentajeTexto2 = Number(ventas.porcentajeMes2) > 0 ? `${Number(ventas.porcentajeMes2).toFixed(1)}%` : '-';
+                let rangoTexto3 = textoRangoComisionesUi(ventas.rangoMes3);
+                let porcentajeTexto3 = Number(ventas.porcentajeMes3) > 0 ? `${Number(ventas.porcentajeMes3).toFixed(1)}%` : '-';
  
                 html += `
                       <div class="method-card" style="background: var(--sidebar); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">

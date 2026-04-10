@@ -233,11 +233,27 @@
        if (el) el.innerText = formatNumberAr(num);
     }
 
+    function tituloRangoObjetivoVendedor(rango) {
+       var n = Number(rango);
+       if (n === 0) return 'RANGO MÍNIMO';
+       return 'RANGO ' + n;
+    }
+
     function pintarGrillaObjetivosVendedor(data, nombreVendedor) {
        var cont = document.getElementById('vobj-grid-container');
        if (!cont) return;
-       var rows = Array.isArray(data) ? data : [];
+       var src = Array.isArray(data) ? data.slice() : [];
        var puede = puedeEditarObjetivosVentas(nombreVendedor);
+       var chk = document.getElementById('chkVobjRangoMin');
+       var wantMin = chk && chk.checked;
+       var rows = src;
+       if (!wantMin) {
+          rows = rows.filter(function (r) { return Number(r.rango) !== 0; });
+       } else if (!rows.some(function (r) { return Number(r.rango) === 0; }) && puede) {
+          rows = [{ rango: 0, pctBotas: 0, pctCerts: 0, botas: 0, certs: 0, factBotas: 0, factCerts: 0 }].concat(rows);
+       }
+       rows.sort(function (a, b) { return (Number(a.rango) || 0) - (Number(b.rango) || 0); });
+
        var html = '<div class="obj-grid-container">';
        if (!rows.length && !puede) {
           html += '<div class="card" style="padding:20px; color:#64748b;">No hay objetivos configurados para este mes.</div></div>';
@@ -249,43 +265,69 @@
              rows.push({ rango: r, pctBotas: 0, pctCerts: 0, botas: 0, certs: 0, factBotas: 0, factCerts: 0 });
           }
        }
-       rows.forEach(function (row, index) {
+       rows.forEach(function (row) {
+          var rg = Number(row.rango);
+          if (!Number.isFinite(rg)) return;
+          var suf = 'r' + rg;
           var factB = formatNumberAr(row.factBotas || 0);
           var factC = formatNumberAr(row.factCerts || 0);
           var factBEdit = factB.replace('ARS', '').trim();
           var factCEdit = factC.replace('ARS', '').trim();
-          html += '<div class="obj-card">' +
-             '<div class="obj-header-row"><div class="obj-title">RANGO ' + row.rango + '</div></div>' +
+          var metaTot = (Number(row.factBotas) || 0) + (Number(row.factCerts) || 0);
+          html += '<div class="obj-card" data-rango="' + rg + '">' +
+             '<div class="obj-header-row"><div class="obj-title">' + tituloRangoObjetivoVendedor(rg) + '</div></div>' +
+             '<div class="obj-row" style="margin:0 0 10px 0;padding:8px;background:rgba(255,255,255,0.04);border-radius:6px;">' +
+             '<span class="obj-label">Meta total (botas + certs):</span> ' +
+             '<span class="obj-val" id="vobj-meta-total-' + suf + '">' + formatNumberAr(metaTot) + '</span></div>' +
              '<div class="obj-content">' +
              '<div class="obj-sub-section">' +
              '<div class="obj-sub-title"><span class="material-symbols-outlined">steps</span> BOTAS</div>' +
              '<div class="obj-row"><span class="obj-label">% Comisión:</span> ' +
              '<div><span class="view-mode obj-val">' + (row.pctBotas || 0) + '</span>' +
-             '<input type="number" class="obj-input edit-mode hidden" value="' + (row.pctBotas || 0) + '" id="vobj-pctB-' + index + '"> %</div></div>' +
+             '<input type="number" class="obj-input edit-mode hidden" value="' + (row.pctBotas || 0) + '" id="vobj-pctB-' + suf + '"> %</div></div>' +
              '<div class="obj-row"><span class="obj-label">Unidades:</span> ' +
              '<div><span class="view-mode obj-val">' + row.botas + '</span>' +
-             '<input type="number" class="obj-input edit-mode hidden" value="' + row.botas + '" id="vobj-botas-' + index + '"></div></div>' +
+             '<input type="number" class="obj-input edit-mode hidden" value="' + row.botas + '" id="vobj-botas-' + suf + '"></div></div>' +
              '<div class="obj-row"><span class="obj-label">$ Meta mensual:</span> ' +
              '<div><span class="view-mode obj-val">' + factB + '</span>' +
-             '<input type="text" class="obj-input edit-mode hidden" value="' + factBEdit + '" id="vobj-factB-' + index + '" onkeyup="formatoMoneda(this); calcObjMetaObjetivosVendedor(this, \'vobj-mensB-' + index + '\')"></div></div>' +
-             '<div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensB-' + index + '">' + factB + '</span></div>' +
+             '<input type="text" class="obj-input edit-mode hidden" value="' + factBEdit + '" id="vobj-factB-' + suf + '" onkeyup="formatoMoneda(this); calcObjMetaObjetivosVendedor(this, \'vobj-mensB-' + suf + '\'); actualizarVobjMetaTotalRow(' + rg + ')"></div></div>' +
+             '<div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensB-' + suf + '">' + factB + '</span></div>' +
              '</div>' +
              '<div class="obj-sub-section">' +
              '<div class="obj-sub-title"><span class="material-symbols-outlined">verified</span> CERTIFICACIONES</div>' +
              '<div class="obj-row"><span class="obj-label">% Comisión:</span> ' +
              '<div><span class="view-mode obj-val">' + (row.pctCerts || 0) + '</span>' +
-             '<input type="number" class="obj-input edit-mode hidden" value="' + (row.pctCerts || 0) + '" id="vobj-pctC-' + index + '"> %</div></div>' +
+             '<input type="number" class="obj-input edit-mode hidden" value="' + (row.pctCerts || 0) + '" id="vobj-pctC-' + suf + '"> %</div></div>' +
              '<div class="obj-row"><span class="obj-label">Unidades:</span> ' +
              '<div><span class="view-mode obj-val">' + row.certs + '</span>' +
-             '<input type="number" class="obj-input edit-mode hidden" value="' + row.certs + '" id="vobj-certs-' + index + '"></div></div>' +
+             '<input type="number" class="obj-input edit-mode hidden" value="' + row.certs + '" id="vobj-certs-' + suf + '"></div></div>' +
              '<div class="obj-row"><span class="obj-label">$ Meta mensual:</span> ' +
              '<div><span class="view-mode obj-val">' + factC + '</span>' +
-             '<input type="text" class="obj-input edit-mode hidden" value="' + factCEdit + '" id="vobj-factC-' + index + '" onkeyup="formatoMoneda(this); calcObjMetaObjetivosVendedor(this, \'vobj-mensC-' + index + '\')"></div></div>' +
-             '<div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensC-' + index + '">' + factC + '</span></div>' +
+             '<input type="text" class="obj-input edit-mode hidden" value="' + factCEdit + '" id="vobj-factC-' + suf + '" onkeyup="formatoMoneda(this); calcObjMetaObjetivosVendedor(this, \'vobj-mensC-' + suf + '\'); actualizarVobjMetaTotalRow(' + rg + ')"></div></div>' +
+             '<div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensC-' + suf + '">' + factC + '</span></div>' +
              '</div></div></div>';
        });
        html += '</div>';
        cont.innerHTML = html;
+    }
+
+    function actualizarVobjMetaTotalRow(rango) {
+       var suf = 'r' + rango;
+       var el = document.getElementById('vobj-meta-total-' + suf);
+       if (!el) return;
+       var fb = document.getElementById('vobj-factB-' + suf);
+       var fc = document.getElementById('vobj-factC-' + suf);
+       var sum = parseCurrency(fb ? fb.value : '0') + parseCurrency(fc ? fc.value : '0');
+       el.textContent = formatNumberAr(sum);
+    }
+
+    function onChkVobjRangoMinChange() {
+       var nom = window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE;
+       if (window.VENTAS_VOBJ_LAST_DATA && nom) {
+          pintarGrillaObjetivosVendedor(window.VENTAS_VOBJ_LAST_DATA, nom);
+       } else if (typeof refrescarPanelObjetivosVendedor === 'function') {
+          refrescarPanelObjetivosVendedor();
+       }
     }
 
     function refrescarPanelObjetivosVendedor() {
@@ -303,12 +345,35 @@
           if (!document.getElementById('vobj-grid-container')) return;
           if (res && res.error) {
              document.getElementById('vobj-grid-container').innerHTML = '<div class="card" style="padding:16px;color:#ef4444;">' + (res.mensaje || 'Error') + '</div>';
+             var avE = document.getElementById('vobj-aviso-heredado');
+             if (avE) avE.style.display = 'none';
              return;
           }
-          pintarGrillaObjetivosVendedor(res && res.data ? res.data : [], nom);
+          window.VENTAS_VOBJ_LAST_DATA = (res && res.data) ? res.data.slice() : [];
+          var chk = document.getElementById('chkVobjRangoMin');
+          if (chk) {
+             chk.checked = window.VENTAS_VOBJ_LAST_DATA.some(function (r) { return Number(r.rango) === 0; });
+          }
+          var av = document.getElementById('vobj-aviso-heredado');
+          if (av) {
+             if (res && res.objetivosDesdeMesAnterior) {
+                var nmes = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                var mi = (res.mesObjetivosOrigen != null ? parseInt(res.mesObjetivosOrigen, 10) : 1) - 1;
+                if (mi < 0 || mi > 11) mi = 0;
+                av.style.display = 'block';
+                av.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:6px;opacity:0.85;">info</span> No había objetivos para este mes; se muestran los valores del mes anterior (' +
+                   nmes[mi] + ' ' + (res.anioObjetivosOrigen != null ? res.anioObjetivosOrigen : '') + '). Al guardar se crean las metas para el mes seleccionado.';
+             } else {
+                av.style.display = 'none';
+                av.innerHTML = '';
+             }
+          }
+          pintarGrillaObjetivosVendedor(window.VENTAS_VOBJ_LAST_DATA, nom);
        }).withFailureHandler(function () {
           var c = document.getElementById('vobj-grid-container');
           if (c) c.innerHTML = '<div class="card" style="padding:16px;color:#ef4444;">Error de conexión</div>';
+          var avF = document.getElementById('vobj-aviso-heredado');
+          if (avF) { avF.style.display = 'none'; avF.innerHTML = ''; }
        }).obtenerObjetivosBackend(anio, mes, nom);
     }
 
@@ -342,22 +407,28 @@
        var mes = parseInt(sm.value, 10) || 1;
        var baseAnio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
        var anio = parseInt(sa.value, 10) || baseAnio;
+       var chkMin = document.getElementById('chkVobjRangoMin');
+       var incluirRangoMin = !chkMin || chkMin.checked;
        var filas = [];
-       for (var i = 0; i < 4; i++) {
-          var elPctB = document.getElementById('vobj-pctB-' + i);
-          var elPctC = document.getElementById('vobj-pctC-' + i);
-          if (elPctB || elPctC) {
-             filas.push({
-                rango: i + 1,
-                pctBotas: parseFloat(elPctB ? elPctB.value || '0' : '0'),
-                pctCerts: parseFloat(elPctC ? elPctC.value || '0' : '0'),
-                botas: document.getElementById('vobj-botas-' + i) ? document.getElementById('vobj-botas-' + i).value || '0' : '0',
-                certs: document.getElementById('vobj-certs-' + i) ? document.getElementById('vobj-certs-' + i).value || '0' : '0',
-                factBotas: parseCurrency(document.getElementById('vobj-factB-' + i) ? document.getElementById('vobj-factB-' + i).value || '0' : '0'),
-                factCerts: parseCurrency(document.getElementById('vobj-factC-' + i) ? document.getElementById('vobj-factC-' + i).value || '0' : '0')
-             });
-          }
-       }
+       document.querySelectorAll('#vobj-grid-container .obj-card[data-rango]').forEach(function (card) {
+          var r = parseInt(card.getAttribute('data-rango'), 10);
+          if (!Number.isFinite(r)) return;
+          if (r === 0 && !incluirRangoMin) return;
+          var suf = 'r' + r;
+          var elPctB = document.getElementById('vobj-pctB-' + suf);
+          var elPctC = document.getElementById('vobj-pctC-' + suf);
+          if (!elPctB && !elPctC) return;
+          filas.push({
+             rango: r,
+             pctBotas: parseFloat(elPctB ? elPctB.value || '0' : '0'),
+             pctCerts: parseFloat(elPctC ? elPctC.value || '0' : '0'),
+             botas: document.getElementById('vobj-botas-' + suf) ? document.getElementById('vobj-botas-' + suf).value || '0' : '0',
+             certs: document.getElementById('vobj-certs-' + suf) ? document.getElementById('vobj-certs-' + suf).value || '0' : '0',
+             factBotas: parseCurrency(document.getElementById('vobj-factB-' + suf) ? document.getElementById('vobj-factB-' + suf).value || '0' : '0'),
+             factCerts: parseCurrency(document.getElementById('vobj-factC-' + suf) ? document.getElementById('vobj-factC-' + suf).value || '0' : '0')
+          });
+       });
+       filas.sort(function (a, b) { return (a.rango || 0) - (b.rango || 0); });
        var btn = document.getElementById('btnVobjEdit');
        if (btn) {
           btn.disabled = true;
@@ -378,7 +449,9 @@
                 btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar objetivos';
              }
              if (resObjs && !resObjs.error && resObjs.data) {
-                ALL_OBJECTIVES = resObjs.data.filter(function (o) { return o && o.rango && o.anio != null && o.mes != null; });
+                ALL_OBJECTIVES = resObjs.data.filter(function (o) {
+                   return o && o.anio != null && o.mes != null && Number.isFinite(Number(o.rango));
+                });
              }
              if (typeof mostrarAlerta === 'function') mostrarAlerta('Objetivos actualizados correctamente.');
              toggleEditModeObjetivosVendedor();
@@ -419,6 +492,9 @@
        var btnObjetivosHtml = puedeEditarObjVentas
           ? '<button type="button" id="btnVobjEdit" class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditModeObjetivosVendedor()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar objetivos</button>'
           : '';
+       var chkRangoMinHtml = puedeEditarObjVentas
+          ? '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;cursor:pointer;user-select:none;"><input type="checkbox" id="chkVobjRangoMin" onchange="onChkVobjRangoMinChange()"> Rango mínimo (antes del 1)</label>'
+          : '';
 
        let filas = [];
        if (datos && datos.length > 1) {
@@ -439,8 +515,9 @@
           // actualizarAvisoPendientes(filas, nombreVendedor);
  
           var anioResVend = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
-          let resumenBotas = generarMatrizResumenCompleja(filas, 'GRUPO_BOTAS', nombreVendedor, anioResVend);
-       let resumenCerts = generarMatrizResumenCompleja(filas, 'GRUPO_CERTS', nombreVendedor, anioResVend);
+          var totalesComboVend = calcTotalesBotasCertsPorMes(filas, anioResVend);
+          let resumenBotas = generarMatrizResumenCompleja(filas, 'GRUPO_BOTAS', nombreVendedor, anioResVend, totalesComboVend);
+       let resumenCerts = generarMatrizResumenCompleja(filas, 'GRUPO_CERTS', nombreVendedor, anioResVend, totalesComboVend);
  
        let html = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="vendor-grid force-header-style">';
  
@@ -513,9 +590,11 @@
                 <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                    <select id="selVobjMes" class="header-select" onchange="if(typeof OBJETIVOS_MES_ACTIVO!=='undefined')OBJETIVOS_MES_ACTIVO=parseInt(this.value,10)||1; refrescarPanelObjetivosVendedor();">${optsVobjMes}</select>
                    <select id="selVobjAnio" class="header-select" onchange="if(typeof OBJETIVOS_ANIO_ACTIVO!=='undefined')OBJETIVOS_ANIO_ACTIVO=parseInt(this.value,10)||${baseAnioVobj}; refrescarPanelObjetivosVendedor();">${optsVobjAnio}</select>
+                   ${chkRangoMinHtml}
                    ${btnObjetivosHtml}
                 </div>
              </div>
+             <div id="vobj-aviso-heredado" class="card" style="display:none; margin-bottom:14px; padding:12px 14px; font-size:12px; color:#94a3b8; border:1px solid rgba(148,163,184,0.35);"></div>
              <div id="vobj-grid-container"></div>
          </div>`;
 
@@ -590,8 +669,9 @@
        });
 
        // Regenerar matrices solo con datos del año seleccionado
-       let resumenBotasFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_BOTAS', nombreVendedor, anioFiltro);
-       let resumenCertsFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_CERTS', nombreVendedor, anioFiltro);
+       var totalesComboFiltro = calcTotalesBotasCertsPorMes(filasFiltradas, anioFiltro);
+       let resumenBotasFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_BOTAS', nombreVendedor, anioFiltro, totalesComboFiltro);
+       let resumenCertsFiltrado = generarMatrizResumenCompleja(filasFiltradas, 'GRUPO_CERTS', nombreVendedor, anioFiltro, totalesComboFiltro);
  
        const MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
        let nombreMes = MESES[mes - 1];
@@ -630,14 +710,14 @@
                    <div class="prog-container">
                        <div class="prog-labels">
                            <span style="color:var(--accent)">${d.rangoLabel}</span>
-                           <span>Meta: ${formatNumberAr(d.objetivo)}</span>
+                           <span>Meta combinada: ${formatNumberAr(d.metaCombinada != null ? d.metaCombinada : d.objetivo)}</span>
                        </div>
                        <div class="prog-track">
                           <div class="prog-fill" style="width:${d.pct}%"></div>
                           <div class="prog-text">${d.pct.toFixed(0)}%</div>
                        </div>
                        <div class="prog-stats">
-                            <span>${formatNumberAr(d.total)} / ${formatNumberAr(d.objetivo)}</span>
+                            <span>Total botas+certs: ${formatNumberAr(d.totalCombinado != null ? d.totalCombinado : d.total)} / ${formatNumberAr(d.metaCombinada != null ? d.metaCombinada : d.objetivo)}</span>
                             <span>${d.cantidadObjetivo > 0 ? d.cantidad + ' / ' + d.cantidadObjetivo + ' u.' : (d.cantidad ? d.cantidad + ' u.' : '-')}</span>
                        </div>
                    </div>
@@ -661,30 +741,83 @@
     }
  
     // --- LOGICA MATRIZ (REUTILIZADA) ---
+    /** Facturación ARS por mes: botas (grupo) + certificaciones (grupo), para umbral de rango combinado. */
+    function calcTotalesBotasCertsPorMes(filas, anioResumen) {
+       const MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+       var anioObj = parseInt(anioResumen, 10);
+       if (!Number.isFinite(anioObj)) anioObj = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var out = {};
+       MESES.forEach(function (m, idx) { out[m] = { botas: 0, certs: 0, total: 0, mesIndex: idx }; });
+       const GRUPO_BOTAS_ITEMS = ['BOTAS', 'INDU - ACCE', 'REPUESTOS'];
+       const GRUPO_CERTS_ITEMS = ['CURSOS', 'TALLERES', 'EVENTOS', 'TORNEOS'];
+       (filas || []).forEach(function (f) {
+          if (!f || !f[0]) return;
+          var fecha = parseFecha(f[0]);
+          var concepto = (f[5] || '').toUpperCase();
+          var enBotas = GRUPO_BOTAS_ITEMS.some(function (item) { return concepto.includes(item); });
+          var enCerts = GRUPO_CERTS_ITEMS.some(function (item) { return concepto.includes(item); });
+          if (!enBotas && !enCerts) return;
+          var mesNombre = MESES[fecha.getMonth()];
+          if (!out[mesNombre]) return;
+          var paisRaw = (f[3] || '').toUpperCase();
+          var paisKey = paisRaw;
+          if (paisRaw === 'USA' || paisRaw === 'EEUU') paisKey = 'EEUU';
+          var montoConIva = parseNumeric(f[9]);
+          var cotizacionGuardada = 1;
+          if (f[12] != null && f[12] !== '') cotizacionGuardada = parseNumeric(f[12]);
+          else cotizacionGuardada = COTIZACIONES[paisKey] || 1;
+          var montoArs = montoConIva;
+          if (paisKey !== 'ARGENTINA') montoArs = montoConIva * cotizacionGuardada;
+          if (enBotas) out[mesNombre].botas += montoArs;
+          if (enCerts) out[mesNombre].certs += montoArs;
+       });
+       MESES.forEach(function (m) {
+          out[m].total = out[m].botas + out[m].certs;
+       });
+       return out;
+    }
+
     function obtenerObjetivosPorVendedorMes(anio, mesNum, nombreVendedor) {
        var ai = parseInt(anio, 10);
        var mn = parseInt(mesNum, 10);
        if (!Number.isFinite(ai) || !Number.isFinite(mn)) return [];
-       let vendedorKey = (nombreVendedor || '').toString().trim().toUpperCase();
-       let objetivosPersonalizados = ALL_OBJECTIVES
-          .filter(function (o) {
-             return o && o.rango && parseInt(o.anio, 10) === ai && parseInt(o.mes, 10) === mn &&
-                (o.vendedor || '').toString().trim().toUpperCase() === vendedorKey;
-          })
-          .sort(function (a, b) { return a.rango - b.rango; });
-       if (objetivosPersonalizados.length > 0) return objetivosPersonalizados;
-       return ALL_OBJECTIVES
-          .filter(function (o) {
-             return o && o.rango && parseInt(o.anio, 10) === ai && parseInt(o.mes, 10) === mn &&
-                (!o.vendedor || o.vendedor.toString().trim() === '');
-          })
-          .sort(function (a, b) { return a.rango - b.rango; });
+       var vendedorKey = (nombreVendedor || '').toString().trim().toUpperCase();
+
+       function lista(an, mm) {
+          var personalizados = ALL_OBJECTIVES
+             .filter(function (o) {
+                return o && Number.isFinite(Number(o.rango)) && parseInt(o.anio, 10) === an && parseInt(o.mes, 10) === mm &&
+                   (o.vendedor || '').toString().trim().toUpperCase() === vendedorKey;
+             })
+             .sort(function (a, b) { return (a.rango || 0) - (b.rango || 0); });
+          if (personalizados.length > 0) return personalizados;
+          return ALL_OBJECTIVES
+             .filter(function (o) {
+                return o && Number.isFinite(Number(o.rango)) && parseInt(o.anio, 10) === an && parseInt(o.mes, 10) === mm &&
+                   (!o.vendedor || o.vendedor.toString().trim() === '');
+             })
+             .sort(function (a, b) { return (a.rango || 0) - (b.rango || 0); });
+       }
+
+       var L = lista(ai, mn);
+       if (L.length === 0) {
+          var pm = mn - 1;
+          var py = ai;
+          if (pm < 1) {
+             pm = 12;
+             py -= 1;
+          }
+          L = lista(py, pm);
+       }
+       return L;
     }
 
-    function generarMatrizResumenCompleja(filas, tipoGrupo, nombreVendedor, anioResumen) {
+    function generarMatrizResumenCompleja(filas, tipoGrupo, nombreVendedor, anioResumen, totalesComboPorMes) {
        const MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
        var anioObj = parseInt(anioResumen, 10);
        if (!Number.isFinite(anioObj)) anioObj = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var comboPorMes = totalesComboPorMes;
+       if (!comboPorMes) comboPorMes = calcTotalesBotasCertsPorMes(filas, anioObj);
        const PAISES_STRUCT = [
           { key: 'ARGENTINA' }, { key: 'CHILE' }, { key: 'MEXICO' }, { key: 'ESPAÑA' },
           { key: 'BRASIL' }, { key: 'URUGUAY' }, { key: 'RDM' }, { key: 'EEUU' }
@@ -746,38 +879,57 @@
           let d = matriz[m];
           let mesCal = d.mesIndex + 1;
 
-          let rangoAlcanzado = 0;
-          let porcentajeRango = 0;
-          let objetivoSiguiente = 0;
-          let cantidadObjetivo = 0;
+          let combo = comboPorMes[m] || { botas: 0, certs: 0, total: 0 };
+          let totalCombinado = combo.total || (combo.botas + combo.certs);
+
+          let rangoAlcanzadoNum = null;
+          let pctRangoBotas = 0;
+          let pctRangoCerts = 0;
+          let targetObj = null;
           let objsTrim = obtenerObjetivosPorVendedorMes(anioObj, mesCal, nombreVendedor);
+
           for (let i = objsTrim.length - 1; i >= 0; i--) {
-             let targetMensual = (tipoGrupo === 'GRUPO_BOTAS' ? objsTrim[i].factBotas : objsTrim[i].factCerts);
-             if (d.total >= targetMensual && targetMensual > 0) {
-                rangoAlcanzado = objsTrim[i].rango;
-                porcentajeRango = (tipoGrupo === 'GRUPO_BOTAS' ? objsTrim[i].pctBotas : objsTrim[i].pctCerts) || 0;
+             let o = objsTrim[i];
+             let metaComb = (Number(o.factBotas) || 0) + (Number(o.factCerts) || 0);
+             if (totalCombinado >= metaComb && metaComb > 0) {
+                rangoAlcanzadoNum = o.rango;
+                pctRangoBotas = Number(o.pctBotas) || 0;
+                pctRangoCerts = Number(o.pctCerts) || 0;
+                targetObj = o;
                 break;
              }
           }
-          let targetObj = null;
-          if (rangoAlcanzado > 0) {
-             targetObj = objsTrim.filter(function (o) { return o.rango === rangoAlcanzado; })[0];
-          } else if (objsTrim.length) {
+
+          if (targetObj == null && objsTrim.length > 0) {
              targetObj = objsTrim[0];
-          }
-          if (targetObj) {
-             objetivoSiguiente = (tipoGrupo === 'GRUPO_BOTAS' ? targetObj.factBotas : targetObj.factCerts);
-             cantidadObjetivo = (tipoGrupo === 'GRUPO_BOTAS') ? targetObj.botas : targetObj.certs;
+             rangoAlcanzadoNum = null;
+             pctRangoBotas = 0;
+             pctRangoCerts = 0;
           }
 
-          d.rangoLabel = (rangoAlcanzado > 0 ? "RANGO " + rangoAlcanzado : "-");
-          d.objetivo = objetivoSiguiente;
+          let metaCombinada = 0;
+          if (targetObj) {
+             metaCombinada = (Number(targetObj.factBotas) || 0) + (Number(targetObj.factCerts) || 0);
+          }
+
+          let cantidadObjetivo = (tipoGrupo === 'GRUPO_BOTAS') ? (targetObj ? targetObj.botas : 0) : (targetObj ? targetObj.certs : 0);
+          let porcentajeLinea = tipoGrupo === 'GRUPO_BOTAS' ? pctRangoBotas : pctRangoCerts;
+
+          let rangoLabel = '-';
+          if (rangoAlcanzadoNum !== null && rangoAlcanzadoNum !== undefined) {
+             rangoLabel = rangoAlcanzadoNum === 0 ? 'MÍNIMO' : ('RANGO ' + rangoAlcanzadoNum);
+          }
+
+          d.rangoLabel = rangoLabel;
+          d.metaCombinada = metaCombinada;
+          d.totalCombinado = totalCombinado;
+          d.objetivo = metaCombinada;
           d.cantidadObjetivo = cantidadObjetivo;
-          d.comision = d.total * (porcentajeRango / 100);
-          if (objetivoSiguiente > 0) {
-             let pct = (d.total / objetivoSiguiente) * 100;
-             if (pct > 100) pct = 100;
-             d.pct = pct;
+          d.comision = d.total * (porcentajeLinea / 100);
+          if (metaCombinada > 0) {
+             let pctBar = (totalCombinado / metaCombinada) * 100;
+             if (pctBar > 100) pctBar = 100;
+             d.pct = pctBar;
           } else { d.pct = 0; }
        }
        return matriz;
