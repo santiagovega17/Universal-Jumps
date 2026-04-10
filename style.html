@@ -1126,9 +1126,9 @@
     }
  
     @media (min-width: 900px) {
-       /* ranking | torta (más ancha) | vencimientos (más ancha) */
+       /* ranking un poco más ancho para nombres; torta y venc casi igual */
        .dash-home-mid-row--con-ranking {
-          grid-template-columns: minmax(180px, 0.85fr) minmax(300px, 2.35fr) minmax(300px, 400px);
+          grid-template-columns: minmax(260px, 1.08fr) minmax(300px, 2.2fr) minmax(300px, 400px);
        }
  
        .dash-home-mid-row--con-ranking .dash-home-ranking-wrap,
@@ -1310,6 +1310,12 @@
  
     .home-dashboard .dash-rank-total {
        color: var(--accent);
+    }
+ 
+    .home-dashboard .dash-rank-name {
+       max-width: none;
+       flex: 1;
+       min-width: 0;
     }
  
     .home-dashboard .dash-ranking-empty {
