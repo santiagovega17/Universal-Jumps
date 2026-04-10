@@ -535,6 +535,7 @@
               <div class="view-option" onclick="switchView(this, 'ventas')">VENTAS</div>
               <div class="view-option" onclick="switchView(this, 'botas')">BOTAS</div>
               <div class="view-option" onclick="switchView(this, 'certs')">CERTIFICACIONES</div>
+              <div class="view-option" onclick="switchView(this, 'comisiones')">COMISIONES</div>
               <div class="view-option" onclick="switchView(this, 'objetivos')">OBJETIVOS</div>
            </div>
         </div>`;
@@ -598,6 +599,14 @@
              <div class="month-grid">${construirGridTarjetas(resumenCerts, 'CERTIFICACIONES')}</div>
          </div>`;
 
+       html += `<div id="tab-comisiones" style="display:none;">
+             <div class="card" style="padding:28px; text-align:center; color:#94a3b8;">
+                <div style="display:flex; justify-content:center; margin-bottom:12px;"><span class="material-symbols-outlined" style="font-size:40px; opacity:0.85;">payments</span></div>
+                <div style="font-weight:700; color:white; margin-bottom:8px;">Comisiones</div>
+                <div style="font-size:13px;">Vista de comisiones para <strong style="color:#e2e8f0;">${nombreVendedor}</strong> — en construcción.</div>
+             </div>
+         </div>`;
+
        html += `<div id="tab-objetivos" style="display:none;">
              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
                 <div style="font-size:13px; color:#64748b; font-weight:600;">Objetivos mensuales · ${nombreVendedor}</div>
@@ -657,6 +666,8 @@
       document.getElementById('tab-ventas').style.display = 'none';
        document.getElementById('tab-botas').style.display = 'none';
        document.getElementById('tab-certs').style.display = 'none';
+       var tabCom = document.getElementById('tab-comisiones');
+       if (tabCom) tabCom.style.display = 'none';
        var tabObj = document.getElementById('tab-objetivos');
        if (tabObj) tabObj.style.display = 'none';
 
