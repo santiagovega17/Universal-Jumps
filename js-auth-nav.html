@@ -815,6 +815,8 @@
           }
        }
 
+       var rolHomeVenc = (typeof getRolEfectivo === 'function' ? getRolEfectivo() : (USUARIO_ACTUAL && USUARIO_ACTUAL.rol) || '').toString().toUpperCase();
+       var puedeVerVencimientosHome = rolHomeVenc === 'ADMIN' || rolHomeVenc === 'ROOT';
        var vencWidget =
           '<aside id="home-caja-venc-root" class="home-caja-venc-widget home-caja-venc-widget--loading" aria-label="Próximos vencimientos de caja">' +
              '<div class="home-caja-venc-inner">' +
@@ -826,6 +828,7 @@
                 '<button type="button" class="home-caja-venc-btn" onclick="navegar(null, \'CAJA\')">IR AL BALANCE DE CAJA</button>' +
              '</div>' +
           '</aside>';
+       var vencWrapHtml = puedeVerVencimientosHome ? '<div class="dash-home-venc-wrap">' + vencWidget + '</div>' : '';
        var rankingCol = (showRanking && rankBlock) ? '<div class="dash-home-ranking-wrap">' + rankBlock + '</div>' : '';
        var paisPieBlock =
           '<div class="dash-home-pais-wrap">' +
@@ -835,14 +838,19 @@
                 '<div class="dash-pais-empty" id="dash-pais-empty" hidden>Sin ventas con país en este mes.</div>' +
              '</div>' +
           '</div>';
-       var midRowClass = 'dash-home-mid-row' + (rankingCol ? ' dash-home-mid-row--con-ranking' : ' dash-home-mid-row--sin-ranking');
+       var midRowClass = 'dash-home-mid-row';
+       if (rankingCol) {
+          midRowClass += puedeVerVencimientosHome ? ' dash-home-mid-row--con-ranking' : ' dash-home-mid-row--con-ranking dash-home-mid-row--con-ranking--sin-venc';
+       } else {
+          midRowClass += puedeVerVencimientosHome ? ' dash-home-mid-row--sin-ranking' : ' dash-home-mid-row--sin-ranking dash-home-mid-row--sin-ranking--sin-venc';
+       }
        var midBlock =
           '<div class="dash-home-main-grid">' +
              '<div class="dash-home-kpi-wrap">' + kpiBlock + '</div>' +
              '<div class="' + midRowClass + '">' +
                 rankingCol +
                 paisPieBlock +
-                '<div class="dash-home-venc-wrap">' + vencWidget + '</div>' +
+                vencWrapHtml +
              '</div>' +
           '</div>';
 
@@ -870,7 +878,7 @@
           '<div class="dash-table-section"><div class="dash-table-title">Últimas 5 ventas</div><div class="dash-table-wrap"><table class="ventas-historial-table dash-ventas-table"><thead>' +
           tableHead + '</thead><tbody>' + tableBody + '</tbody></table></div></div>';
 
-       cargarProximosVencimientosHome();
+       if (puedeVerVencimientosHome) cargarProximosVencimientosHome();
        pintarHomeChartPorPais(d);
     }
 

@@ -1167,6 +1167,15 @@
           flex: 1;
           min-height: 0;
        }
+
+       /* Sin widget de vencimientos (solo ROOT / ADMIN lo ven): reacomodar columnas */
+       .dash-home-mid-row--con-ranking.dash-home-mid-row--con-ranking--sin-venc {
+          grid-template-columns: minmax(300px, 1.35fr) minmax(260px, 1fr);
+       }
+
+       .dash-home-mid-row--sin-ranking.dash-home-mid-row--sin-ranking--sin-venc {
+          grid-template-columns: minmax(0, 1fr);
+       }
  
        .dash-home-main-grid .dash-home-kpi-wrap .dash-kpi-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2615,6 +2624,29 @@
  
     .usuarios-gestion-table {
        min-width: 880px;
+    }
+
+    /* Gestión de usuarios: misma piel que tabla balance caja (thead card-surface, filas compactas) */
+    .caja-historial-table-wrap > table.caja-historial-table.usuarios-gestion-table.ventas-historial-table thead th.ventas-historial-th {
+       white-space: nowrap;
+       padding: var(--table-card-head-pt) 6px var(--table-card-head-pb) !important;
+       letter-spacing: 0.035em !important;
+       font-size: 12px !important;
+       line-height: var(--table-row-lh) !important;
+    }
+    .caja-historial-table-wrap > table.caja-historial-table.usuarios-gestion-table.ventas-historial-table tbody td {
+       padding: var(--table-row-py) 8px !important;
+       line-height: var(--table-row-lh) !important;
+    }
+    .caja-historial-table-wrap > table.caja-historial-table.usuarios-gestion-table.ventas-historial-table .ventas-historial-th-inner {
+       gap: 2px;
+       justify-content: flex-start;
+       width: 100%;
+    }
+    .caja-historial-table-wrap > table.caja-historial-table.usuarios-gestion-table td:last-child {
+       min-width: 120px !important;
+       padding-left: var(--table-row-px) !important;
+       padding-right: var(--table-row-px) !important;
     }
  
     tr.usuarios-gestion-row-inactive td {
