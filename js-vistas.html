@@ -1,70 +1,5 @@
 <script>
-    function obtenerVendedorObjetivosSeleccionado() {
-       var rolEffObj = (typeof getRolEfectivo === 'function') ? getRolEfectivo() : (USUARIO_ACTUAL && USUARIO_ACTUAL.rol);
-       if (rolEffObj === 'VENDEDOR') return (USUARIO_ACTUAL && USUARIO_ACTUAL.hoja) ? USUARIO_ACTUAL.hoja : '';
-       return (typeof OBJETIVOS_VENDEDOR_ACTIVO !== 'undefined' && OBJETIVOS_VENDEDOR_ACTIVO) ? OBJETIVOS_VENDEDOR_ACTIVO : '';
-    }
-
-    function obtenerAnioMesObjetivosActivos() {
-      var anio = typeof OBJETIVOS_ANIO_ACTIVO !== 'undefined' ? OBJETIVOS_ANIO_ACTIVO : (typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear());
-      var mes = typeof OBJETIVOS_MES_ACTIVO !== 'undefined' ? OBJETIVOS_MES_ACTIVO : (new Date().getMonth() + 1);
-      return { anio: parseInt(anio, 10) || new Date().getFullYear(), mes: parseInt(mes, 10) || 1 };
-    }
-
-    function cargarSelectorVendedorObjetivos() {
-      var sel = document.getElementById('selVendedorObjetivos');
-      if (!sel) return;
-      var vendedorActual = (typeof OBJETIVOS_VENDEDOR_ACTIVO !== 'undefined') ? OBJETIVOS_VENDEDOR_ACTIVO : '';
-      google.script.run.withSuccessHandler(function (res) {
-        var activos = Array.isArray(res && res.activos) ? res.activos : [];
-        sel.innerHTML = '<option value="">OBJETIVO GLOBAL (DEFAULT)</option>';
-        activos
-          .map(function (v) { return (v && v.nombre ? v.nombre : '').toString().trim(); })
-          .filter(Boolean)
-          .sort(function (a, b) { return a.localeCompare(b); })
-          .forEach(function (nombre) {
-            var opt = document.createElement('option');
-            opt.value = nombre;
-            opt.textContent = nombre;
-            sel.appendChild(opt);
-          });
-        sel.value = vendedorActual || '';
-      }).withFailureHandler(function () {
-        sel.innerHTML = '<option value="">OBJETIVO GLOBAL (DEFAULT)</option>';
-        sel.value = vendedorActual || '';
-      }).obtenerListaVendedores();
-    }
-
     function cargar(hoja) {
-       if (hoja === 'OBJETIVOS') {
-          var am = obtenerAnioMesObjetivosActivos();
-          let vendedorObjetivo = obtenerVendedorObjetivosSeleccionado();
-          google.script.run.withSuccessHandler(res => {
-             NAVEGANDO = false;
-             if (HOJA_ACTUAL !== 'OBJETIVOS' && HOJA_ACTUAL !== 'CAMBIAR_TRIMESTRE') return;
-             if (res.error) {
-                if (typeof getHtmlErrorRedConReintentar === 'function') {
-                   window._reintentarCarga = function () { cargar('OBJETIVOS'); };
-                   document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">OBJETIVOS</div>' + getHtmlErrorRedConReintentar(res.mensaje || 'Error al cargar');
-                } else {
-                   document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">OBJETIVOS</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (res.mensaje || '') + '</div>';
-                }
-             } else {
-                renderObjetivos(res.data);
-             }
-          }).withFailureHandler(err => {
-             NAVEGANDO = false;
-             if (HOJA_ACTUAL !== 'OBJETIVOS' && HOJA_ACTUAL !== 'CAMBIAR_TRIMESTRE') return;
-             if (typeof getHtmlErrorRedConReintentar === 'function') {
-                window._reintentarCarga = function () { cargar('OBJETIVOS'); };
-                document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">OBJETIVOS</div>' + getHtmlErrorRedConReintentar(err && err.message ? err.message : 'Error de conexión');
-             } else {
-                document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">OBJETIVOS</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (err && err.message ? err.message : '') + '</div>';
-             }
-          }).obtenerObjetivosBackend(am.anio, am.mes, vendedorObjetivo);
-          return;
-       }
- 
        if (hoja === 'CONSOLIDADO') {
           if (typeof poblarAnioConsolidado === 'function') poblarAnioConsolidado();
           let anioConsolidadoVentas = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
@@ -154,12 +89,12 @@
                 NAVEGANDO = false;
                 if (HOJA_ACTUAL !== hoja) return;
                 if (!data) {
-                   let titulo = hoja === 'OBJETIVOS' ? 'OBJETIVOS' : 'VENTAS: ' + hoja.toUpperCase();
+                   let titulo = 'VENTAS: ' + hoja.toUpperCase();
                    document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: No se recibieron datos</div>`;
                    return;
                 }
                 if (data.error) {
-                   let titulo = hoja === 'OBJETIVOS' ? 'OBJETIVOS' : 'VENTAS: ' + hoja.toUpperCase();
+                   let titulo = 'VENTAS: ' + hoja.toUpperCase();
                    document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${data.mensaje || 'Error desconocido'}</div>`;
                    return;
                 }
@@ -183,21 +118,21 @@
                 NAVEGANDO = false;
                 console.error('Error al renderizar:', renderError);
                 if (HOJA_ACTUAL !== hoja) return;
-                let titulo = hoja === 'OBJETIVOS' ? 'OBJETIVOS' : 'VENTAS: ' + hoja.toUpperCase();
+                let titulo = 'VENTAS: ' + hoja.toUpperCase();
                 document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error al renderizar: ${renderError.message}</div>`;
              }
           }).withFailureHandler(err => {
              NAVEGANDO = false;
              console.error('Error al obtener datos de hoja:', err);
              if (HOJA_ACTUAL !== hoja) return;
-             let titulo = hoja === 'OBJETIVOS' ? 'OBJETIVOS' : 'VENTAS: ' + hoja.toUpperCase();
+             let titulo = 'VENTAS: ' + hoja.toUpperCase();
              let errorMsg = err && err.message ? err.message : (err && err.toString ? err.toString() : 'Error desconocido');
              document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${errorMsg}</div>`;
           }).obtenerDatosDeHoja(hoja);
        } catch (e) {
           NAVEGANDO = false;
           console.error('Error al iniciar carga:', e);
-          let titulo = hoja === 'OBJETIVOS' ? 'OBJETIVOS' : 'VENTAS: ' + hoja.toUpperCase();
+          let titulo = 'VENTAS: ' + hoja.toUpperCase();
           document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error al iniciar carga: ${e.message}</div>`;
        }
     }
@@ -1546,166 +1481,6 @@
        });
  
        document.getElementById('app').innerHTML = html;
-    }
- 
-    // --- OBJETIVOS (NUEVO DISEÑO TARJETAS + FACT SEPARADA) ---
-    function renderObjetivos(data) {
-       var am = obtenerAnioMesObjetivosActivos();
-       var baseAnio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
-       var optsAnio = '';
-       for (var ya = baseAnio - 2; ya <= baseAnio + 1; ya++) {
-          optsAnio += '<option value="' + ya + '"' + (ya === am.anio ? ' selected' : '') + '>' + ya + '</option>';
-       }
-       var nombresMes = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-       var optsMes = '';
-       for (var mi = 1; mi <= 12; mi++) {
-          optsMes += '<option value="' + mi + '"' + (mi === am.mes ? ' selected' : '') + '>' + nombresMes[mi - 1] + '</option>';
-       }
-       var rolEff = (typeof getRolEfectivo === 'function') ? getRolEfectivo() : (USUARIO_ACTUAL && USUARIO_ACTUAL.rol);
-       let isAdmin = (rolEff === 'ADMIN' || rolEff === 'ROOT');
-       let isSuperVendedor = (rolEff === 'VENDEDORGRAL');
-       let puedeEditar = isAdmin;
-
-       let html = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-              <div style="font-size:13px; color:#64748b; font-weight:600;">Objetivos mensuales · ${am.anio} · ${nombresMes[am.mes - 1]}</div>
-              <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                <select id="selObjetivosMes" class="header-select" onchange="OBJETIVOS_MES_ACTIVO = parseInt(this.value,10)||1; cargar('OBJETIVOS');">${optsMes}</select>
-                <select id="selObjetivosAnio" class="header-select" onchange="OBJETIVOS_ANIO_ACTIVO = parseInt(this.value,10)||${baseAnio}; cargar('OBJETIVOS');">${optsAnio}</select>
-                ${isAdmin ? '<select id="selVendedorObjetivos" class="header-select" style="min-width:260px;" onchange="OBJETIVOS_VENDEDOR_ACTIVO = this.value || \'\'; cargar(\'OBJETIVOS\');"><option value="">OBJETIVO GLOBAL (DEFAULT)</option></select>' : ''}
-                ${puedeEditar ? '<button class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditMode()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar Objetivos</button>' : ''}
-              </div>
-          </div>
-          
-          <div class="obj-grid-container">`;
-
-       if (isSuperVendedor && (!data || data.length === 0)) {
-          html += '<div class="card" style="padding:20px; color:#64748b;">No hay objetivos configurados para este mes.</div>';
-       } else {
-          data.forEach((row, index) => {
-             html += `
-                 <div class="obj-card">
-                    <div class="obj-header-row">
-                       <div class="obj-title">RANGO ${row.rango}</div>
-                    </div>
-                    <div class="obj-content">
-                       <div class="obj-sub-section">
-                          <div class="obj-sub-title"><span class="material-symbols-outlined">steps</span> BOTAS</div>
-                          <div class="obj-row"><span class="obj-label">% Comisión:</span> 
-                              <div><span class="view-mode obj-val">${row.pctBotas || 0}</span><input type="number" class="obj-input edit-mode hidden" value="${row.pctBotas || 0}" id="pctB-${index}"> %</div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">Unidades:</span> 
-                              <div><span class="view-mode obj-val">${row.botas}</span><input type="number" class="obj-input edit-mode hidden" value="${row.botas}" id="botas-${index}"></div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">$ Meta mensual:</span> 
-                              <div><span class="view-mode obj-val">${formatNumberAr(row.factBotas)}</span><input type="text" class="obj-input edit-mode hidden" value="${formatNumberAr(row.factBotas).replace('ARS', '').trim()}" id="factB-${index}" onkeyup="formatoMoneda(this); calcObjMetaMensual(this, 'mensB-${index}')"></div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="mensB-${index}">${formatNumberAr(row.factBotas || 0)}</span></div>
-                       </div>
-
-                       <div class="obj-sub-section">
-                          <div class="obj-sub-title"><span class="material-symbols-outlined">verified</span> CERTIFICACIONES</div>
-                          <div class="obj-row"><span class="obj-label">% Comisión:</span> 
-                              <div><span class="view-mode obj-val">${row.pctCerts || 0}</span><input type="number" class="obj-input edit-mode hidden" value="${row.pctCerts || 0}" id="pctC-${index}"> %</div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">Unidades:</span> 
-                              <div><span class="view-mode obj-val">${row.certs}</span><input type="number" class="obj-input edit-mode hidden" value="${row.certs}" id="certs-${index}"></div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">$ Meta mensual:</span> 
-                              <div><span class="view-mode obj-val">${formatNumberAr(row.factCerts)}</span><input type="text" class="obj-input edit-mode hidden" value="${formatNumberAr(row.factCerts).replace('ARS', '').trim()}" id="factC-${index}" onkeyup="formatoMoneda(this); calcObjMetaMensual(this, 'mensC-${index}')"></div>
-                          </div>
-                          <div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="mensC-${index}">${formatNumberAr(row.factCerts || 0)}</span></div>
-                       </div>
-                    </div>
-                 </div>`;
-          });
-       }
- 
-       html += `</div>`; // Close grid
- 
- 
-       document.getElementById('app').innerHTML = html;
-       if (isAdmin) cargarSelectorVendedorObjetivos();
-    }
- 
-    function toggleEditMode() {
-       let btn = document.querySelector('button[onclick*="toggleEditMode"]');
-       let isEditing = btn && btn.innerHTML.includes('Guardar');
- 
-       document.querySelectorAll('.view-mode').forEach(el => el.classList.toggle('hidden'));
-       document.querySelectorAll('.edit-mode').forEach(el => {
-          el.classList.toggle('hidden');
-          el.classList.add('editable');
-       });
- 
-       // Cambiar el botón de editar a guardar y viceversa
-       if (btn) {
-          if (isEditing) {
-             // Volver a modo visualización, mostrar botón "Editar Objetivos"
-             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar Objetivos';
-             btn.setAttribute('onclick', 'toggleEditMode()');
-          } else {
-             // Cambiar a modo edición, mostrar botón "Guardar Objetivos"
-             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar Objetivos';
-             btn.setAttribute('onclick', 'guardarObjetivosFrontend();');
-          }
-       }
-    }
- 
-    function calcObjMetaMensual(input, targetId) {
-       let num = parseCurrency(input.value);
-       var el = document.getElementById(targetId);
-       if (el) el.innerText = formatNumberAr(num);
-    }
-
-    function guardarObjetivosFrontend() {
-       var am = obtenerAnioMesObjetivosActivos();
-       let filas = [];
- 
-       // Guardar objetivos por rango (si existen)
-       for (let i = 0; i < 4; i++) {
-          let elPctB = document.getElementById(`pctB-${i}`);
-          let elPctC = document.getElementById(`pctC-${i}`);
-          if (elPctB || elPctC) {
-             filas.push({
-                rango: i + 1,
-                pctBotas: parseFloat(elPctB ? elPctB.value || "0" : "0"),
-                pctCerts: parseFloat(elPctC ? elPctC.value || "0" : "0"),
-                botas: document.getElementById(`botas-${i}`) ? document.getElementById(`botas-${i}`).value || "0" : "0",
-                certs: document.getElementById(`certs-${i}`) ? document.getElementById(`certs-${i}`).value || "0" : "0",
-                factBotas: parseCurrency(document.getElementById(`factB-${i}`) ? document.getElementById(`factB-${i}`).value || "0" : "0"),
-                factCerts: parseCurrency(document.getElementById(`factC-${i}`) ? document.getElementById(`factC-${i}`).value || "0" : "0")
-             });
-          }
-       }
- 
-       let btn = document.querySelector('button[onclick*="guardarObjetivosFrontend"]');
-       if (btn) {
-          btn.disabled = true;
-          btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">hourglass_empty</span> Guardando...';
-       }
- 
-       let vendedorObjetivo = obtenerVendedorObjetivosSeleccionado();
-       Promise.resolve().then(() => new Promise((resolve, reject) => {
-          google.script.run.withSuccessHandler(res => {
-             if (res.error) reject(res.mensaje);
-             else resolve(res);
-          }).withFailureHandler(err => reject(err.message)).guardarObjetivosBackend(am.anio, am.mes, filas, vendedorObjetivo);
-       })).then(() => {
-          if (btn) {
-             btn.disabled = false;
-             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar Objetivos';
-          }
-          mostrarAlerta("Objetivos actualizados correctamente.");
-          toggleEditMode();
-          cargar('OBJETIVOS');
-       }).catch(err => {
-          if (btn) {
-             btn.disabled = false;
-             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar Objetivos';
-          }
-          alert("Error: " + err);
-       });
     }
 
     initClienteComboVenta();

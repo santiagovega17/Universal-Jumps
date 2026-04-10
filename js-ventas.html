@@ -217,9 +217,209 @@
        VENTAS_HISTORIAL_LIMITE_MOSTRAR += CARGA_HISTORIAL_VENTAS;
        aplicarFiltrosHistorial(VENTAS_HISTORIAL_VENDEDOR, { preserveLimite: true });
     }
- 
+
+    function puedeEditarObjetivosVentas(nombreVendedor) {
+       if (!USUARIO_ACTUAL || !nombreVendedor) return false;
+       var rol = String((typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) || '').toUpperCase();
+       if (rol === 'ADMIN' || rol === 'ROOT') return true;
+       if (rol !== 'VENDEDOR') return false;
+       var hoja = (typeof getHojaEfectiva === 'function' ? getHojaEfectiva() : USUARIO_ACTUAL.hoja) || '';
+       return hoja && String(hoja).toUpperCase() === String(nombreVendedor).toUpperCase();
+    }
+
+    function calcObjMetaObjetivosVendedor(input, targetId) {
+       var num = parseCurrency(input.value);
+       var el = document.getElementById(targetId);
+       if (el) el.innerText = formatNumberAr(num);
+    }
+
+    function pintarGrillaObjetivosVendedor(data, nombreVendedor) {
+       var cont = document.getElementById('vobj-grid-container');
+       if (!cont) return;
+       var rows = Array.isArray(data) ? data : [];
+       var puede = puedeEditarObjetivosVentas(nombreVendedor);
+       var html = '<div class="obj-grid-container">';
+       if (!rows.length && !puede) {
+          html += '<div class="card" style="padding:20px; color:#64748b;">No hay objetivos configurados para este mes.</div></div>';
+          cont.innerHTML = html;
+          return;
+       }
+       if (!rows.length) {
+          for (var r = 1; r <= 4; r++) {
+             rows.push({ rango: r, pctBotas: 0, pctCerts: 0, botas: 0, certs: 0, factBotas: 0, factCerts: 0 });
+          }
+       }
+       rows.forEach(function (row, index) {
+          var factB = formatNumberAr(row.factBotas || 0);
+          var factC = formatNumberAr(row.factCerts || 0);
+          var factBEdit = factB.replace('ARS', '').trim();
+          var factCEdit = factC.replace('ARS', '').trim();
+          html += '<div class="obj-card">' +
+             '<div class="obj-header-row"><div class="obj-title">RANGO ' + row.rango + '</div></div>' +
+             '<div class="obj-content">' +
+             '<div class="obj-sub-section">' +
+             '<div class="obj-sub-title"><span class="material-symbols-outlined">steps</span> BOTAS</div>' +
+             '<div class="obj-row"><span class="obj-label">% Comisión:</span> ' +
+             '<div><span class="view-mode obj-val">' + (row.pctBotas || 0) + '</span>' +
+             '<input type="number" class="obj-input edit-mode hidden" value="' + (row.pctBotas || 0) + '" id="vobj-pctB-' + index + '"> %</div></div>' +
+             '<div class="obj-row"><span class="obj-label">Unidades:</span> ' +
+             '<div><span class="view-mode obj-val">' + row.botas + '</span>' +
+             '<input type="number" class="obj-input edit-mode hidden" value="' + row.botas + '" id="vobj-botas-' + index + '"></div></div>' +
+             '<div class="obj-row"><span class="obj-label">$ Meta mensual:</span> ' +
+             '<div><span class="view-mode obj-val">' + factB + '</span>' +
+             '<input type="text" class="obj-input edit-mode hidden" value="' + factBEdit + '" id="vobj-factB-' + index + '" onkeyup="formatoMoneda(this); calcObjMetaObjetivosVendedor(this, \'vobj-mensB-' + index + '\')"></div></div>' +
+             '<div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensB-' + index + '">' + factB + '</span></div>' +
+             '</div>' +
+             '<div class="obj-sub-section">' +
+             '<div class="obj-sub-title"><span class="material-symbols-outlined">verified</span> CERTIFICACIONES</div>' +
+             '<div class="obj-row"><span class="obj-label">% Comisión:</span> ' +
+             '<div><span class="view-mode obj-val">' + (row.pctCerts || 0) + '</span>' +
+             '<input type="number" class="obj-input edit-mode hidden" value="' + (row.pctCerts || 0) + '" id="vobj-pctC-' + index + '"> %</div></div>' +
+             '<div class="obj-row"><span class="obj-label">Unidades:</span> ' +
+             '<div><span class="view-mode obj-val">' + row.certs + '</span>' +
+             '<input type="number" class="obj-input edit-mode hidden" value="' + row.certs + '" id="vobj-certs-' + index + '"></div></div>' +
+             '<div class="obj-row"><span class="obj-label">$ Meta mensual:</span> ' +
+             '<div><span class="view-mode obj-val">' + factC + '</span>' +
+             '<input type="text" class="obj-input edit-mode hidden" value="' + factCEdit + '" id="vobj-factC-' + index + '" onkeyup="formatoMoneda(this); calcObjMetaObjetivosVendedor(this, \'vobj-mensC-' + index + '\')"></div></div>' +
+             '<div class="obj-row"><span class="obj-label">Vista rápida:</span> <span class="obj-val" style="color:var(--accent)" id="vobj-mensC-' + index + '">' + factC + '</span></div>' +
+             '</div></div></div>';
+       });
+       html += '</div>';
+       cont.innerHTML = html;
+    }
+
+    function refrescarPanelObjetivosVendedor() {
+       var nom = window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE;
+       var cont = document.getElementById('vobj-grid-container');
+       if (!nom || !cont) return;
+       var sm = document.getElementById('selVobjMes');
+       var sa = document.getElementById('selVobjAnio');
+       if (!sm || !sa) return;
+       var mes = parseInt(sm.value, 10) || 1;
+       var baseAnio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var anio = parseInt(sa.value, 10) || baseAnio;
+       cont.innerHTML = '<div class="card" style="padding:20px;color:#94a3b8;">Cargando objetivos...</div>';
+       google.script.run.withSuccessHandler(function (res) {
+          if (!document.getElementById('vobj-grid-container')) return;
+          if (res && res.error) {
+             document.getElementById('vobj-grid-container').innerHTML = '<div class="card" style="padding:16px;color:#ef4444;">' + (res.mensaje || 'Error') + '</div>';
+             return;
+          }
+          pintarGrillaObjetivosVendedor(res && res.data ? res.data : [], nom);
+       }).withFailureHandler(function () {
+          var c = document.getElementById('vobj-grid-container');
+          if (c) c.innerHTML = '<div class="card" style="padding:16px;color:#ef4444;">Error de conexión</div>';
+       }).obtenerObjetivosBackend(anio, mes, nom);
+    }
+
+    function toggleEditModeObjetivosVendedor() {
+       var root = document.getElementById('tab-objetivos');
+       if (!root) return;
+       var btn = document.getElementById('btnVobjEdit');
+       var isEditing = btn && btn.innerHTML.indexOf('Guardar') >= 0;
+       root.querySelectorAll('.view-mode').forEach(function (el) { el.classList.toggle('hidden'); });
+       root.querySelectorAll('.edit-mode').forEach(function (el) {
+          el.classList.toggle('hidden');
+          el.classList.add('editable');
+       });
+       if (btn) {
+          if (isEditing) {
+             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar objetivos';
+             btn.setAttribute('onclick', 'toggleEditModeObjetivosVendedor()');
+          } else {
+             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar objetivos';
+             btn.setAttribute('onclick', 'guardarObjetivosVendedorVentas()');
+          }
+       }
+    }
+
+    function guardarObjetivosVendedorVentas() {
+       var nom = window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE;
+       if (!nom || !puedeEditarObjetivosVentas(nom)) return;
+       var sm = document.getElementById('selVobjMes');
+       var sa = document.getElementById('selVobjAnio');
+       if (!sm || !sa) return;
+       var mes = parseInt(sm.value, 10) || 1;
+       var baseAnio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var anio = parseInt(sa.value, 10) || baseAnio;
+       var filas = [];
+       for (var i = 0; i < 4; i++) {
+          var elPctB = document.getElementById('vobj-pctB-' + i);
+          var elPctC = document.getElementById('vobj-pctC-' + i);
+          if (elPctB || elPctC) {
+             filas.push({
+                rango: i + 1,
+                pctBotas: parseFloat(elPctB ? elPctB.value || '0' : '0'),
+                pctCerts: parseFloat(elPctC ? elPctC.value || '0' : '0'),
+                botas: document.getElementById('vobj-botas-' + i) ? document.getElementById('vobj-botas-' + i).value || '0' : '0',
+                certs: document.getElementById('vobj-certs-' + i) ? document.getElementById('vobj-certs-' + i).value || '0' : '0',
+                factBotas: parseCurrency(document.getElementById('vobj-factB-' + i) ? document.getElementById('vobj-factB-' + i).value || '0' : '0'),
+                factCerts: parseCurrency(document.getElementById('vobj-factC-' + i) ? document.getElementById('vobj-factC-' + i).value || '0' : '0')
+             });
+          }
+       }
+       var btn = document.getElementById('btnVobjEdit');
+       if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">hourglass_empty</span> Guardando...';
+       }
+       google.script.run.withSuccessHandler(function (res) {
+          if (res && res.error) {
+             if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar objetivos';
+             }
+             alert(res.mensaje || 'Error al guardar');
+             return;
+          }
+          google.script.run.withSuccessHandler(function (resObjs) {
+             if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar objetivos';
+             }
+             if (resObjs && !resObjs.error && resObjs.data) {
+                ALL_OBJECTIVES = resObjs.data.filter(function (o) { return o && o.rango && o.anio != null && o.mes != null; });
+             }
+             if (typeof mostrarAlerta === 'function') mostrarAlerta('Objetivos actualizados correctamente.');
+             toggleEditModeObjetivosVendedor();
+             cargar(nom);
+          }).withFailureHandler(function (err) {
+             if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar objetivos';
+             }
+             alert(err && err.message ? err.message : 'Error al refrescar objetivos');
+          }).obtenerTodosLosObjetivos();
+       }).withFailureHandler(function (err) {
+          if (btn) {
+             btn.disabled = false;
+             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">save</span> Guardar objetivos';
+          }
+          alert(err && err.message ? err.message : 'Error al guardar');
+       }).guardarObjetivosBackend(anio, mes, filas, nom);
+    }
 
     function renderVendedor(datos, nombreVendedor) {
+       window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE = nombreVendedor;
+       var baseAnioVobj = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var vobjAmAnio = typeof OBJETIVOS_ANIO_ACTIVO !== 'undefined' ? parseInt(OBJETIVOS_ANIO_ACTIVO, 10) : baseAnioVobj;
+       if (!Number.isFinite(vobjAmAnio)) vobjAmAnio = baseAnioVobj;
+       var vobjAmMes = typeof OBJETIVOS_MES_ACTIVO !== 'undefined' ? parseInt(OBJETIVOS_MES_ACTIVO, 10) : (new Date().getMonth() + 1);
+       if (!Number.isFinite(vobjAmMes) || vobjAmMes < 1 || vobjAmMes > 12) vobjAmMes = new Date().getMonth() + 1;
+       var nombresMesVobj = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+       var optsVobjMes = '';
+       for (var vmi = 1; vmi <= 12; vmi++) {
+          optsVobjMes += '<option value="' + vmi + '"' + (vmi === vobjAmMes ? ' selected' : '') + '>' + nombresMesVobj[vmi - 1] + '</option>';
+       }
+       var optsVobjAnio = '';
+       for (var vya = baseAnioVobj - 2; vya <= baseAnioVobj + 1; vya++) {
+          optsVobjAnio += '<option value="' + vya + '"' + (vya === vobjAmAnio ? ' selected' : '') + '>' + vya + '</option>';
+       }
+       var puedeEditarObjVentas = puedeEditarObjetivosVentas(nombreVendedor);
+       var btnObjetivosHtml = puedeEditarObjVentas
+          ? '<button type="button" id="btnVobjEdit" class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditModeObjetivosVendedor()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar objetivos</button>'
+          : '';
+
        let filas = [];
        if (datos && datos.length > 1) {
           let cabecera = datos[0];
@@ -246,10 +446,11 @@
  
        // PESTAÑAS (TABS)
        html += `<div class="view-toggle-container">
-            <div class="type-toggle" style="width:100%; max-width:600px; margin:0 auto 20px auto;">
+            <div class="type-toggle" style="width:100%; max-width:780px; margin:0 auto 20px auto; flex-wrap:wrap;">
                <div class="view-option active-view" onclick="switchView(this, 'general')">GENERAL</div>
                <div class="view-option" onclick="switchView(this, 'botas')">BOTAS</div>
                <div class="view-option" onclick="switchView(this, 'certs')">CERTIFICACIONES</div>
+               <div class="view-option" onclick="switchView(this, 'objetivos')">OBJETIVOS</div>
             </div>
          </div>`;
  
@@ -305,8 +506,19 @@
              <div class="card-header"><span class="material-symbols-outlined">verified</span> RESUMEN CERTIFICACIONES</div>
              <div class="month-grid">${construirGridTarjetas(resumenCerts, 'CERTIFICACIONES')}</div>
          </div>`;
- 
- 
+
+       html += `<div id="tab-objetivos" style="display:none;">
+             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                <div style="font-size:13px; color:#64748b; font-weight:600;">Objetivos mensuales · ${nombreVendedor}</div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                   <select id="selVobjMes" class="header-select" onchange="if(typeof OBJETIVOS_MES_ACTIVO!=='undefined')OBJETIVOS_MES_ACTIVO=parseInt(this.value,10)||1; refrescarPanelObjetivosVendedor();">${optsVobjMes}</select>
+                   <select id="selVobjAnio" class="header-select" onchange="if(typeof OBJETIVOS_ANIO_ACTIVO!=='undefined')OBJETIVOS_ANIO_ACTIVO=parseInt(this.value,10)||${baseAnioVobj}; refrescarPanelObjetivosVendedor();">${optsVobjAnio}</select>
+                   ${btnObjetivosHtml}
+                </div>
+             </div>
+             <div id="vobj-grid-container"></div>
+         </div>`;
+
        document.getElementById('app').innerHTML = html;
  
        poblarSelectFormasPagoVenta('fPago');
@@ -349,13 +561,17 @@
     function switchView(el, tabName) {
        document.querySelectorAll('.view-option').forEach(t => t.classList.remove('active-view'));
        el.classList.add('active-view');
- 
+
        document.getElementById('tab-general').style.display = 'none';
        document.getElementById('tab-botas').style.display = 'none';
        document.getElementById('tab-certs').style.display = 'none';
+       var tabObj = document.getElementById('tab-objetivos');
+       if (tabObj) tabObj.style.display = 'none';
 
- 
        document.getElementById('tab-' + tabName).style.display = 'block';
+       if (tabName === 'objetivos' && typeof refrescarPanelObjetivosVendedor === 'function') {
+          refrescarPanelObjetivosVendedor();
+       }
     }
  
     function actualizarTarjetasGeneral(mes, nombreVendedor) {

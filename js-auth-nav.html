@@ -488,17 +488,10 @@
           mostrarEstadoCarga('STOCK', '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'STOCK');
           cargarStock();
        }
-       else if (hoja === 'OBJETIVOS') {
-          if (selVentas) selVentas.style.display = 'none';
-          document.getElementById('titulo').innerText = 'OBJETIVOS';
-          mostrarEstadoCarga('OBJETIVOS', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'OBJETIVOS');
-          cargar('OBJETIVOS');
-       }
        else if (hoja === 'CAMBIAR_TRIMESTRE') {
-          selVentas.style.display = 'block';
+          if (selVentas) selVentas.style.display = 'block';
           let currentTitle = document.getElementById('titulo').innerText;
           if (currentTitle === 'COMISIONES') {
-             // Si estamos en comisiones, recargar todas las comisiones
              document.getElementById('titulo').innerText = 'COMISIONES';
              mostrarEstadoCarga('COMISIONES', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'COMISIONES');
              google.script.run.withSuccessHandler(res => {
@@ -511,11 +504,8 @@
                 }
              }).obtenerTodasLasComisiones();
           } else {
-             document.getElementById('titulo').innerText = 'OBJETIVOS';
-             document.getElementById('btnObjetivos').classList.add('active');
-             if (selVentas) selVentas.style.display = 'none';
-             mostrarEstadoCarga('OBJETIVOS', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'OBJETIVOS');
-             cargar('OBJETIVOS');
+             NAVEGANDO = false;
+             syncSidebarExpandedForHome();
           }
        }
        else if (hoja === 'GESTION_USUARIOS') {
@@ -584,6 +574,7 @@
           }
           let tituloConsolidado = hoja === '%' ? 'COMISIONES' : 'CONSOLIDADO';
           document.getElementById('titulo').innerText = tituloConsolidado;
+          if (hoja === '%' && selVentas) selVentas.style.display = 'block';
           mostrarEstadoCarga(tituloConsolidado, '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', hoja === '%' ? 'COMISIONES' : 'CONSOLIDADO');
           cargar(hoja);
        }
@@ -1049,12 +1040,10 @@
        if (rolEff === 'ADMIN' || rolEff === 'ROOT') {
           html += `<div class="home-card" onclick="navegar(null, 'CONSOLIDADO')"><div class="home-icon"><span class="material-symbols-outlined">leaderboard</span></div><div class="home-title">Consolidado</div></div>
                       <div class="home-card" onclick="navegar(null, '%')"><div class="home-icon"><span class="material-symbols-outlined">trending_up</span></div><div class="home-title">Comisiones</div></div>
-                      <div class="home-card" onclick="navegar(null, 'OBJETIVOS')"><div class="home-icon"><span class="material-symbols-outlined">track_changes</span></div><div class="home-title">Objetivos</div></div>
                       <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>
                       <div class="home-card" onclick="navegar(null, 'CONFIGURACION_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined">tune</span></div><div class="home-title">Configuración</div><div class="home-desc">Medios de pago y más</div></div>`;
        } else if (rolEff === 'VENDEDORGRAL') {
-          html += `<div class="home-card" onclick="navegar(null, 'OBJETIVOS')"><div class="home-icon"><span class="material-symbols-outlined">track_changes</span></div><div class="home-title">Objetivos</div></div>
-                      <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
+          html += `<div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
        } else {
          html += `<div class="home-card" onclick="navegar(null, '${hojaEff || user.hoja}')"><div class="home-icon"><span class="material-symbols-outlined">edit_note</span></div><div class="home-title">Mis Ventas</div></div>
                       <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
