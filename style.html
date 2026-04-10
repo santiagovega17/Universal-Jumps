@@ -2664,29 +2664,6 @@
        min-width: 880px;
     }
 
-    /* Gestión de usuarios: misma piel que tabla balance caja (thead card-surface, filas compactas) */
-    .caja-historial-table-wrap > table.caja-historial-table.usuarios-gestion-table.ventas-historial-table thead th.ventas-historial-th {
-       white-space: nowrap;
-       padding: var(--table-card-head-pt) 6px var(--table-card-head-pb) !important;
-       letter-spacing: 0.035em !important;
-       font-size: 12px !important;
-       line-height: var(--table-row-lh) !important;
-    }
-    .caja-historial-table-wrap > table.caja-historial-table.usuarios-gestion-table.ventas-historial-table tbody td {
-       padding: var(--table-row-py) 8px !important;
-       line-height: var(--table-row-lh) !important;
-    }
-    .caja-historial-table-wrap > table.caja-historial-table.usuarios-gestion-table.ventas-historial-table .ventas-historial-th-inner {
-       gap: 2px;
-       justify-content: flex-start;
-       width: 100%;
-    }
-    .caja-historial-table-wrap > table.caja-historial-table.usuarios-gestion-table td:last-child {
-       min-width: 120px !important;
-       padding-left: var(--table-row-px) !important;
-       padding-right: var(--table-row-px) !important;
-    }
- 
     tr.usuarios-gestion-row-inactive td {
        color: #94a3b8;
     }
@@ -4300,37 +4277,37 @@
     .caja-historial-table-wrap > table.caja-historial-table.caja-balance-historial-table.ventas-historial-table .ventas-historial-th-inner {
        gap: 2px;
     }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(1),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(1) { min-width: 92px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(2),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(2) { min-width: 76px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(3),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(3) { min-width: 104px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(4),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(4) { min-width: 168px; max-width: 240px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(5),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(5) { min-width: 128px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(6),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(6) { min-width: 104px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(7),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(7) { min-width: 120px; max-width: 180px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(8),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(8) { min-width: 112px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(9),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(9) { min-width: 128px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table thead th:nth-child(10),
-    .caja-historial-table-wrap > table.caja-balance-historial-table tbody td:nth-child(10) { min-width: 88px; }
-    .caja-historial-table-wrap > table.caja-balance-historial-table td:last-child {
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(1),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(1) { min-width: 92px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(2),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(2) { min-width: 76px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(3),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(3) { min-width: 104px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(4),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(4) { min-width: 168px; max-width: 240px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(5),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(5) { min-width: 128px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(6),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(6) { min-width: 104px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(7),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(7) { min-width: 120px; max-width: 180px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(8),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(8) { min-width: 112px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(9),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(9) { min-width: 128px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) thead th:nth-child(10),
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) tbody td:nth-child(10) { min-width: 88px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) td:last-child {
        min-width: 88px !important;
        padding-left: 5px !important;
        padding-right: 5px !important;
     }
-    .caja-historial-table-wrap > table.caja-balance-historial-table td.caja-h-obs-cell {
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) td.caja-h-obs-cell {
        overflow: hidden;
        vertical-align: top;
        white-space: nowrap !important;
     }
-    .caja-historial-table-wrap > table.caja-balance-historial-table td.caja-h-obs-cell .caja-balance-obs-clip {
+    .caja-historial-table-wrap > table.caja-balance-historial-table:not(.usuarios-gestion-table) td.caja-h-obs-cell .caja-balance-obs-clip {
        display: block;
        max-width: 100%;
        min-width: 0;
@@ -4341,6 +4318,23 @@
        font-size: 12px;
        line-height: var(--table-row-lh);
        color: #e2e8f0;
+    }
+
+    /* Gestión usuarios: mismas clases/reglas globales que balance; anchos de columna para 6 columnas */
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table thead th:nth-child(1),
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table tbody td:nth-child(1) { min-width: 132px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table thead th:nth-child(2),
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table tbody td:nth-child(2) { min-width: 200px; max-width: 300px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table thead th:nth-child(3),
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table tbody td:nth-child(3) { min-width: 100px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table thead th:nth-child(4),
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table tbody td:nth-child(4) { min-width: 112px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table thead th:nth-child(5),
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table tbody td:nth-child(5) { min-width: 120px; }
+    .caja-historial-table-wrap > table.caja-balance-historial-table.usuarios-gestion-table td:last-child {
+       min-width: 220px !important;
+       padding-left: 5px !important;
+       padding-right: 5px !important;
     }
 
     /* Historial ventas por vendedor: misma piel y comportamiento que balance caja */
