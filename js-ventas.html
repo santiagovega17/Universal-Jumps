@@ -649,7 +649,7 @@
           String(rolEff).toUpperCase() === 'ROOT' ||
           (String(rolEff).toUpperCase() === 'VENDEDOR' && hojaEff && hojaEff.toUpperCase() === nombreVendedor.toUpperCase())
        );
-       let html = '<table class="ventas-historial-table"><thead><tr>';
+       let html = '<div class="caja-historial-table-wrap"><table class="caja-historial-table ventas-historial-table ventas-vendedor-historial-table"><thead><tr>';
        html += historialTh('FECHA', 'col-sm ventas-h-col-fecha');
        html += historialTh('ESTADO', 'col-sm');
        html += historialTh('CHEQUEADO', 'col-min');
@@ -687,13 +687,13 @@
                 <td class="ventas-historial-col-check">${puedeEditar ? `<input type="checkbox" class="ventas-historial-check" ${row[2] == 'SI' ? 'checked' : ''} onclick="toggleCheck(this, '${idEsc}', '${nombreVendedorEsc}')">` : `<input type="checkbox" class="ventas-historial-check" ${row[2] == 'SI' ? 'checked' : ''} disabled>`}</td>
                  <td class="ventas-h-col-pais">${historialPaisCellHtml(row[3])}</td>
                  <td class="ventas-h-col-cliente"><span class="ventas-historial-cliente"><span class="material-symbols-outlined ventas-historial-cliente-ic">person</span><span class="ventas-historial-cliente-txt" title="${escapeHtmlAttr(row[4] || '')}">${escapeHtmlText(row[4])}</span></span></td>
-                 <td class="ventas-h-col-concepto"><span class="ventas-historial-clip" title="${escapeHtmlAttr(row[5] || '')}">${escapeHtmlText(row[5])}</span></td>
+                 <td class="ventas-h-col-concepto"><span class="ventas-historial-clip ventas-vendedor-historial-clip" title="${escapeHtmlAttr(row[5] || '')}">${escapeHtmlText(row[5])}</span></td>
                  <td class="ventas-h-col-pago">${historialFormaPagoCellHtml(row[6])}</td>
                  <td class="ventas-h-col-cant">${escapeHtmlText(row[7])}</td>
                  <td class="ventas-h-col-num">${formatNumberAr(precio)}</td>
                  <td class="ventas-h-col-num">${formatNumberAr(total)}</td>
                  <td class="ventas-h-col-num">${formatNumberAr(totalSinIva)}</td>
-                 <td class="ventas-h-col-obs"><span class="ventas-historial-obs-ellipsis" title="${obsTitle}">${obsEsc}</span></td>`;
+                 <td class="ventas-h-col-obs"><span class="ventas-vendedor-obs-clip" title="${obsTitle}">${obsEsc}</span></td>`;
  
           if (puedeEditar) {
              html += `<td class="ventas-h-col-acc">
@@ -706,7 +706,7 @@
  
           html += `</tr>`;
        }
-       return html + '</tbody></table>';
+       return html + '</tbody></table></div>';
     }
 
     // --- MODALS ---
