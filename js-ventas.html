@@ -9,6 +9,9 @@
     var VENTAS_HISTORIAL_LIMITE_MOSTRAR = 10;
     var CARGA_HISTORIAL_VENTAS = 10;
     var VENTAS_HISTORIAL_VENDEDOR = '';
+    /** Si el usuario marcó "Rango mínimo" en edición, el checkbox no se vuelve a deshabilitar (misma sesión, mismo vendedor). */
+    var VENTAS_VOBJ_RANGO_MIN_STICKY = false;
+    var VENTAS_VOBJ_STICKY_VENDOR = '';
 
     /** Respaldo si el backend no responde o la tabla está vacía */
     var DEFAULT_FORMAS_PAGO_VENTA = [
@@ -333,7 +336,24 @@
        el.textContent = formatNumberAr(sum);
     }
 
+    function esEdicionObjetivosVendedorActiva() {
+       var btn = document.getElementById('btnVobjEdit');
+       return !!(btn && btn.innerHTML.indexOf('Guardar') >= 0);
+    }
+
+    function actualizarEstadoChkVobjRangoMin() {
+       var chk = document.getElementById('chkVobjRangoMin');
+       if (!chk) return;
+       var habilitar = esEdicionObjetivosVendedorActiva() || window.VENTAS_VOBJ_RANGO_MIN_STICKY;
+       chk.disabled = !habilitar;
+    }
+
     function onChkVobjRangoMinChange() {
+       var chk = document.getElementById('chkVobjRangoMin');
+       if (chk && chk.checked) {
+          window.VENTAS_VOBJ_RANGO_MIN_STICKY = true;
+          actualizarEstadoChkVobjRangoMin();
+       }
        var nom = window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE;
        if (window.VENTAS_VOBJ_LAST_DATA && nom) {
           pintarGrillaObjetivosVendedor(window.VENTAS_VOBJ_LAST_DATA, nom);
@@ -363,7 +383,9 @@
           }
           window.VENTAS_VOBJ_LAST_DATA = dedupeObjetivosPorRango((res && res.data) ? res.data.slice() : []);
           var chk = document.getElementById('chkVobjRangoMin');
-          if (chk) chk.checked = false;
+          if (chk) {
+             chk.checked = window.VENTAS_VOBJ_LAST_DATA.some(function (r) { return Number(r.rango) === 0; });
+          }
           var av = document.getElementById('vobj-aviso-heredado');
           if (av) {
              if (res && res.objetivosDesdeMesAnterior) {
@@ -379,6 +401,7 @@
              }
           }
           pintarGrillaObjetivosVendedor(window.VENTAS_VOBJ_LAST_DATA, nom);
+          actualizarEstadoChkVobjRangoMin();
        }).withFailureHandler(function () {
           var c = document.getElementById('vobj-grid-container');
           if (c) c.innerHTML = '<div class="card" style="padding:16px;color:#ef4444;">Error de conexión</div>';
@@ -406,6 +429,7 @@
              btn.setAttribute('onclick', 'guardarObjetivosVendedorVentas()');
           }
        }
+       actualizarEstadoChkVobjRangoMin();
     }
 
     function guardarObjetivosVendedorVentas() {
@@ -484,6 +508,10 @@
 
     function renderVendedor(datos, nombreVendedor) {
        window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE = nombreVendedor;
+       if (String(window.VENTAS_VOBJ_STICKY_VENDOR || '') !== String(nombreVendedor || '')) {
+          window.VENTAS_VOBJ_RANGO_MIN_STICKY = false;
+          window.VENTAS_VOBJ_STICKY_VENDOR = nombreVendedor;
+       }
        var baseAnioVobj = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
        var vobjAmAnio = typeof OBJETIVOS_ANIO_ACTIVO !== 'undefined' ? parseInt(OBJETIVOS_ANIO_ACTIVO, 10) : baseAnioVobj;
        if (!Number.isFinite(vobjAmAnio)) vobjAmAnio = baseAnioVobj;
@@ -503,7 +531,7 @@
           ? '<button type="button" id="btnVobjEdit" class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditModeObjetivosVendedor()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar objetivos</button>'
           : '';
        var chkRangoMinHtml = puedeEditarObjVentas
-          ? '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;cursor:pointer;user-select:none;"><input type="checkbox" id="chkVobjRangoMin" onchange="onChkVobjRangoMinChange()"> Rango mínimo</label>'
+          ? '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;cursor:pointer;user-select:none;"><input type="checkbox" id="chkVobjRangoMin" disabled onchange="onChkVobjRangoMinChange()"> Rango mínimo</label>'
           : '';
 
        let filas = [];
@@ -533,12 +561,12 @@
  
       // PESTAÑAS (TABS)
       html += `<div class="view-toggle-container">
-           <div style="display:flex; gap:12px; flex-wrap:wrap; margin:0 auto 20px auto; justify-content:center;">
-              <div class="view-option active-view" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'dashboard')">DASHBOARD</div>
-              <div class="view-option" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'ventas')">VENTAS</div>
-              <div class="view-option" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'botas')">BOTAS</div>
-              <div class="view-option" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'certs')">CERTIFICACIONES</div>
-              <div class="view-option" style="width:122px; height:88px; border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; letter-spacing:.3px;" onclick="switchView(this, 'objetivos')">OBJETIVOS</div>
+           <div class="type-toggle" style="width:100%; max-width:960px; margin:0 auto 20px auto; flex-wrap:wrap;">
+              <div class="view-option active-view" onclick="switchView(this, 'dashboard')">DASHBOARD</div>
+              <div class="view-option" onclick="switchView(this, 'ventas')">VENTAS</div>
+              <div class="view-option" onclick="switchView(this, 'botas')">BOTAS</div>
+              <div class="view-option" onclick="switchView(this, 'certs')">CERTIFICACIONES</div>
+              <div class="view-option" onclick="switchView(this, 'objetivos')">OBJETIVOS</div>
            </div>
         </div>`;
  
@@ -629,6 +657,7 @@
              fAnio.value = anioActual.toString();
              aplicarFiltrosHistorial(nombreVendedor);
           }
+          actualizarEstadoChkVobjRangoMin();
        }, 100);
     }
 
