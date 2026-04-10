@@ -9,10 +9,6 @@
     var VENTAS_HISTORIAL_LIMITE_MOSTRAR = 10;
     var CARGA_HISTORIAL_VENTAS = 10;
     var VENTAS_HISTORIAL_VENDEDOR = '';
-    /** Si el usuario marcó "Rango mínimo" en edición, el checkbox no se vuelve a deshabilitar (misma sesión, mismo vendedor). */
-    var VENTAS_VOBJ_RANGO_MIN_STICKY = false;
-    var VENTAS_VOBJ_STICKY_VENDOR = '';
-
     /** Respaldo si el backend no responde o la tabla está vacía */
     var DEFAULT_FORMAS_PAGO_VENTA = [
        'Mercado Pago', 'Transferencia', 'Efectivo', 'Cta corriente', 'Mercado Libre', 'Amazon', 'Prisma', 'Paypal',
@@ -344,29 +340,13 @@
     function actualizarEstadoChkVobjRangoMin() {
        var chk = document.getElementById('chkVobjRangoMin');
        if (!chk) return;
-       var habilitar = esEdicionObjetivosVendedorActiva() || window.VENTAS_VOBJ_RANGO_MIN_STICKY;
-       chk.disabled = !habilitar;
+       chk.disabled = !esEdicionObjetivosVendedorActiva();
     }
 
     function onChkVobjRangoMinChange() {
-       var chk = document.getElementById('chkVobjRangoMin');
-       if (chk && chk.checked) {
-          window.VENTAS_VOBJ_RANGO_MIN_STICKY = true;
-          actualizarEstadoChkVobjRangoMin();
-       }
        var nom = window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE;
        if (window.VENTAS_VOBJ_LAST_DATA && nom) {
           pintarGrillaObjetivosVendedor(window.VENTAS_VOBJ_LAST_DATA, nom);
-          var smChk = document.getElementById('selVobjMes');
-          var saChk = document.getElementById('selVobjAnio');
-          if (smChk && saChk) {
-             var baseAChk = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
-             var mesChk = parseInt(smChk.value, 10) || 1;
-             var anioChk = parseInt(saChk.value, 10) || baseAChk;
-             var listaProg = window.VENTAS_VOBJ_LAST_DATA.slice();
-             if (chk && !chk.checked) listaProg = listaProg.filter(function (r) { return Number(r.rango) !== 0; });
-             pintarResumenProgresoObjetivosPeriodo(mesChk, anioChk, listaProg);
-          }
        } else if (typeof refrescarPanelObjetivosVendedor === 'function') {
           refrescarPanelObjetivosVendedor();
        }
@@ -383,16 +363,10 @@
        var baseAnio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
        var anio = parseInt(sa.value, 10) || baseAnio;
        cont.innerHTML = '<div class="card" style="padding:20px;color:#94a3b8;">Cargando objetivos...</div>';
-       var progSlot = document.getElementById('vobj-progreso-periodo');
-       if (progSlot) progSlot.innerHTML = '<div style="font-size:13px;color:#94a3b8;">Cargando progreso…</div>';
        google.script.run.withSuccessHandler(function (res) {
           if (!document.getElementById('vobj-grid-container')) return;
           if (res && res.error) {
              document.getElementById('vobj-grid-container').innerHTML = '<div class="card" style="padding:16px;color:#ef4444;">' + (res.mensaje || 'Error') + '</div>';
-             var avE = document.getElementById('vobj-aviso-heredado');
-             if (avE) avE.style.display = 'none';
-             var prE = document.getElementById('vobj-progreso-periodo');
-             if (prE) prE.innerHTML = '';
              return;
           }
           window.VENTAS_VOBJ_LAST_DATA = dedupeObjetivosPorRango((res && res.data) ? res.data.slice() : []);
@@ -400,66 +374,12 @@
           if (chk) {
              chk.checked = window.VENTAS_VOBJ_LAST_DATA.some(function (r) { return Number(r.rango) === 0; });
           }
-          var av = document.getElementById('vobj-aviso-heredado');
-          if (av) {
-             if (res && res.objetivosDesdeMesAnterior) {
-                var nmes = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-                var mi = (res.mesObjetivosOrigen != null ? parseInt(res.mesObjetivosOrigen, 10) : 1) - 1;
-                if (mi < 0 || mi > 11) mi = 0;
-                av.style.display = 'block';
-                av.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:6px;opacity:0.85;">info</span> No había objetivos para este mes; se muestran los valores del mes anterior (' +
-                   nmes[mi] + ' ' + (res.anioObjetivosOrigen != null ? res.anioObjetivosOrigen : '') + '). Al guardar se crean las metas para el mes seleccionado.';
-             } else {
-                av.style.display = 'none';
-                av.innerHTML = '';
-             }
-          }
           pintarGrillaObjetivosVendedor(window.VENTAS_VOBJ_LAST_DATA, nom);
           actualizarEstadoChkVobjRangoMin();
-          var listaProg = window.VENTAS_VOBJ_LAST_DATA.slice();
-          var chkMinP = document.getElementById('chkVobjRangoMin');
-          if (chkMinP && !chkMinP.checked) listaProg = listaProg.filter(function (r) { return Number(r.rango) !== 0; });
-          pintarResumenProgresoObjetivosPeriodo(mes, anio, listaProg);
        }).withFailureHandler(function () {
           var c = document.getElementById('vobj-grid-container');
           if (c) c.innerHTML = '<div class="card" style="padding:16px;color:#ef4444;">Error de conexión</div>';
-          var avF = document.getElementById('vobj-aviso-heredado');
-          if (avF) { avF.style.display = 'none'; avF.innerHTML = ''; }
-          var prF = document.getElementById('vobj-progreso-periodo');
-          if (prF) prF.innerHTML = '';
        }).obtenerObjetivosBackend(anio, mes, nom);
-    }
-
-    /** Progreso del mes/año elegido (historial en caché vs metas ya cargadas). */
-    function pintarResumenProgresoObjetivosPeriodo(mes, anio, listaObj) {
-       var el = document.getElementById('vobj-progreso-periodo');
-       if (!el) return;
-       var mn = parseInt(mes, 10);
-       var ai = parseInt(anio, 10);
-       var baseAnio = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
-       if (!Number.isFinite(mn) || mn < 1 || mn > 12) mn = new Date().getMonth() + 1;
-       if (!Number.isFinite(ai)) ai = baseAnio;
-       var MESES_CAL = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-       var nombreMes = MESES_CAL[mn - 1];
-       var filas = typeof HISTORIAL_CACHE !== 'undefined' ? HISTORIAL_CACHE : [];
-       var comboPorMes = calcTotalesBotasCertsPorMes(filas, ai);
-       var combo = comboPorMes[nombreMes] || { botas: 0, certs: 0, total: 0 };
-       var totalCombinado = combo.total != null ? combo.total : (combo.botas + combo.certs);
-       var lista = dedupeObjetivosPorRango(Array.isArray(listaObj) ? listaObj.slice() : []);
-       var p = aplicarProgresoSobreListaObjetivos(totalCombinado, lista, nombreMes);
-       if (p.sinObjetivos) {
-          el.innerHTML = '<div style="font-size:13px;color:#64748b;">Sin metas para comparar el avance.</div>';
-          return;
-       }
-       var nombresCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-       var mesTit = nombresCortos[mn - 1] + ' ' + ai;
-       el.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;font-size:13px;color:#e2e8f0;">' +
-          '<span><span style="color:#94a3b8;">Período:</span> ' + escapeHtmlText(mesTit) + '</span>' +
-          '<span><span style="color:#94a3b8;">Fact. botas+certs:</span> <strong>' + formatNumberAr(p.totalCombinado) + '</strong></span>' +
-          '<span><span style="color:#94a3b8;">Meta combinada:</span> <strong>' + formatNumberAr(p.metaCombinada) + '</strong></span>' +
-          '<span><span style="color:#94a3b8;">Avance:</span> <strong style="color:var(--accent);">' + (p.metaCombinada > 0 ? p.pct.toFixed(0) + '%' : '—') + '</strong></span>' +
-          '<span><span style="color:#94a3b8;">Rango:</span> <strong>' + escapeHtmlText(String(p.rangoLabel)) + '</strong></span>' +
-          '</div>';
     }
 
     function toggleEditModeObjetivosVendedor() {
@@ -560,10 +480,6 @@
 
     function renderVendedor(datos, nombreVendedor) {
        window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE = nombreVendedor;
-       if (String(window.VENTAS_VOBJ_STICKY_VENDOR || '') !== String(nombreVendedor || '')) {
-          window.VENTAS_VOBJ_RANGO_MIN_STICKY = false;
-          window.VENTAS_VOBJ_STICKY_VENDOR = nombreVendedor;
-       }
        var baseAnioVobj = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
        var calMes = new Date().getMonth() + 1;
        if (typeof OBJETIVOS_MES_ACTIVO !== 'undefined') OBJETIVOS_MES_ACTIVO = calMes;
@@ -692,15 +608,7 @@
                    ${btnObjetivosHtml}
                 </div>
              </div>
-             <div id="vobj-aviso-heredado" class="card" style="display:none; margin-bottom:14px; padding:12px 14px; font-size:12px; color:#94a3b8; border:1px solid rgba(148,163,184,0.35);"></div>
              <div id="vobj-grid-container"></div>
-             <div style="margin-top:24px; border-top:1px solid var(--border-color); padding-top:20px;">
-                <div style="font-weight:700; color:#64748b; font-size:12px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Progreso del período</div>
-                <div style="font-size:11px; color:#64748b; margin-bottom:12px; line-height:1.45;">
-                   Facturación botas+certs (ARS) del historial del vendedor frente a las metas del mes y año seleccionados arriba (misma lógica que el resumen).
-                </div>
-                <div id="vobj-progreso-periodo" class="card" style="padding:14px;"></div>
-             </div>
          </div>`;
 
        document.getElementById('app').innerHTML = html;
