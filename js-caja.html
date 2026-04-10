@@ -582,7 +582,11 @@
        var fid = escIdCaja(mov.filaIndex);
        var acciones = '<button type="button" class="action-btn btn-edit" onclick="abrirModalCaja(\'editar\', ' + fid + '); event.stopPropagation();" title="Editar"><span class="material-symbols-outlined">edit</span></button>';
        var accionesWrap = '<div class="caja-acciones-wrap">' + acciones + '</div>';
-       return '<tr><td class="ventas-h-col-fecha">' + (mov.fecha || '') + '</td><td class="ventas-h-col-estado"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td>' + (mov.concepto || '') + '</td><td><span class="ventas-historial-clip">' + (mov.descripcion || '') + '</span></td><td>' + formaPagoHtml + '</td><td class="ventas-h-col-num">' + montoHtml + '</td><td>' + obsHtml + '</td><td class="ventas-h-col-estado"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td class="ventas-h-col-fecha">' + vencHtml + '</td><td class="ventas-h-col-acc">' + accionesWrap + '</td></tr>';
+       var descRaw = (mov.descripcion || '').toString();
+       var descEsc = escCaja(descRaw);
+       var descTitle = escCaja(descRaw.replace(/\r?\n/g, ' '));
+       var descCell = '<td><span class="ventas-historial-clip ventas-historial-clip-caja-desc" title="' + descTitle + '">' + descEsc + '</span></td>';
+       return '<tr><td class="ventas-h-col-fecha">' + (mov.fecha || '') + '</td><td class="ventas-h-col-estado"><span style="color:' + tipoColor + '; font-weight:600; font-size:13px;">' + (mov.tipo || '') + '</span></td><td>' + (mov.concepto || '') + '</td>' + descCell + '<td>' + formaPagoHtml + '</td><td class="ventas-h-col-num">' + montoHtml + '</td><td>' + obsHtml + '</td><td class="ventas-h-col-estado"><span style="color:' + estadoColor + '; font-weight:600; font-size:13px;">' + (mov.estado || '') + '</span></td><td class="ventas-h-col-fecha">' + vencHtml + '</td><td class="ventas-h-col-acc">' + accionesWrap + '</td></tr>';
     }
 
     function renderHistorialMovimientos(data) {
@@ -608,7 +612,7 @@
           return descA.localeCompare(descB);
        });
 
-       var colgroup = '<colgroup><col style="width:8%"><col style="width:6%"><col style="width:10%"><col style="width:18%"><col style="width:10%"><col style="width:10%"><col style="width:14%"><col style="width:7%"><col style="width:7%"><col style="width:10%"></colgroup>';
+       var colgroup = '<colgroup><col style="width:7%"><col style="width:6%"><col style="width:9%"><col style="width:22%"><col style="width:9%"><col style="width:9%"><col style="width:14%"><col style="width:7%"><col style="width:7%"><col style="width:10%"></colgroup>';
        var thLabels = ['FECHA', 'TIPO', 'CONCEPTO', 'DESCRIPCIÓN', 'FORMA DE PAGO', 'MONTO', 'OBSERVACION', 'ESTADO', 'VENCIMIENTO', 'ACCIONES'];
        var thRow = '<tr>' + thLabels.map(function (lbl) {
           return '<th class="ventas-historial-th"><span class="ventas-historial-th-inner">' + lbl + '</span></th>';
