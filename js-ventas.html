@@ -16,6 +16,8 @@
     ];
 
     var SIMPLE_ICONS_SVG_CDN = 'https://cdn.jsdelivr.net/npm/simple-icons@13.16.0/icons/';
+    var COMISIONES_VENDEDOR_CACHE = {};
+    var COMISIONES_VENDEDOR_ESTADO = { vendedor: '', requestKey: '' };
 
     /**
      * logoSlug: SVG en jsDelivr (Simple Icons). logoUrl: imagen propia/CDN.
@@ -495,6 +497,18 @@
        for (var vya = baseAnioVobj - 2; vya <= baseAnioVobj + 2; vya++) {
           optsVobjAnio += '<option value="' + vya + '"' + (vya === vobjAmAnio ? ' selected' : '') + '>' + vya + '</option>';
        }
+       var optsComAnio = '';
+       for (var vca = baseAnioVobj - 2; vca <= baseAnioVobj + 2; vca++) {
+          optsComAnio += '<option value="' + vca + '"' + (vca === baseAnioVobj ? ' selected' : '') + '>' + vca + '</option>';
+       }
+       var optsComPeriodo = '<option value="ALL">Todo el año</option>';
+       for (var vcm = 1; vcm <= 12; vcm++) {
+          optsComPeriodo += '<option value="M' + vcm + '">' + nombresMesVobj[vcm - 1] + '</option>';
+       }
+       optsComPeriodo += '<option value="T1">1° Trimestre</option>';
+       optsComPeriodo += '<option value="T2">2° Trimestre</option>';
+       optsComPeriodo += '<option value="T3">3° Trimestre</option>';
+       optsComPeriodo += '<option value="T4">4° Trimestre</option>';
        var puedeEditarObjVentas = puedeEditarObjetivosVentas(nombreVendedor);
        var btnObjetivosHtml = puedeEditarObjVentas
           ? '<button type="button" id="btnVobjEdit" class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditModeObjetivosVendedor()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar objetivos</button>'
@@ -600,11 +614,18 @@
          </div>`;
 
        html += `<div id="tab-comisiones" style="display:none;">
-             <div class="card" style="padding:28px; text-align:center; color:#94a3b8;">
-                <div style="display:flex; justify-content:center; margin-bottom:12px;"><span class="material-symbols-outlined" style="font-size:40px; opacity:0.85;">payments</span></div>
-                <div style="font-weight:700; color:white; margin-bottom:8px;">Comisiones</div>
-                <div style="font-size:13px;">Vista de comisiones para <strong style="color:#e2e8f0;">${nombreVendedor}</strong> — en construcción.</div>
+             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                <div style="font-size:13px; color:#64748b; font-weight:600;">Comisiones estimadas · ${nombreVendedor}</div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                   <select id="selComVendAnio" class="filter-select" onchange="refrescarPanelComisionesVendedor(true)">${optsComAnio}</select>
+                   <select id="selComVendPeriodo" class="filter-select" onchange="refrescarPanelComisionesVendedor(true)">${optsComPeriodo}</select>
+                </div>
              </div>
+             <div id="comisionesVendedorFeedback" style="margin-bottom:16px;"></div>
+             <div id="comisionesVendedorResumen">
+                <div class="card" style="padding:24px; text-align:center; color:#94a3b8;">Seleccioná un período para cargar las comisiones.</div>
+             </div>
+             <div id="comisionesVendedorDetalle" style="margin-top:18px;"></div>
          </div>`;
 
        html += `<div id="tab-objetivos" style="display:none;">
@@ -635,6 +656,7 @@
              aplicarFiltrosHistorial(nombreVendedor);
           }
           actualizarEstadoChkVobjRangoMin();
+          inicializarPanelComisionesVendedor(nombreVendedor, anioActual);
        }, 100);
     }
 
@@ -672,9 +694,224 @@
        if (tabObj) tabObj.style.display = 'none';
 
        document.getElementById('tab-' + tabName).style.display = 'block';
+       if (tabName === 'comisiones' && typeof refrescarPanelComisionesVendedor === 'function') {
+          refrescarPanelComisionesVendedor();
+       }
        if (tabName === 'objetivos' && typeof refrescarPanelObjetivosVendedor === 'function') {
           refrescarPanelObjetivosVendedor();
        }
+    }
+
+    function formatearMontoComisionesVendedor(valor) {
+       var n = Number(valor) || 0;
+       if (typeof formatNumberAr === 'function') return formatNumberAr(n);
+       return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+    }
+
+    function formatearPorcentajeComisionesVendedor(valor) {
+       var n = Number(valor) || 0;
+       return n.toFixed(1) + '%';
+    }
+
+    function textoRangoComisionesVendedor(rango) {
+       if (typeof textoRangoComisionesUi === 'function') return textoRangoComisionesUi(rango);
+       if (rango === 0 || rango === '0') return 'MIN';
+       if (rango == null) return '-';
+       var n = Number(rango);
+       if (!Number.isFinite(n)) return '-';
+       return n > 0 ? 'R' + n : '-';
+    }
+
+    function formatearFechaComisionesVendedor(valor) {
+       if (!valor) return '-';
+       var fecha = valor instanceof Date ? valor : new Date(valor);
+       if (isNaN(fecha.getTime()) && typeof parseFecha === 'function') {
+          try { fecha = parseFecha(valor); } catch (_) { }
+       }
+       if (!fecha || isNaN(fecha.getTime())) return escapeHtmlText(valor);
+       var dd = String(fecha.getDate()).padStart(2, '0');
+       var mm = String(fecha.getMonth() + 1).padStart(2, '0');
+       var yyyy = fecha.getFullYear();
+       return dd + '/' + mm + '/' + yyyy;
+    }
+
+    function badgeGrupoComisionHtml(grupo) {
+       var esBotas = grupo === 'botas';
+       var bg = esBotas ? 'rgba(34, 197, 94, 0.14)' : 'rgba(59, 130, 246, 0.14)';
+       var color = esBotas ? '#86efac' : '#93c5fd';
+       var label = esBotas ? 'BOTAS' : 'CERTS';
+       return '<span style="display:inline-flex; align-items:center; justify-content:center; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:0.4px; background:' + bg + '; color:' + color + ';">' + label + '</span>';
+    }
+
+    function obtenerFiltrosComisionesVendedor() {
+       var selAnio = document.getElementById('selComVendAnio');
+       var selPeriodo = document.getElementById('selComVendPeriodo');
+       var anioDefault = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
+       var anio = selAnio ? (parseInt(selAnio.value, 10) || anioDefault) : anioDefault;
+       var periodo = selPeriodo && selPeriodo.value ? selPeriodo.value : 'ALL';
+       var mes = null;
+       var trimestre = null;
+       if (/^M\d+$/.test(periodo)) mes = parseInt(periodo.slice(1), 10) || null;
+       else if (/^T\d+$/.test(periodo)) trimestre = periodo;
+       return { anio: anio, periodo: periodo, mes: mes, trimestre: trimestre };
+    }
+
+    function setHtmlComisionesVendedor(feedbackHtml, resumenHtml, detalleHtml) {
+       var feedbackEl = document.getElementById('comisionesVendedorFeedback');
+       var resumenEl = document.getElementById('comisionesVendedorResumen');
+       var detalleEl = document.getElementById('comisionesVendedorDetalle');
+       if (feedbackEl) feedbackEl.innerHTML = feedbackHtml || '';
+       if (resumenEl) resumenEl.innerHTML = resumenHtml || '';
+       if (detalleEl) detalleEl.innerHTML = detalleHtml || '';
+    }
+
+    function renderLoadingComisionesVendedor() {
+       setHtmlComisionesVendedor(
+          '',
+          '<div class="card" style="padding:24px; text-align:center; color:#94a3b8;"><span class="material-symbols-outlined" style="font-size:30px; display:block; margin-bottom:10px;">progress_activity</span>Cargando comisiones...</div>',
+          ''
+       );
+    }
+
+    function renderErrorComisionesVendedor(mensaje) {
+       var msg = escapeHtmlText(mensaje || 'No se pudieron cargar las comisiones.');
+       setHtmlComisionesVendedor(
+          '',
+          '<div class="card" style="padding:24px; text-align:center; color:#fca5a5;"><div style="font-weight:700; color:#fecaca; margin-bottom:8px;">Error al cargar comisiones</div><div style="font-size:13px; margin-bottom:14px;">' + msg + '</div><button type="button" class="btn-submit" style="width:auto; padding:8px 16px;" onclick="refrescarPanelComisionesVendedor(true)">Reintentar</button></div>',
+          ''
+       );
+    }
+
+    function renderComisionesVendedor(data) {
+       var resumen = data && data.resumen ? data.resumen : {};
+       var meses = Array.isArray(resumen.meses) ? resumen.meses : [];
+       var detalle = Array.isArray(data && data.detalle) ? data.detalle : [];
+       var resumenHtml = '';
+       var detalleHtml = '';
+       var feedbackHtml = '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; color:#94a3b8; font-size:12px;">' +
+          '<span>Período: <strong style="color:#e2e8f0;">' + escapeHtmlText(resumen.periodoLabel || 'Sin período') + '</strong></span>' +
+          '<span>Vendedor: <strong style="color:#e2e8f0;">' + escapeHtmlText(data && data.vendedor ? data.vendedor : '') + '</strong></span>' +
+          '</div>';
+
+       resumenHtml += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:18px;">';
+       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Facturado comisionable</div><div style="color:white; font-size:22px; font-weight:800;">' + formatearMontoComisionesVendedor(resumen.totalFacturado) + '</div></div>';
+       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Comisión estimada</div><div style="color:var(--accent); font-size:22px; font-weight:800;">' + formatearMontoComisionesVendedor(resumen.totalComision) + '</div></div>';
+       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Botas / Certs</div><div style="color:white; font-size:16px; font-weight:700;">' + formatearMontoComisionesVendedor(resumen.totalBotas) + ' / ' + formatearMontoComisionesVendedor(resumen.totalCerts) + '</div></div>';
+       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Ventas comisionables</div><div style="color:white; font-size:22px; font-weight:800;">' + (Number(resumen.cantidadVentas) || 0) + '</div></div>';
+       resumenHtml += '</div>';
+
+       if (meses.length === 0) {
+          resumenHtml += '<div class="card" style="padding:24px; text-align:center; color:#94a3b8;">No hay datos comisionables para el período seleccionado.</div>';
+       } else {
+          resumenHtml += '<div class="month-grid">';
+          meses.forEach(function (mes) {
+             var pctColor = Number(mes.porcentajeCumplimiento) >= 100 ? 'var(--accent)' : 'white';
+             resumenHtml += '<div class="card" style="padding:18px;">' +
+                '<div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-bottom:12px;">' +
+                '<div style="font-weight:700; color:white;">' + escapeHtmlText(mes.nombreMes || '-') + '</div>' +
+                '<div style="font-size:11px; color:#94a3b8;">' + escapeHtmlText(textoRangoComisionesVendedor(mes.rango)) + '</div>' +
+                '</div>' +
+                '<div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Facturado</span><span style="font-weight:700; color:white;">' + formatearMontoComisionesVendedor(mes.totalFacturado) + '</span></div>' +
+                '<div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Cumplimiento</span><span style="font-weight:700; color:' + pctColor + ';">' + formatearPorcentajeComisionesVendedor(mes.porcentajeCumplimiento) + '</span></div>' +
+                '<div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">% Botas / Certs</span><span style="font-weight:700; color:white;">' + formatearPorcentajeComisionesVendedor(mes.porcentajeBotas) + ' / ' + formatearPorcentajeComisionesVendedor(mes.porcentajeCerts) + '</span></div>' +
+                '<div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Meta combinada</span><span style="font-weight:700; color:white;">' + formatearMontoComisionesVendedor(mes.metaCombinada) + '</span></div>' +
+                '<div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-color); display:flex; justify-content:space-between; gap:14px;"><span style="font-size:12px; color:#94a3b8;">Comisión</span><span style="font-weight:800; color:var(--accent);">' + formatearMontoComisionesVendedor(mes.totalComision) + '</span></div>' +
+                '</div>';
+          });
+          resumenHtml += '</div>';
+       }
+
+       if (detalle.length === 0) {
+          detalleHtml = '<div class="card" style="padding:24px; text-align:center; color:#94a3b8;">No hay ventas comisionables en este período.</div>';
+       } else {
+          detalleHtml = '<div class="card">' +
+             '<div class="card-header" style="justify-content:space-between; gap:12px; flex-wrap:wrap;"><span><span class="material-symbols-outlined">receipt_long</span> DETALLE DE COMISIONES</span><span style="font-size:12px; color:#94a3b8;">' + detalle.length + ' venta(s)</span></div>' +
+             '<div class="card-scroll">' +
+             '<table style="width:100%; border-collapse:collapse; min-width:980px;">' +
+             '<thead><tr>' +
+             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Fecha</th>' +
+             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Mes</th>' +
+             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Cliente</th>' +
+             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Concepto</th>' +
+             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Grupo</th>' +
+             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">País</th>' +
+             '<th style="text-align:right; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Base ARS</th>' +
+             '<th style="text-align:right; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">%</th>' +
+             '<th style="text-align:right; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Comisión</th>' +
+             '</tr></thead><tbody>';
+          detalle.forEach(function (venta) {
+             var cliente = venta.cliente ? escapeHtmlText(venta.cliente) : '-';
+             var concepto = venta.concepto ? escapeHtmlText(venta.concepto) : '-';
+             var pais = venta.pais ? escapeHtmlText(venta.pais) : '-';
+             var montoSec = '';
+             if (venta.monedaOriginal && Number(venta.montoOriginal || 0) > 0 && venta.monedaOriginal !== 'ARS') {
+                montoSec = '<div style="font-size:11px; color:#94a3b8; margin-top:4px;">' + escapeHtmlText(venta.monedaOriginal) + ' ' + formatearMontoComisionesVendedor(venta.montoOriginal) + ' x ' + formatearMontoComisionesVendedor(venta.cotizacionUsada) + '</div>';
+             }
+             detalleHtml += '<tr style="border-top:1px solid rgba(148,163,184,0.12);">' +
+                '<td style="padding:12px; color:white;">' + formatearFechaComisionesVendedor(venta.fecha) + '</td>' +
+                '<td style="padding:12px; color:#cbd5e1;">' + escapeHtmlText(venta.nombreMes || '-') + '</td>' +
+                '<td style="padding:12px; color:white;">' + cliente + '</td>' +
+                '<td style="padding:12px; color:white;">' + concepto + '</td>' +
+                '<td style="padding:12px;">' + badgeGrupoComisionHtml(venta.grupo) + '</td>' +
+                '<td style="padding:12px; color:#cbd5e1;">' + pais + '</td>' +
+                '<td style="padding:12px; text-align:right; color:white; font-weight:700;">' + formatearMontoComisionesVendedor(venta.montoComisionable) + montoSec + '</td>' +
+                '<td style="padding:12px; text-align:right; color:white;">' + formatearPorcentajeComisionesVendedor(venta.porcentajeAplicado) + '</td>' +
+                '<td style="padding:12px; text-align:right; color:var(--accent); font-weight:800;">' + formatearMontoComisionesVendedor(venta.importeComision) + '</td>' +
+                '</tr>';
+          });
+          detalleHtml += '</tbody></table></div></div>';
+       }
+
+       setHtmlComisionesVendedor(feedbackHtml, resumenHtml, detalleHtml);
+    }
+
+    function inicializarPanelComisionesVendedor(nombreVendedor, anioBase) {
+       COMISIONES_VENDEDOR_ESTADO = {
+          vendedor: nombreVendedor || '',
+          requestKey: '',
+          anioBase: parseInt(anioBase, 10) || (typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear())
+       };
+       var selAnio = document.getElementById('selComVendAnio');
+       var selPeriodo = document.getElementById('selComVendPeriodo');
+       if (selAnio && !selAnio.value) selAnio.value = String(COMISIONES_VENDEDOR_ESTADO.anioBase);
+       if (selPeriodo && !selPeriodo.value) selPeriodo.value = 'ALL';
+       refrescarPanelComisionesVendedor(true);
+    }
+
+    function refrescarPanelComisionesVendedor(forceReload) {
+       var resumenEl = document.getElementById('comisionesVendedorResumen');
+       if (!resumenEl) return;
+       var vendedor = COMISIONES_VENDEDOR_ESTADO && COMISIONES_VENDEDOR_ESTADO.vendedor
+          ? COMISIONES_VENDEDOR_ESTADO.vendedor
+          : (typeof VENTAS_VENDEDOR_OBJETIVOS_NOMBRE !== 'undefined' ? VENTAS_VENDEDOR_OBJETIVOS_NOMBRE : '');
+       if (!vendedor) return;
+
+       var filtros = obtenerFiltrosComisionesVendedor();
+       var cacheKey = [vendedor, filtros.anio, filtros.periodo].join('|');
+       COMISIONES_VENDEDOR_ESTADO.vendedor = vendedor;
+       COMISIONES_VENDEDOR_ESTADO.requestKey = cacheKey;
+
+       if (!forceReload && COMISIONES_VENDEDOR_CACHE[cacheKey]) {
+          renderComisionesVendedor(COMISIONES_VENDEDOR_CACHE[cacheKey]);
+          return;
+       }
+
+       renderLoadingComisionesVendedor();
+       google.script.run
+          .withSuccessHandler(function (res) {
+             if (!COMISIONES_VENDEDOR_ESTADO || COMISIONES_VENDEDOR_ESTADO.requestKey !== cacheKey) return;
+             if (!res || res.error) {
+                renderErrorComisionesVendedor(res && res.mensaje ? res.mensaje : 'Respuesta inválida del servidor.');
+                return;
+             }
+             COMISIONES_VENDEDOR_CACHE[cacheKey] = res.data || {};
+             renderComisionesVendedor(COMISIONES_VENDEDOR_CACHE[cacheKey]);
+          })
+          .withFailureHandler(function (err) {
+             if (!COMISIONES_VENDEDOR_ESTADO || COMISIONES_VENDEDOR_ESTADO.requestKey !== cacheKey) return;
+             renderErrorComisionesVendedor(err && err.message ? err.message : 'Error de conexión');
+          })
+          .obtenerComisionesVendedor(vendedor, filtros.anio, filtros.mes, filtros.trimestre);
     }
  
     function actualizarTarjetasGeneral(mes, nombreVendedor) {

@@ -189,7 +189,10 @@
         }),
       obtenerReporteConsolidado: (anio) =>
         requestJson(`/api/reportes?${buildQuery({ action: 'consolidado', anio })}`),
-      obtenerTodasLasComisiones: () => requestJson('/api/reportes?action=comisiones'),
+      obtenerTodasLasComisiones: (anio) =>
+        requestJson(`/api/reportes?${buildQuery({ action: 'comisiones', anio })}`),
+      obtenerComisionesVendedor: (vendedor, anio, mes, trimestre) =>
+        requestJson(`/api/reportes?${buildQuery({ action: 'comisiones', vendedor, anio, mes, trimestre })}`),
 
       obtenerStockBotas: (pais) =>
         requestJson(`/api/stock?${buildQuery({ action: 'stock-botas', pais })}`),

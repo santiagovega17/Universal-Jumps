@@ -5,6 +5,7 @@ const {
   guardarObjetivoEspecialService,
   obtenerReporteConsolidadoService,
   obtenerTodasLasComisionesService,
+  obtenerComisionesVendedorService,
 } = require('../lib/reportesService');
 
 function getBody(req) {
@@ -51,7 +52,13 @@ module.exports = async (req, res) => {
       }
 
       if (action === 'comisiones') {
-        const result = await obtenerTodasLasComisionesService();
+        const anio = req.query.anio;
+        const vendedor = req.query.vendedor || '';
+        const mes = req.query.mes;
+        const trimestre = req.query.trimestre;
+        const result = vendedor
+          ? await obtenerComisionesVendedorService(vendedor, anio, mes, trimestre)
+          : await obtenerTodasLasComisionesService(anio);
         return res.status(200).json(result);
       }
 
