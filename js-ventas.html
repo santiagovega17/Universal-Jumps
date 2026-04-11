@@ -713,6 +713,18 @@
        return n.toFixed(1) + '%';
     }
 
+    function formatearDeltaComisionesVendedor(actual, previo) {
+       var a = Number(actual) || 0;
+       var p = Number(previo) || 0;
+       if (!p) {
+          if (!a) return '0%';
+          return '+100%';
+       }
+       var delta = ((a - p) / p) * 100;
+       var prefijo = delta > 0 ? '+' : '';
+       return prefijo + delta.toFixed(1) + '%';
+    }
+
     function textoRangoComisionesVendedor(rango) {
        if (typeof textoRangoComisionesUi === 'function') return textoRangoComisionesUi(rango);
        if (rango === 0 || rango === '0') return 'MIN';
@@ -785,83 +797,89 @@
     function renderComisionesVendedor(data) {
        var resumen = data && data.resumen ? data.resumen : {};
        var meses = Array.isArray(resumen.meses) ? resumen.meses : [];
-       var detalle = Array.isArray(data && data.detalle) ? data.detalle : [];
+       var historico = Array.isArray(resumen.historicoMeses) ? resumen.historicoMeses : [];
+       var foco = resumen.mesPrioritario || (meses.length ? meses[meses.length - 1] : null);
+       var mesAnterior = resumen.mesAnterior || null;
+       var mejorMes = resumen.mejorMes || null;
        var resumenHtml = '';
        var detalleHtml = '';
+       var colorDeltaFact = mesAnterior && Number(foco && foco.totalFacturado) >= Number(mesAnterior.totalFacturado) ? 'var(--accent)' : '#fda4af';
+       var colorDeltaCom = mesAnterior && Number(foco && foco.totalComision) >= Number(mesAnterior.totalComision) ? 'var(--accent)' : '#fda4af';
+       var textoDeltaFact = mesAnterior ? formatearDeltaComisionesVendedor(foco.totalFacturado, mesAnterior.totalFacturado) + ' vs ' + mesAnterior.nombreMes : 'Sin mes previo';
+       var textoDeltaCom = mesAnterior ? formatearDeltaComisionesVendedor(foco.totalComision, mesAnterior.totalComision) + ' vs ' + mesAnterior.nombreMes : 'Sin mes previo';
        var feedbackHtml = '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; color:#94a3b8; font-size:12px;">' +
-          '<span>Período: <strong style="color:#e2e8f0;">' + escapeHtmlText(resumen.periodoLabel || 'Sin período') + '</strong></span>' +
-          '<span>Vendedor: <strong style="color:#e2e8f0;">' + escapeHtmlText(data && data.vendedor ? data.vendedor : '') + '</strong></span>' +
+          '<span>Período visible: <strong style="color:#e2e8f0;">' + escapeHtmlText(resumen.periodoLabel || 'Sin período') + '</strong></span>' +
+          '<span>Foco principal: <strong style="color:#e2e8f0;">' + escapeHtmlText(foco && foco.nombreMes ? foco.nombreMes : 'Sin datos') + '</strong></span>' +
           '</div>';
 
-       resumenHtml += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:18px;">';
-       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Facturado comisionable</div><div style="color:white; font-size:22px; font-weight:800;">' + formatearMontoComisionesVendedor(resumen.totalFacturado) + '</div></div>';
-       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Comisión estimada</div><div style="color:var(--accent); font-size:22px; font-weight:800;">' + formatearMontoComisionesVendedor(resumen.totalComision) + '</div></div>';
-       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Botas / Certs</div><div style="color:white; font-size:16px; font-weight:700;">' + formatearMontoComisionesVendedor(resumen.totalBotas) + ' / ' + formatearMontoComisionesVendedor(resumen.totalCerts) + '</div></div>';
-       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Ventas comisionables</div><div style="color:white; font-size:22px; font-weight:800;">' + (Number(resumen.cantidadVentas) || 0) + '</div></div>';
+       if (!foco) {
+          setHtmlComisionesVendedor(
+             feedbackHtml,
+             '<div class="card" style="padding:24px; text-align:center; color:#94a3b8;">No hay datos para mostrar en la pestaña de comisiones.</div>',
+             ''
+          );
+          return;
+       }
+
+       resumenHtml += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; margin-bottom:18px;">';
+       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Facturado</div><div style="color:white; font-size:24px; font-weight:800;">' + formatearMontoComisionesVendedor(foco.totalFacturado) + '</div><div style="font-size:12px; margin-top:8px; color:' + colorDeltaFact + ';">' + escapeHtmlText(textoDeltaFact) + '</div></div>';
+       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Comisión</div><div style="color:var(--accent); font-size:24px; font-weight:800;">' + formatearMontoComisionesVendedor(foco.totalComision) + '</div><div style="font-size:12px; margin-top:8px; color:' + colorDeltaCom + ';">' + escapeHtmlText(textoDeltaCom) + '</div></div>';
+       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Rango actual</div><div style="color:white; font-size:24px; font-weight:800;">' + escapeHtmlText(textoRangoComisionesVendedor(foco.rango)) + '</div><div style="font-size:12px; margin-top:8px; color:#94a3b8;">Cumplimiento ' + formatearPorcentajeComisionesVendedor(foco.porcentajeCumplimiento) + '</div></div>';
+       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Próximo rango</div><div style="color:white; font-size:24px; font-weight:800;">' + (foco.estaEnRangoMaximo ? 'Máximo' : escapeHtmlText(textoRangoComisionesVendedor(foco.siguienteRango))) + '</div><div style="font-size:12px; margin-top:8px; color:#94a3b8;">' + (foco.estaEnRangoMaximo ? 'Ya alcanzó el último rango configurado' : 'Faltan ' + formatearMontoComisionesVendedor(foco.faltanteProximoRango)) + '</div></div>';
        resumenHtml += '</div>';
 
-       if (meses.length === 0) {
-          resumenHtml += '<div class="card" style="padding:24px; text-align:center; color:#94a3b8;">No hay datos comisionables para el período seleccionado.</div>';
+       resumenHtml += '<div style="display:grid; grid-template-columns:minmax(320px, 1.25fr) minmax(280px, 0.95fr); gap:16px; margin-bottom:18px;">';
+       resumenHtml += '<div class="card" style="padding:22px;">' +
+          '<div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:18px; flex-wrap:wrap;">' +
+          '<div><div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.4px;">Mes priorizado</div><div style="font-size:24px; font-weight:800; color:white; margin-top:6px;">' + escapeHtmlText(foco.nombreMes || '-') + '</div></div>' +
+          '<div style="font-size:12px; color:#94a3b8;">Meta actual: <strong style="color:#e2e8f0;">' + formatearMontoComisionesVendedor(foco.metaActual || foco.metaCombinada) + '</strong></div>' +
+          '</div>' +
+          '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">' +
+          '<div style="background:rgba(15,23,42,0.35); border:1px solid var(--border-color); border-radius:12px; padding:14px;"><div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">Objetivo actual</div><div style="font-size:20px; font-weight:800; color:white;">' + formatearMontoComisionesVendedor(foco.metaActual || foco.metaCombinada) + '</div><div style="font-size:12px; color:#94a3b8; margin-top:8px;">Faltan ' + formatearMontoComisionesVendedor(foco.faltanteMetaActual) + '</div></div>' +
+          '<div style="background:rgba(15,23,42,0.35); border:1px solid var(--border-color); border-radius:12px; padding:14px;"><div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">Próximo rango</div><div style="font-size:20px; font-weight:800; color:white;">' + (foco.estaEnRangoMaximo ? 'Máximo' : formatearMontoComisionesVendedor(foco.metaProximoRango)) + '</div><div style="font-size:12px; color:#94a3b8; margin-top:8px;">' + (foco.estaEnRangoMaximo ? 'No hay un rango superior' : 'Faltan ' + formatearMontoComisionesVendedor(foco.faltanteProximoRango)) + '</div></div>' +
+          '<div style="background:rgba(15,23,42,0.35); border:1px solid var(--border-color); border-radius:12px; padding:14px;"><div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">% actual</div><div style="font-size:20px; font-weight:800; color:white;">' + formatearPorcentajeComisionesVendedor(foco.porcentajeBotas) + ' / ' + formatearPorcentajeComisionesVendedor(foco.porcentajeCerts) + '</div><div style="font-size:12px; color:#94a3b8; margin-top:8px;">Botas / Certs</div></div>' +
+          '<div style="background:rgba(15,23,42,0.35); border:1px solid var(--border-color); border-radius:12px; padding:14px;"><div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">% próximo rango</div><div style="font-size:20px; font-weight:800; color:white;">' + (foco.estaEnRangoMaximo ? '-' : formatearPorcentajeComisionesVendedor(foco.pctBotasProximo) + ' / ' + formatearPorcentajeComisionesVendedor(foco.pctCertsProximo)) + '</div><div style="font-size:12px; color:#94a3b8; margin-top:8px;">Botas / Certs</div></div>' +
+          '</div>' +
+          '</div>';
+
+       resumenHtml += '<div class="card" style="padding:22px;">' +
+          '<div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:14px;">Comparativas</div>' +
+          '<div style="display:grid; gap:12px;">' +
+          '<div style="display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid rgba(148,163,184,0.12);"><span style="color:#94a3b8;">Mes anterior</span><span style="text-align:right; color:white; font-weight:700;">' + (mesAnterior ? escapeHtmlText(mesAnterior.nombreMes) + ' · ' + formatearMontoComisionesVendedor(mesAnterior.totalFacturado) : '-') + '</span></div>' +
+          '<div style="display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid rgba(148,163,184,0.12);"><span style="color:#94a3b8;">Promedio mensual</span><span style="text-align:right; color:white; font-weight:700;">' + formatearMontoComisionesVendedor(resumen.promedioMensualFacturado) + '</span></div>' +
+          '<div style="display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid rgba(148,163,184,0.12);"><span style="color:#94a3b8;">Mejor mes</span><span style="text-align:right; color:white; font-weight:700;">' + (mejorMes ? escapeHtmlText(mejorMes.nombreMes) + ' · ' + formatearMontoComisionesVendedor(mejorMes.totalFacturado) : '-') + '</span></div>' +
+          '<div style="display:flex; justify-content:space-between; gap:16px; padding:12px 0;"><span style="color:#94a3b8;">Período visible</span><span style="text-align:right; color:white; font-weight:700;">' + formatearMontoComisionesVendedor(resumen.totalFacturado) + ' / ' + formatearMontoComisionesVendedor(resumen.totalComision) + '</span></div>' +
+          '</div>' +
+          '</div>';
+       resumenHtml += '</div>';
+
+       resumenHtml += '<div class="card" style="padding:20px;">' +
+          '<div style="display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">' +
+          '<div style="font-size:13px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Histórico mensual</div>' +
+          '<div style="font-size:12px; color:#94a3b8;">Mes actual primero, meses anteriores para comparar evolución</div>' +
+          '</div>';
+       if (!historico.length) {
+          resumenHtml += '<div style="padding:18px; text-align:center; color:#94a3b8;">No hay meses para comparar.</div>';
        } else {
           resumenHtml += '<div class="month-grid">';
-          meses.forEach(function (mes) {
-             var pctColor = Number(mes.porcentajeCumplimiento) >= 100 ? 'var(--accent)' : 'white';
-             resumenHtml += '<div class="card" style="padding:18px;">' +
-                '<div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-bottom:12px;">' +
+          historico.slice().reverse().forEach(function (mes) {
+             var borde = foco && mes.monthIndex === foco.monthIndex ? '2px solid var(--accent)' : '1px solid var(--border-color)';
+             resumenHtml += '<div style="background:var(--sidebar); border:' + borde + '; border-radius:14px; padding:16px;">' +
+                '<div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-bottom:10px;">' +
                 '<div style="font-weight:700; color:white;">' + escapeHtmlText(mes.nombreMes || '-') + '</div>' +
                 '<div style="font-size:11px; color:#94a3b8;">' + escapeHtmlText(textoRangoComisionesVendedor(mes.rango)) + '</div>' +
                 '</div>' +
-                '<div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Facturado</span><span style="font-weight:700; color:white;">' + formatearMontoComisionesVendedor(mes.totalFacturado) + '</span></div>' +
-                '<div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Cumplimiento</span><span style="font-weight:700; color:' + pctColor + ';">' + formatearPorcentajeComisionesVendedor(mes.porcentajeCumplimiento) + '</span></div>' +
-                '<div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">% Botas / Certs</span><span style="font-weight:700; color:white;">' + formatearPorcentajeComisionesVendedor(mes.porcentajeBotas) + ' / ' + formatearPorcentajeComisionesVendedor(mes.porcentajeCerts) + '</span></div>' +
-                '<div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Meta combinada</span><span style="font-weight:700; color:white;">' + formatearMontoComisionesVendedor(mes.metaCombinada) + '</span></div>' +
-                '<div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-color); display:flex; justify-content:space-between; gap:14px;"><span style="font-size:12px; color:#94a3b8;">Comisión</span><span style="font-weight:800; color:var(--accent);">' + formatearMontoComisionesVendedor(mes.totalComision) + '</span></div>' +
+                '<div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Facturado</span><span style="color:white; font-weight:700;">' + formatearMontoComisionesVendedor(mes.totalFacturado) + '</span></div>' +
+                '<div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Comisión</span><span style="color:var(--accent); font-weight:800;">' + formatearMontoComisionesVendedor(mes.totalComision) + '</span></div>' +
+                '<div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Objetivo</span><span style="color:white; font-weight:700;">' + formatearMontoComisionesVendedor(mes.metaCombinada) + '</span></div>' +
+                '<div style="display:flex; justify-content:space-between; gap:12px;"><span style="font-size:12px; color:#94a3b8;">Próximo rango</span><span style="color:white; font-weight:700;">' + (mes.estaEnRangoMaximo ? 'Máximo' : formatearMontoComisionesVendedor(mes.faltanteProximoRango)) + '</span></div>' +
                 '</div>';
           });
           resumenHtml += '</div>';
        }
+       resumenHtml += '</div>';
 
-       if (detalle.length === 0) {
-          detalleHtml = '<div class="card" style="padding:24px; text-align:center; color:#94a3b8;">No hay ventas comisionables en este período.</div>';
-       } else {
-          detalleHtml = '<div class="card">' +
-             '<div class="card-header" style="justify-content:space-between; gap:12px; flex-wrap:wrap;"><span><span class="material-symbols-outlined">receipt_long</span> DETALLE DE COMISIONES</span><span style="font-size:12px; color:#94a3b8;">' + detalle.length + ' venta(s)</span></div>' +
-             '<div class="card-scroll">' +
-             '<table style="width:100%; border-collapse:collapse; min-width:980px;">' +
-             '<thead><tr>' +
-             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Fecha</th>' +
-             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Mes</th>' +
-             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Cliente</th>' +
-             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Concepto</th>' +
-             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Grupo</th>' +
-             '<th style="text-align:left; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">País</th>' +
-             '<th style="text-align:right; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Base ARS</th>' +
-             '<th style="text-align:right; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">%</th>' +
-             '<th style="text-align:right; padding:12px; color:#94a3b8; font-size:11px; text-transform:uppercase;">Comisión</th>' +
-             '</tr></thead><tbody>';
-          detalle.forEach(function (venta) {
-             var cliente = venta.cliente ? escapeHtmlText(venta.cliente) : '-';
-             var concepto = venta.concepto ? escapeHtmlText(venta.concepto) : '-';
-             var pais = venta.pais ? escapeHtmlText(venta.pais) : '-';
-             var montoSec = '';
-             if (venta.monedaOriginal && Number(venta.montoOriginal || 0) > 0 && venta.monedaOriginal !== 'ARS') {
-                montoSec = '<div style="font-size:11px; color:#94a3b8; margin-top:4px;">' + escapeHtmlText(venta.monedaOriginal) + ' ' + formatearMontoComisionesVendedor(venta.montoOriginal) + ' x ' + formatearMontoComisionesVendedor(venta.cotizacionUsada) + '</div>';
-             }
-             detalleHtml += '<tr style="border-top:1px solid rgba(148,163,184,0.12);">' +
-                '<td style="padding:12px; color:white;">' + formatearFechaComisionesVendedor(venta.fecha) + '</td>' +
-                '<td style="padding:12px; color:#cbd5e1;">' + escapeHtmlText(venta.nombreMes || '-') + '</td>' +
-                '<td style="padding:12px; color:white;">' + cliente + '</td>' +
-                '<td style="padding:12px; color:white;">' + concepto + '</td>' +
-                '<td style="padding:12px;">' + badgeGrupoComisionHtml(venta.grupo) + '</td>' +
-                '<td style="padding:12px; color:#cbd5e1;">' + pais + '</td>' +
-                '<td style="padding:12px; text-align:right; color:white; font-weight:700;">' + formatearMontoComisionesVendedor(venta.montoComisionable) + montoSec + '</td>' +
-                '<td style="padding:12px; text-align:right; color:white;">' + formatearPorcentajeComisionesVendedor(venta.porcentajeAplicado) + '</td>' +
-                '<td style="padding:12px; text-align:right; color:var(--accent); font-weight:800;">' + formatearMontoComisionesVendedor(venta.importeComision) + '</td>' +
-                '</tr>';
-          });
-          detalleHtml += '</tbody></table></div></div>';
-       }
-
+       detalleHtml = '';
        setHtmlComisionesVendedor(feedbackHtml, resumenHtml, detalleHtml);
     }
 
@@ -874,7 +892,7 @@
        var selAnio = document.getElementById('selComVendAnio');
        var selPeriodo = document.getElementById('selComVendPeriodo');
        if (selAnio && !selAnio.value) selAnio.value = String(COMISIONES_VENDEDOR_ESTADO.anioBase);
-       if (selPeriodo && !selPeriodo.value) selPeriodo.value = 'ALL';
+       if (selPeriodo && !selPeriodo.value) selPeriodo.value = 'M' + (new Date().getMonth() + 1);
        refrescarPanelComisionesVendedor(true);
     }
 
