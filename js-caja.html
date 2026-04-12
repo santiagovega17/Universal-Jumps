@@ -352,6 +352,7 @@
     function renderBalanceData(data, mediosData, historialData) {
        let container = document.getElementById('balance-content');
        if (!container) return;
+       var mostrarOriginalCaja = PAIS_CAJA_ACTUAL !== 'ARGENTINA' && !(typeof paisTieneMultiplesMonedas === 'function' && paisTieneMultiplesMonedas(PAIS_CAJA_ACTUAL));
  
        let html = `
           <!-- SECCIÓN 1: TOTALES PRINCIPALES -->
@@ -365,11 +366,11 @@
                    </div>
                    <div class="card" style="background: var(--sidebar); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 10px;">
                       <div style="font-size: 22px; font-weight: 800; color: #10b981; text-align: center; overflow: hidden; text-overflow: ellipsis;">
-                         ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.ingresosOriginal !== undefined
+                        ${mostrarOriginalCaja && data.ingresosOriginal !== undefined
                             ? formatearMonedaPais(data.ingresosOriginal || 0, PAIS_CAJA_ACTUAL)
                             : formatNumberAr(data.ingresos || 0)}
                       </div>
-                      ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.ingresosOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.ingresos || 0)})</div>` : ''}
+                      ${mostrarOriginalCaja && data.ingresosOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.ingresos || 0)})</div>` : ''}
                    </div>
                 </div>
                 
@@ -381,11 +382,11 @@
                    </div>
                    <div class="card" style="background: var(--sidebar); border: 1px solid rgba(239, 68, 68, 0.2); padding: 12px; border-radius: 10px;">
                       <div style="font-size: 22px; font-weight: 800; color: #ef4444; text-align: center; overflow: hidden; text-overflow: ellipsis;">
-                         ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.egresosOriginal !== undefined
+                        ${mostrarOriginalCaja && data.egresosOriginal !== undefined
                             ? formatearMonedaPais(data.egresosOriginal || 0, PAIS_CAJA_ACTUAL)
                             : formatNumberAr(data.egresos || 0)}
                       </div>
-                      ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.egresosOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.egresos || 0)})</div>` : ''}
+                      ${mostrarOriginalCaja && data.egresosOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.egresos || 0)})</div>` : ''}
                    </div>
                 </div>
                 
@@ -397,11 +398,11 @@
                    </div>
                    <div class="card" style="background: var(--sidebar); border: 1px solid rgba(245, 158, 11, 0.2); padding: 12px; border-radius: 10px;">
                       <div style="font-size: 22px; font-weight: 800; color: #f59e0b; text-align: center; overflow: hidden; text-overflow: ellipsis;">
-                         ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.pendientesOriginal !== undefined
+                        ${mostrarOriginalCaja && data.pendientesOriginal !== undefined
                             ? formatearMonedaPais(data.pendientesOriginal || 0, PAIS_CAJA_ACTUAL)
                             : formatNumberAr(data.pendientes || 0)}
                       </div>
-                      ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.pendientesOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.pendientes || 0)})</div>` : ''}
+                      ${mostrarOriginalCaja && data.pendientesOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.pendientes || 0)})</div>` : ''}
                    </div>
                 </div>
                 
@@ -413,11 +414,11 @@
                    </div>
                    <div class="card" style="background: var(--sidebar); border: 1px solid rgba(59, 130, 246, 0.2); padding: 12px; border-radius: 10px;">
                       <div style="font-size: 22px; font-weight: 800; color: #3b82f6; text-align: center; overflow: hidden; text-overflow: ellipsis;">
-                         ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.saldoOriginal !== undefined
+                        ${mostrarOriginalCaja && data.saldoOriginal !== undefined
                             ? formatearMonedaPais(data.saldoOriginal || 0, PAIS_CAJA_ACTUAL)
                             : formatNumberAr(data.saldo || 0)}
                       </div>
-                      ${PAIS_CAJA_ACTUAL !== 'ARGENTINA' && data.saldoOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.saldo || 0)})</div>` : ''}
+                      ${mostrarOriginalCaja && data.saldoOriginal !== undefined ? `<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(${formatNumberAr(data.saldo || 0)})</div>` : ''}
                    </div>
                 </div>
              </div>

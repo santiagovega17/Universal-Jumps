@@ -65,11 +65,47 @@ CREATE TABLE IF NOT EXISTS public."configCaja" (
 CREATE INDEX IF NOT EXISTS idx_configCaja_pais_tipo ON public."configCaja"(pais, tipo);
 
 -- -----------------------------------------------------------------------------
--- ConfigCotizacion (cotización por país)
+-- Moneda
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public."moneda" (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  codigo text NOT NULL UNIQUE,
+  nombre text NOT NULL,
+  simbolo text DEFAULT '',
+  decimales smallint NOT NULL DEFAULT 2,
+  activa boolean NOT NULL DEFAULT true,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_moneda_activa ON public."moneda"(activa);
+
+-- -----------------------------------------------------------------------------
+-- PaisMoneda (monedas habilitadas por país)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public."paisMoneda" (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  pais text NOT NULL,
+  moneda_codigo text NOT NULL REFERENCES public."moneda"(codigo) ON DELETE RESTRICT,
+  es_default boolean NOT NULL DEFAULT false,
+  activa boolean NOT NULL DEFAULT true,
+  orden smallint NOT NULL DEFAULT 0,
+  created_at timestamptz DEFAULT now(),
+  CONSTRAINT uq_paisMoneda_pais_moneda UNIQUE (pais, moneda_codigo)
+);
+
+CREATE INDEX IF NOT EXISTS idx_paisMoneda_pais ON public."paisMoneda"(pais);
+CREATE INDEX IF NOT EXISTS idx_paisMoneda_moneda_codigo ON public."paisMoneda"(moneda_codigo);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_paisMoneda_default_activa
+  ON public."paisMoneda"(pais)
+  WHERE es_default = true AND activa = true;
+
+-- -----------------------------------------------------------------------------
+-- ConfigCotizacion (cotización base actual; compatibilidad legacy)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public."configCotizacion" (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   pais text NOT NULL UNIQUE,
+  moneda_codigo text DEFAULT '',
   factor numeric NOT NULL DEFAULT 1,
   created_at timestamptz DEFAULT now()
 );
@@ -135,6 +171,11 @@ CREATE TABLE IF NOT EXISTS public."venta" (
   precio numeric DEFAULT 0,
   total numeric DEFAULT 0,
   total_sin_iva numeric DEFAULT 0,
+  moneda_codigo text DEFAULT '',
+  cotizacion_moneda numeric DEFAULT 1,
+  subtotal_moneda numeric DEFAULT 0,
+  total_moneda numeric DEFAULT 0,
+  total_ars numeric DEFAULT 0,
   observaciones text DEFAULT '',
   cotizacion numeric DEFAULT 1,
   anio smallint,
@@ -146,6 +187,7 @@ CREATE INDEX IF NOT EXISTS idx_venta_usuario_id ON public."venta"(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_venta_vendedor ON public."venta"(vendedor);
 CREATE INDEX IF NOT EXISTS idx_venta_fecha_anio ON public."venta"(fecha, anio);
 CREATE INDEX IF NOT EXISTS idx_venta_pais ON public."venta"(pais);
+CREATE INDEX IF NOT EXISTS idx_venta_moneda_codigo ON public."venta"(moneda_codigo);
 
 -- -----------------------------------------------------------------------------
 -- Producto (definición de producto en stock). codigo = ID de negocio
@@ -153,13 +195,20 @@ CREATE INDEX IF NOT EXISTS idx_venta_pais ON public."venta"(pais);
 CREATE TABLE IF NOT EXISTS public."producto" (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   codigo text NOT NULL UNIQUE,
+  nombre_corto text DEFAULT '',
   marca text DEFAULT '',
   tipo text DEFAULT '',
+  tipo_item text DEFAULT 'PRODUCTO',
   modelo text DEFAULT '',
   color text DEFAULT '',
   descripcion text DEFAULT '',
+  descripcion_fiscal text DEFAULT '',
+  unidad_medida text DEFAULT 'UN',
+  alicuota_iva numeric,
+  codigo_gtin text DEFAULT '',
   imagen_url text DEFAULT '',
   activo text NOT NULL DEFAULT 'SI',
+  controla_stock boolean NOT NULL DEFAULT true,
   divide_talles text NOT NULL DEFAULT 'SI',
   pais text NOT NULL DEFAULT 'ARGENTINA',
   created_at timestamptz DEFAULT now(),
@@ -171,6 +220,24 @@ CREATE INDEX IF NOT EXISTS idx_producto_activo ON public."producto"(activo);
 CREATE INDEX IF NOT EXISTS idx_producto_codigo ON public."producto"(codigo);
 
 -- -----------------------------------------------------------------------------
+-- ProductoPrecio (precio por producto y moneda)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public."productoPrecio" (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  producto_id uuid NOT NULL REFERENCES public."producto"(id) ON DELETE CASCADE,
+  moneda_codigo text NOT NULL REFERENCES public."moneda"(codigo) ON DELETE RESTRICT,
+  precio numeric NOT NULL DEFAULT 0,
+  es_default boolean NOT NULL DEFAULT false,
+  activo boolean NOT NULL DEFAULT true,
+  vigencia_desde date,
+  vigencia_hasta date,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_productoPrecio_producto_id ON public."productoPrecio"(producto_id);
+CREATE INDEX IF NOT EXISTS idx_productoPrecio_moneda_codigo ON public."productoPrecio"(moneda_codigo);
+
+-- -----------------------------------------------------------------------------
 -- StockMovimiento (cada movimiento pertenece a un producto)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public."stockMovimiento" (
@@ -180,6 +247,10 @@ CREATE TABLE IF NOT EXISTS public."stockMovimiento" (
   talle text DEFAULT 'UNICO',
   tipo text NOT NULL,
   cantidad numeric NOT NULL DEFAULT 0,
+  referencia_tipo text DEFAULT '',
+  referencia_id uuid,
+  costo_moneda_codigo text DEFAULT '',
+  costo_unitario numeric,
   observacion_usuario text DEFAULT '',
   pais text NOT NULL DEFAULT 'ARGENTINA',
   created_at timestamptz DEFAULT now()
@@ -221,11 +292,14 @@ CREATE INDEX IF NOT EXISTS idx_configFormaPagoVenta_orden ON public."configForma
 ALTER TABLE public."usuario" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."cajaMovimiento" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."configCaja" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."moneda" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."paisMoneda" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."configCotizacion" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."configObjetivo" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."cliente" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."venta" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."producto" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."productoPrecio" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."stockMovimiento" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."configMarcaModelo" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."configFormaPagoVenta" ENABLE ROW LEVEL SECURITY;
@@ -233,11 +307,14 @@ ALTER TABLE public."configFormaPagoVenta" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Authenticated full access usuario" ON public."usuario" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access cajaMovimiento" ON public."cajaMovimiento" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access configCaja" ON public."configCaja" FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated full access moneda" ON public."moneda" FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated full access paisMoneda" ON public."paisMoneda" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access configCotizacion" ON public."configCotizacion" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access configObjetivo" ON public."configObjetivo" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access cliente" ON public."cliente" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access venta" ON public."venta" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access producto" ON public."producto" FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated full access productoPrecio" ON public."productoPrecio" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access stockMovimiento" ON public."stockMovimiento" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access configMarcaModelo" ON public."configMarcaModelo" FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated full access configFormaPagoVenta" ON public."configFormaPagoVenta" FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -245,8 +322,11 @@ CREATE POLICY "Authenticated full access configFormaPagoVenta" ON public."config
 -- Comentarios
 COMMENT ON TABLE public."usuario" IS 'Usuario (vendedor/admin). nombre = nombre de hoja del vendedor.';
 COMMENT ON TABLE public."cajaMovimiento" IS 'Movimiento de caja.';
+COMMENT ON TABLE public."moneda" IS 'Catálogo de monedas habilitadas en el sistema.';
+COMMENT ON TABLE public."paisMoneda" IS 'Relación de monedas disponibles por país.';
 COMMENT ON TABLE public."venta" IS 'Venta. Relación N:1 con Usuario (vendedor).';
 COMMENT ON TABLE public."producto" IS 'Producto (definición de stock). codigo = ID de negocio.';
+COMMENT ON TABLE public."productoPrecio" IS 'Precio por producto y moneda.';
 COMMENT ON TABLE public."stockMovimiento" IS 'Movimiento de stock. Relación N:1 con Producto.';
 COMMENT ON TABLE public."configFormaPagoVenta" IS 'Medios de pago configurables para el formulario de ventas.';
 

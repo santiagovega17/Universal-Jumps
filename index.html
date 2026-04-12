@@ -237,7 +237,7 @@
             <div class="form-row form-row-venta-sm">
                <div class="form-group form-group-venta-sm">
                   <label class="form-label form-label-venta-sm">País</label><select class="form-input form-input-venta-sm" name="pais" id="paisInput" required
-                     onchange="actualizarSelectorClientes('TODOS')">
+                     onchange="actualizarSelectorClientes('TODOS'); actualizarSelectorMonedaVenta(); calcularTotal();">
                      <option value="">País...</option>
                      <option value="Argentina">Argentina</option>
                      <option value="Chile">Chile</option>
@@ -247,6 +247,11 @@
                      <option value="Brasil">Brasil</option>
                      <option value="Uruguay">Uruguay</option>
                      <option value="RDM">RDM</option>
+                  </select>
+               </div>
+               <div class="form-group form-group-venta-sm">
+                  <label class="form-label form-label-venta-sm">Moneda</label><select class="form-input form-input-venta-sm" name="moneda" id="monedaInput" required onchange="calcularTotal()">
+                     <option value="ARS">ARS</option>
                   </select>
                </div>
                <div class="form-group form-group-venta-sm" style="flex:2;">

@@ -1442,9 +1442,33 @@
     }
  
     function obtenerMonedaPais(pais) {
-       if (pais == 'CHILE') return 'CLP'; if (pais == 'MEXICO') return 'MXN'; if (pais == 'ESPAÑA') return 'EUR';
-       if (pais == 'BRASIL') return 'BRL'; if (pais == 'URUGUAY') return 'UYU'; if (pais == 'RDM' || pais == 'EEUU') return 'USD';
-       return 'ARS';
+      if (typeof obtenerMonedaDefaultPorPaisUi === 'function') return obtenerMonedaDefaultPorPaisUi(pais);
+      if (pais == 'CHILE') return 'CLP'; if (pais == 'MEXICO') return 'MXN'; if (pais == 'ESPAÑA') return 'EUR';
+      if (pais == 'BRASIL') return 'BRL'; if (pais == 'URUGUAY') return 'UYU'; if (pais == 'RDM' || pais == 'EEUU') return 'USD';
+      return 'ARS';
+   }
+
+   function obtenerMonedasPaisVenta(pais) {
+      if (typeof obtenerMonedasPorPaisUi === 'function') return obtenerMonedasPorPaisUi(pais);
+      return [obtenerMonedaPais(pais)];
+   }
+
+   function actualizarSelectorMonedaVenta(monedaSeleccionada) {
+      var paisInput = document.getElementById('paisInput');
+      var monedaInput = document.getElementById('monedaInput');
+      if (!paisInput || !monedaInput) return;
+      var pais = (paisInput.value || '').toString().trim();
+      var opciones = obtenerMonedasPaisVenta(pais);
+      var seleccion = (monedaSeleccionada || monedaInput.value || obtenerMonedaPais(pais)).toString().toUpperCase();
+      monedaInput.innerHTML = '';
+      opciones.forEach(function (codigo) {
+         var opt = document.createElement('option');
+         opt.value = codigo;
+         opt.textContent = codigo;
+         monedaInput.appendChild(opt);
+      });
+      if (opciones.indexOf(seleccion) >= 0) monedaInput.value = seleccion;
+      else monedaInput.value = opciones[0] || obtenerMonedaPais(pais);
     }
  
     function fmt(num) {
@@ -1691,6 +1715,7 @@
                 title.innerText = "EDITAR"; btn.innerText = "ACTUALIZAR"; document.getElementById('filaIndex').value = id;
                 let f = datos[0].split('/'); document.getElementById('fechaInput').value = `${f[2]}-${f[1]}-${f[0]}`;
                 document.getElementById('estadoInput').value = datos[1]; document.getElementById('paisInput').value = datos[3];
+                actualizarSelectorMonedaVenta(datos[13] || obtenerMonedaPais(datos[3]));
                 document.getElementById('clienteInput').value = datos[4];
                 var clienteCombo = document.getElementById('clienteComboText');
                 if (clienteCombo) clienteCombo.value = datos[4];
@@ -1707,6 +1732,7 @@
                 title.innerText = "AGREGAR VENTA";
                 btn.innerText = "GUARDAR";
                 if (typeof getFechaHoyISO === 'function') document.getElementById('fechaInput').value = getFechaHoyISO();
+                actualizarSelectorMonedaVenta();
                 if (vendedorParaClientes) {
                    setTimeout(() => actualizarSelectorClientes(vendedorParaClientes), 100);
                 }
@@ -1737,6 +1763,7 @@
        let obsInput = document.getElementById('obsInput');
        let filaIndexInput = document.getElementById('filaIndex');
        let selVendedor = document.getElementById('selVendedor');
+       let monedaInput = document.getElementById('monedaInput');
  
        // Validación de campos requeridos y numéricos
        if (typeof validarCampos === 'function') {
@@ -1783,10 +1810,10 @@
        let paisCotKey = (pais === 'ESPAÑA') ? 'ESPANA' : pais;
 
        // Obtener cotización del momento para guardarla con la venta (necesaria para España y otros países)
-       let moneda = obtenerMonedaPais(pais);
+       let moneda = monedaInput && monedaInput.value ? monedaInput.value.toUpperCase() : obtenerMonedaPais(pais);
        let cotizacionActual = 1;
        if (moneda !== 'ARS') {
-          cotizacionActual = COTIZACIONES[paisCotKey] || COTIZACIONES[moneda] || 1;
+          cotizacionActual = COTIZACIONES[moneda] || COTIZACIONES[paisCotKey] || 1;
        }
  
        // Preparar datos
@@ -1800,9 +1827,11 @@
           formaPago: pagoInput.value,
           cantidad: cantInput.value,
           precio: precioLimpio,
+          monedaCodigo: moneda,
           comentario: obsInput.value || '',
           filaIndex: filaIndexInput.value || '',
-          cotizacion: cotizacionActual
+          cotizacion: cotizacionActual,
+          cotizacionMoneda: cotizacionActual
        };
  
        // Determinar si es edición o creación

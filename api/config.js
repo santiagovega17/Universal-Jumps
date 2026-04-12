@@ -1,5 +1,6 @@
 const {
   getCotizacionesBackend,
+  getMonedasPaisBackend,
   getConfiguracionCaja,
   getConceptosPorPais,
   getDescripcionesPorPaisConcepto,
@@ -35,6 +36,11 @@ module.exports = async (req, res) => {
 
       if (action === 'caja') {
         const data = await getConfiguracionCaja();
+        return res.status(200).json({ error: false, data });
+      }
+
+      if (action === 'monedas-pais') {
+        const data = await getMonedasPaisBackend();
         return res.status(200).json({ error: false, data });
       }
 

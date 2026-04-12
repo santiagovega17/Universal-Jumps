@@ -293,6 +293,13 @@
        google.script.run.withSuccessHandler(res => {
           if (!res.error) COTIZACIONES = res.data;
        }).obtenerCotizacionesBackend();
+
+      google.script.run.withSuccessHandler(res => {
+         if (!res.error && res.data) {
+            MONEDAS_POR_PAIS = res.data.porPais || {};
+            MONEDA_DEFAULT_POR_PAIS = res.data.defaultPorPais || {};
+         }
+      }).obtenerMonedasPaisBackend();
  
        google.script.run.withSuccessHandler(res => {
           if (!res.error) { GLOBAL_CONFIG = res.data; poblarSelectsCaja(); }

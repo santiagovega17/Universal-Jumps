@@ -57,6 +57,7 @@
           body: JSON.stringify(payload || {}),
         }),
       obtenerCotizacionesBackend: () => requestJson('/api/config?action=cotizaciones'),
+      obtenerMonedasPaisBackend: () => requestJson('/api/config?action=monedas-pais'),
       actualizarCotizacionesDesdeExternas: () =>
         requestJson('/api/config?action=actualizar-cotizaciones', {
           method: 'POST',

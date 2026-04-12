@@ -1275,20 +1275,15 @@
     // --- FUNCIÓN AUXILIAR: Convertir monto a ARS ---
     function convertirAArs(monto, pais) {
        if (pais === 'ARGENTINA') return monto;
-       let cotizacion = COTIZACIONES[pais] || 1;
+       let moneda = typeof obtenerMonedaDefaultPorPaisUi === 'function' ? obtenerMonedaDefaultPorPaisUi(pais) : pais;
+       let cotizacion = COTIZACIONES[moneda] || COTIZACIONES[pais] || 1;
        return monto * cotizacion;
     }
  
     // --- FUNCIÓN AUXILIAR: Formatear monto en moneda del país ---
     function formatearMonedaPais(monto, pais) {
-       if (pais === 'ARGENTINA') return formatNumberAr(monto);
-       if (pais === 'CHILE') return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(monto);
-       if (pais === 'MEXICO') return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(monto);
-       if (pais === 'ESPANA') return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(monto);
-       if (pais === 'BRASIL') return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monto);
-       if (pais === 'URUGUAY') return new Intl.NumberFormat('es-UY', { style: 'currency', currency: 'UYU' }).format(monto);
-       if (pais === 'EEUU' || pais === 'RDM') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(monto);
-       return formatNumberAr(monto);
+       var moneda = typeof obtenerMonedaDefaultPorPaisUi === 'function' ? obtenerMonedaDefaultPorPaisUi(pais) : 'ARS';
+       return typeof formatCurrency === 'function' ? formatCurrency(monto, moneda) : formatNumberAr(monto);
     }
  
     // --- NUEVO RENDER CONSOLIDADO (TIPO TARJETAS) ---
@@ -1429,19 +1424,19 @@
                 if (d[pais.key]) totalPaisArs += d[pais.key] || 0;
              });
  
-             // Convertir de ARS a moneda original para mostrar debajo
-             // La misma lógica funciona para todos los países no-ARGENTINA
-             let cotizacionPais = 1;
-             if (pais.key !== 'ARGENTINA') {
-                cotizacionPais = COTIZACIONES[pais.key] || 1;
-             }
-             let totalPaisOriginal = pais.key === 'ARGENTINA' ? totalPaisArs : (cotizacionPais > 0 && cotizacionPais !== 1 ? Math.round((totalPaisArs / cotizacionPais) * 100) / 100 : totalPaisArs);
+            var mostrarMonedaOriginal = !(typeof paisTieneMultiplesMonedas === 'function' && paisTieneMultiplesMonedas(pais.key));
+            let cotizacionPais = 1;
+            if (pais.key !== 'ARGENTINA') {
+               var monedaPais = typeof obtenerMonedaDefaultPorPaisUi === 'function' ? obtenerMonedaDefaultPorPaisUi(pais.key) : pais.key;
+               cotizacionPais = COTIZACIONES[monedaPais] || COTIZACIONES[pais.key] || 1;
+            }
+            let totalPaisOriginal = pais.key === 'ARGENTINA' ? totalPaisArs : (cotizacionPais > 0 && cotizacionPais !== 1 ? Math.round((totalPaisArs / cotizacionPais) * 100) / 100 : totalPaisArs);
  
              html += `
                    <div style="text-align: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
                       <div style="color: var(--accent); font-weight: 700; font-size: 13px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Total Anual</div>
-                      <div style="color: white; font-weight: 800; font-size: 28px; margin-bottom: 6px;">${formatearMonedaPais(totalPaisOriginal, pais.key)}</div>
-                      <div style="color: #64748b; font-size: 13px;">(${formatNumberAr(totalPaisArs)})</div>
+                     <div style="color: white; font-weight: 800; font-size: 28px; margin-bottom: 6px;">${mostrarMonedaOriginal ? formatearMonedaPais(totalPaisOriginal, pais.key) : formatNumberAr(totalPaisArs)}</div>
+                     <div style="color: #64748b; font-size: 13px;">${mostrarMonedaOriginal ? '(' + formatNumberAr(totalPaisArs) + ')' : 'MULTIMONEDA'}</div>
                    </div>
                    <div style="margin-bottom: 15px;">
                       <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;">`;
@@ -1454,8 +1449,8 @@
                 html += `
                       <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 6px; text-align: center;">
                          <div style="font-weight: 600; color: white; font-size: 11px; margin-bottom: 6px;">${mes}</div>
-                         <div style="color: white; font-weight: 700; font-size: 13px; margin-bottom: 4px;">${formatearMonedaPais(montoPaisOriginal, pais.key)}</div>
-                         <div style="color: #64748b; font-size: 9px;">(${formatNumberAr(montoPaisArs)})</div>
+                        <div style="color: white; font-weight: 700; font-size: 13px; margin-bottom: 4px;">${mostrarMonedaOriginal ? formatearMonedaPais(montoPaisOriginal, pais.key) : formatNumberAr(montoPaisArs)}</div>
+                        <div style="color: #64748b; font-size: 9px;">${mostrarMonedaOriginal ? '(' + formatNumberAr(montoPaisArs) + ')' : 'MULTIMONEDA'}</div>
                       </div>`;
              });
  
@@ -1472,8 +1467,8 @@
                 html += `
                       <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 6px; text-align: center;">
                          <div style="font-weight: 600; color: white; font-size: 11px; margin-bottom: 6px;">${mes}</div>
-                         <div style="color: white; font-weight: 700; font-size: 13px; margin-bottom: 4px;">${formatearMonedaPais(montoPaisOriginal, pais.key)}</div>
-                         <div style="color: #64748b; font-size: 9px;">(${formatNumberAr(montoPaisArs)})</div>
+                        <div style="color: white; font-weight: 700; font-size: 13px; margin-bottom: 4px;">${mostrarMonedaOriginal ? formatearMonedaPais(montoPaisOriginal, pais.key) : formatNumberAr(montoPaisArs)}</div>
+                        <div style="color: #64748b; font-size: 9px;">${mostrarMonedaOriginal ? '(' + formatNumberAr(montoPaisArs) + ')' : 'MULTIMONEDA'}</div>
                       </div>`;
              });
  

@@ -23,6 +23,8 @@
     let VISTA_STOCK_ACTUAL = 'STOCK'; // Vista por defecto: 'STOCK' o 'MOVIMIENTOS'
     let ALL_OBJECTIVES = []; // Cache de objetivos (globales y por vendedor)
     let COTIZACIONES = {};
+    let MONEDAS_POR_PAIS = {};
+    let MONEDA_DEFAULT_POR_PAIS = {};
     const TRIMESTRES = ["1° TRIMESTRE", "2° TRIMESTRE", "3° TRIMESTRE", "4° TRIMESTRE"];
     var OBJETIVOS_ANIO_ACTIVO = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
     var OBJETIVOS_MES_ACTIVO = new Date().getMonth() + 1;
@@ -70,6 +72,55 @@
          RDM: { colorHeader: '#111111', colorBorder: '#000000', colorTexto: '#FFFFFF' }
       };
       return temas[key] || { colorHeader: '#111827', colorBorder: '#374151', colorTexto: '#FFFFFF' };
+   }
+
+   function normalizarPaisUi(pais) {
+      return normalizarClavePaisTema(pais || '').replace('USA', 'EEUU') || 'ARGENTINA';
+   }
+
+   function normalizarMonedaCodigoUi(moneda) {
+      return String(moneda || 'ARS').toUpperCase().trim() || 'ARS';
+   }
+
+   function obtenerMonedaLegacyPorPaisUi(pais) {
+      var p = normalizarPaisUi(pais);
+      if (p === 'CHILE') return 'CLP';
+      if (p === 'MEXICO') return 'MXN';
+      if (p === 'ESPANA') return 'EUR';
+      if (p === 'BRASIL') return 'BRL';
+      if (p === 'URUGUAY') return 'UYU';
+      if (p === 'RDM' || p === 'EEUU') return 'USD';
+      return 'ARS';
+   }
+
+   function obtenerMonedaDefaultPorPaisUi(pais) {
+      var p = normalizarPaisUi(pais);
+      return normalizarMonedaCodigoUi((MONEDA_DEFAULT_POR_PAIS && MONEDA_DEFAULT_POR_PAIS[p]) || obtenerMonedaLegacyPorPaisUi(p));
+   }
+
+   function obtenerMonedasPorPaisUi(pais) {
+      var p = normalizarPaisUi(pais);
+      var lista = (MONEDAS_POR_PAIS && Array.isArray(MONEDAS_POR_PAIS[p]) && MONEDAS_POR_PAIS[p].length)
+         ? MONEDAS_POR_PAIS[p]
+         : [obtenerMonedaDefaultPorPaisUi(p)];
+      return lista.map(normalizarMonedaCodigoUi);
+   }
+
+   function paisTieneMultiplesMonedas(pais) {
+      return obtenerMonedasPorPaisUi(pais).length > 1;
+   }
+
+   function formatCurrency(amount, currencyCode) {
+      if (!amount) amount = 0;
+      var moneda = normalizarMonedaCodigoUi(currencyCode);
+      var locale = 'en-US';
+      if (moneda === 'ARS') locale = 'es-AR';
+      else if (moneda === 'CLP') locale = 'es-CL';
+      else if (moneda === 'MXN') locale = 'es-MX';
+      else if (moneda === 'EUR') locale = 'es-ES';
+      else if (moneda === 'BRL') locale = 'pt-BR';
+      else if (moneda === 'UYU') locale = 'es-UY';
+      return new Intl.NumberFormat(locale, { style: 'currency', currency: moneda }).format(amount);
    }
 
     /** Objeto de estado mínimo: lectura/escritura centralizada (get/set) y sincronización con variables globales. */
@@ -193,12 +244,9 @@
        let cant = parseFloat(document.getElementById('cantInput').value) || 0;
        let precio = parseCurrency(document.getElementById('precioInput').value);
        let total = cant * precio;
-       document.getElementById('totalDisplay').value = formatNumberAr(total);
-    }
-
-    function formatCurrency(amount, currencyCode) {
-       if (!amount) amount = 0;
-       return new Intl.NumberFormat('en-US', { style: 'currency', currency: currencyCode }).format(amount);
+       let monedaInput = document.getElementById('monedaInput');
+       let moneda = monedaInput ? monedaInput.value : 'ARS';
+       document.getElementById('totalDisplay').value = formatCurrency(total, moneda);
     }
 
     // --- UI HELPERS ---
