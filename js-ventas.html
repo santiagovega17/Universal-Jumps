@@ -1462,6 +1462,11 @@
       return Number(COTIZACIONES[monedaNorm] || COTIZACIONES[paisCotKey] || 0);
    }
 
+   function formatearMontoTipoCambioVenta(monto, moneda) {
+      if (typeof formatCurrency === 'function') return formatCurrency(monto, moneda);
+      return String(monto || 0);
+   }
+
    function actualizarIndicadorTipoCambioVenta() {
       var info = document.getElementById('ventaTipoCambioInfo');
       var paisInput = document.getElementById('paisInput');
@@ -1470,6 +1475,10 @@
 
       var pais = (paisInput.value || '').toString().trim();
       var moneda = (monedaInput.value || '').toString().trim().toUpperCase();
+      var usdArs = obtenerCotizacionActualVenta('ARGENTINA', 'USD');
+      var monedaPais = (typeof obtenerMonedaDefaultPorPaisUi === 'function')
+         ? obtenerMonedaDefaultPorPaisUi(pais)
+         : obtenerMonedaPais(pais);
 
       if (!pais) {
          info.textContent = 'TIPO DE CAMBIO OFICIAL: SELECCIONÁ PAÍS Y MONEDA';
@@ -1478,20 +1487,43 @@
       }
 
       if (!moneda || moneda === 'ARS') {
-         info.textContent = 'TIPO DE CAMBIO OFICIAL: NO REQUIERE CONVERSIÓN';
-         info.classList.remove('is-warning');
+         if (usdArs && usdArs > 0) {
+            info.textContent = 'TIPO DE CAMBIO OFICIAL: 1 USD = ' + formatearMontoTipoCambioVenta(usdArs, 'ARS');
+            info.classList.remove('is-warning');
+         } else {
+            info.textContent = 'TIPO DE CAMBIO OFICIAL: NO DISPONIBLE';
+            info.classList.add('is-warning');
+         }
          return;
       }
 
-      var cotizacion = obtenerCotizacionActualVenta(pais, moneda);
-      if (!cotizacion || cotizacion <= 0) {
+      var factorMoneda = obtenerCotizacionActualVenta(pais, moneda);
+      if (!factorMoneda || factorMoneda <= 0 || !usdArs || usdArs <= 0) {
          info.textContent = 'TIPO DE CAMBIO OFICIAL: NO DISPONIBLE';
          info.classList.add('is-warning');
          return;
       }
 
       info.classList.remove('is-warning');
-      info.textContent = 'TIPO DE CAMBIO OFICIAL: 1 ' + moneda + ' = ' + formatCurrency(cotizacion, 'ARS');
+      if (moneda === 'USD') {
+         if (monedaPais && monedaPais !== 'USD') {
+            var factorPais = obtenerCotizacionActualVenta(pais, monedaPais);
+            if (factorPais && factorPais > 0) {
+               var usdEnMonedaPais = usdArs / factorPais;
+               info.textContent = 'TIPO DE CAMBIO OFICIAL: 1 USD = ' + formatearMontoTipoCambioVenta(usdEnMonedaPais, monedaPais);
+            } else {
+               info.textContent = 'TIPO DE CAMBIO OFICIAL: 1 USD = ' + formatearMontoTipoCambioVenta(usdArs, 'ARS');
+            }
+         } else {
+            info.textContent = 'TIPO DE CAMBIO OFICIAL: 1 USD = ' + formatearMontoTipoCambioVenta(usdArs, 'ARS');
+         }
+         return;
+      }
+
+      var usdEnMoneda = usdArs / factorMoneda;
+      var monedaEnUsd = factorMoneda > 0 ? 1 / usdEnMoneda : 0;
+      info.textContent = 'TIPO DE CAMBIO OFICIAL: 1 USD = ' + formatearMontoTipoCambioVenta(usdEnMoneda, moneda) +
+         ' | 1 ' + moneda + ' = ' + formatearMontoTipoCambioVenta(monedaEnUsd, 'USD');
    }
 
    function actualizarSelectorMonedaVenta(monedaSeleccionada) {
