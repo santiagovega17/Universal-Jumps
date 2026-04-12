@@ -2321,6 +2321,186 @@
        border-color: var(--accent);
     }
 
+    .vendor-dashboard {
+       display: flex;
+       flex-direction: column;
+       gap: 18px;
+    }
+
+    .vendor-dashboard-head {
+       display: flex;
+       align-items: center;
+       justify-content: space-between;
+       gap: 16px;
+       flex-wrap: wrap;
+    }
+
+    .vendor-dashboard-eyebrow {
+       color: #94a3b8;
+       font-size: 12px;
+       font-weight: 700;
+       letter-spacing: 0.12em;
+       text-transform: uppercase;
+       margin-bottom: 6px;
+    }
+
+    .vendor-dashboard-periodo {
+       color: white;
+       font-size: 26px;
+       font-weight: 800;
+       line-height: 1.1;
+       text-transform: uppercase;
+    }
+
+    .vendor-dashboard-head-actions {
+       display: flex;
+       gap: 10px;
+       flex-wrap: wrap;
+    }
+
+    .vendor-dashboard-add-btn {
+       width: auto;
+       padding: 10px 18px;
+       white-space: nowrap;
+    }
+
+    .vendor-dashboard-grid,
+    .vendor-dashboard-secondary-grid {
+       display: grid;
+       gap: 16px;
+    }
+
+    .vendor-dashboard-grid {
+       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .vendor-dashboard-secondary-grid {
+       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .vendor-dashboard-card {
+       background: var(--sidebar);
+       border: 1px solid var(--border-color);
+       border-radius: 14px;
+       padding: 18px;
+       min-height: 138px;
+       display: flex;
+       flex-direction: column;
+       justify-content: space-between;
+       gap: 10px;
+    }
+
+    .vendor-dashboard-card--list {
+       min-height: 0;
+    }
+
+    .vendor-dashboard-title {
+       color: var(--title-accent);
+       font-size: 14px;
+       font-weight: 800;
+       text-transform: uppercase;
+       letter-spacing: 0.1em;
+       padding-left: 12px;
+       border-left: 3px solid var(--accent);
+    }
+
+    .vendor-dashboard-value {
+       color: white;
+       font-size: 30px;
+       font-weight: 800;
+       line-height: 1.1;
+       text-transform: uppercase;
+    }
+
+    .vendor-dashboard-value--compact {
+       font-size: 22px;
+    }
+
+    .vendor-dashboard-sub {
+       color: #94a3b8;
+       font-size: 12px;
+       font-weight: 700;
+       line-height: 1.5;
+       text-transform: uppercase;
+    }
+
+    .vendor-dashboard-progress {
+       width: 100%;
+       height: 10px;
+       border-radius: 999px;
+       background: rgba(148, 163, 184, 0.12);
+       overflow: hidden;
+    }
+
+    .vendor-dashboard-progress span {
+       display: block;
+       height: 100%;
+       border-radius: inherit;
+       background: linear-gradient(90deg, #60a5fa 0%, var(--accent) 100%);
+    }
+
+    .vendor-dashboard-list {
+       display: flex;
+       flex-direction: column;
+       gap: 10px;
+    }
+
+    .vendor-dashboard-list-item {
+       display: flex;
+       align-items: center;
+       justify-content: space-between;
+       gap: 14px;
+       padding: 12px 14px;
+       border-radius: 12px;
+       background: rgba(2, 6, 23, 0.35);
+       border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .vendor-dashboard-list-main,
+    .vendor-dashboard-list-side {
+       display: flex;
+       flex-direction: column;
+       gap: 6px;
+    }
+
+    .vendor-dashboard-list-side {
+       align-items: flex-end;
+       text-align: right;
+    }
+
+    .vendor-dashboard-list-title {
+       color: white;
+       font-size: 14px;
+       font-weight: 800;
+       text-transform: uppercase;
+    }
+
+    .vendor-dashboard-list-sub {
+       color: #94a3b8;
+       font-size: 12px;
+       font-weight: 600;
+       text-transform: uppercase;
+    }
+
+    .vendor-dashboard-list-amount {
+       color: white;
+       font-size: 16px;
+       font-weight: 800;
+    }
+
+    .vendor-dashboard-list-status {
+       display: flex;
+       justify-content: flex-end;
+    }
+
+    .vendor-dashboard-empty {
+       padding: 24px 0 8px;
+       color: #94a3b8;
+       text-align: center;
+       font-weight: 600;
+       text-transform: uppercase;
+    }
+
     .comisiones-overview-grid {
        display: grid;
        grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2638,6 +2818,11 @@
     }
 
     @media (max-width: 1100px) {
+       .vendor-dashboard-grid,
+       .vendor-dashboard-secondary-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+       }
+
        .comisiones-overview-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
        }
@@ -2648,6 +2833,21 @@
     }
 
     @media (max-width: 720px) {
+       .vendor-dashboard-grid,
+       .vendor-dashboard-secondary-grid {
+          grid-template-columns: 1fr;
+       }
+
+       .vendor-dashboard-list-item {
+          flex-direction: column;
+          align-items: flex-start;
+       }
+
+       .vendor-dashboard-list-side {
+          align-items: flex-start;
+          text-align: left;
+       }
+
        .comisiones-overview-grid {
           grid-template-columns: 1fr;
        }

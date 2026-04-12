@@ -480,6 +480,127 @@
        }).guardarObjetivosBackend(anio, mes, filas, nom);
     }
 
+    function puedeAgregarVentaDesdeDashboard() {
+       return USUARIO_ACTUAL && (typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) !== 'VENDEDORGRAL';
+    }
+
+    function obtenerMontoArsVentaDashboard(row) {
+       var paisRaw = String((row && row[3]) || '').toUpperCase();
+       var paisKey = paisRaw === 'USA' || paisRaw === 'EEUU' ? 'EEUU' : paisRaw;
+       var monto = parseNumeric(row && row[9]);
+       var cotizacion = 1;
+       if (row && row[12] != null && row[12] !== '') cotizacion = parseNumeric(row[12]);
+       else if (typeof COTIZACIONES !== 'undefined' && COTIZACIONES[paisKey]) cotizacion = COTIZACIONES[paisKey];
+       if (paisKey && paisKey !== 'ARGENTINA') monto *= cotizacion || 1;
+       return monto;
+    }
+
+    function obtenerMesFocoDashboardVentas(filas, anioBase) {
+       var ahora = new Date();
+       if (Number(anioBase) === ahora.getFullYear()) return ahora.getMonth();
+       var ultimoMesConVentas = -1;
+       (filas || []).forEach(function (row) {
+          var fecha = parseFecha(row[0]);
+          if (!fecha || isNaN(fecha.getTime())) return;
+          if (fecha.getFullYear() !== Number(anioBase)) return;
+          if (fecha.getMonth() > ultimoMesConVentas) ultimoMesConVentas = fecha.getMonth();
+       });
+       return ultimoMesConVentas >= 0 ? ultimoMesConVentas : 0;
+    }
+
+    function construirDashboardComercialVendedor(filas, nombreVendedor, anioBase, resumenBotas, resumenCerts) {
+       var nombresMes = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+       var mesIndex = obtenerMesFocoDashboardVentas(filas, anioBase);
+       var mesNombre = nombresMes[mesIndex] || nombresMes[new Date().getMonth()];
+       var progreso = calcularProgresoObjetivoMes(filas, anioBase, mesIndex + 1, nombreVendedor);
+       var statsMes = { totalFacturado: 0, cantidadVentas: 0, topPaisLabel: '-', topPaisMonto: 0, topConceptoLabel: '-', topConceptoMonto: 0 };
+       var paises = {};
+       var conceptos = {};
+       var recientes = (filas || []).slice(0, 5);
+
+       (filas || []).forEach(function (row) {
+          var fecha = parseFecha(row[0]);
+          if (!fecha || isNaN(fecha.getTime())) return;
+          if (fecha.getFullYear() !== Number(anioBase) || fecha.getMonth() !== mesIndex) return;
+          var montoArs = obtenerMontoArsVentaDashboard(row);
+          var pais = String((row[3] || '')).toUpperCase();
+          if (pais === 'USA') pais = 'EEUU';
+          var concepto = String(row[5] || '-').trim().toUpperCase() || '-';
+          statsMes.totalFacturado += montoArs;
+          statsMes.cantidadVentas += 1;
+          paises[pais || 'SIN PAÍS'] = (paises[pais || 'SIN PAÍS'] || 0) + montoArs;
+          conceptos[concepto] = (conceptos[concepto] || 0) + montoArs;
+       });
+
+       Object.keys(paises).forEach(function (key) {
+          if (paises[key] > statsMes.topPaisMonto) {
+             statsMes.topPaisMonto = paises[key];
+             statsMes.topPaisLabel = key;
+          }
+       });
+       Object.keys(conceptos).forEach(function (key) {
+          if (conceptos[key] > statsMes.topConceptoMonto) {
+             statsMes.topConceptoMonto = conceptos[key];
+             statsMes.topConceptoLabel = key;
+          }
+       });
+
+       var ticketPromedio = statsMes.cantidadVentas ? (statsMes.totalFacturado / statsMes.cantidadVentas) : 0;
+       var resumenMesBotas = (resumenBotas && resumenBotas[mesNombre]) || {};
+       var resumenMesCerts = (resumenCerts && resumenCerts[mesNombre]) || {};
+       var comisionMes = (Number(resumenMesBotas.comision) || 0) + (Number(resumenMesCerts.comision) || 0);
+       var metaMes = Number(progreso.metaCombinada) || 0;
+       var pct = Math.max(0, Math.min(100, Number(progreso.pct) || 0));
+       var targetObj = progreso.targetObj || null;
+       var nextObj = progreso.nextObj || null;
+       var rangoActual = targetObj ? textoRangoCompletoComisionesVendedor(targetObj.rango) : '-';
+       var proximoRango = nextObj ? textoRangoCompletoComisionesVendedor(nextObj.rango) : 'RANGO MÁXIMO';
+       var faltanteProximo = nextObj ? Math.max(0, (Number(nextObj.factBotas) || 0) + (Number(nextObj.factCerts) || 0) - (Number(progreso.totalCombinado) || 0)) : 0;
+       var btnAgregar = puedeAgregarVentaDesdeDashboard()
+          ? '<button class="btn-submit vendor-dashboard-add-btn" onclick="abrirModalVenta()"><span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle; margin-right:6px;">add</span>Agregar venta</button>'
+          : '';
+
+       var listaRecientes = recientes.length
+          ? recientes.map(function (row) {
+             return '<div class="vendor-dashboard-list-item">' +
+                '<div class="vendor-dashboard-list-main">' +
+                '<div class="vendor-dashboard-list-title">' + escapeHtmlText(String(row[4] || 'SIN CLIENTE').toUpperCase()) + '</div>' +
+                '<div class="vendor-dashboard-list-sub">' + escapeHtmlText(String(row[5] || '-').toUpperCase()) + ' · ' + escapeHtmlText(String(row[0] || '-')) + '</div>' +
+                '</div>' +
+                '<div class="vendor-dashboard-list-side">' +
+                '<div class="vendor-dashboard-list-amount">' + formatearMontoComisionesVendedor(obtenerMontoArsVentaDashboard(row)) + '</div>' +
+                '<div class="vendor-dashboard-list-status">' + historialEstadoBadgeHtml(row[1]) + '</div>' +
+                '</div>' +
+                '</div>';
+          }).join('')
+          : '<div class="vendor-dashboard-empty">NO HAY VENTAS REGISTRADAS.</div>';
+
+       var html = '<div class="vendor-dashboard">';
+       html += '<div class="vendor-dashboard-head">';
+       html += '<div><div class="vendor-dashboard-eyebrow">FOCO COMERCIAL</div><div class="vendor-dashboard-periodo">' + escapeHtmlText(mesNombre + ' ' + anioBase) + '</div></div>';
+       if (btnAgregar) html += '<div class="vendor-dashboard-head-actions">' + btnAgregar + '</div>';
+       html += '</div>';
+       html += '<div class="vendor-dashboard-grid">';
+       html += '<div class="vendor-dashboard-card"><div class="vendor-dashboard-title">FACTURACIÓN DEL MES</div><div class="vendor-dashboard-value">' + formatearMontoComisionesVendedor(statsMes.totalFacturado) + '</div><div class="vendor-dashboard-sub">' + statsMes.cantidadVentas + ' VENTAS</div></div>';
+       html += '<div class="vendor-dashboard-card"><div class="vendor-dashboard-title">COMISIÓN DEL MES</div><div class="vendor-dashboard-value">' + formatearMontoComisionesVendedor(comisionMes) + '</div><div class="vendor-dashboard-sub">BOTAS + CERTIFICACIONES</div></div>';
+       html += '<div class="vendor-dashboard-card"><div class="vendor-dashboard-title">OBJETIVO DEL MES</div><div class="vendor-dashboard-value">' + formatearMontoComisionesVendedor(metaMes) + '</div><div class="vendor-dashboard-sub">' + (metaMes > 0 ? ('FALTAN ' + formatearMontoComisionesVendedor(Math.max(0, metaMes - (Number(progreso.totalCombinado) || 0)))) : 'SIN OBJETIVO CONFIGURADO') + '</div></div>';
+       html += '<div class="vendor-dashboard-card"><div class="vendor-dashboard-title">AVANCE SOBRE OBJETIVO</div><div class="vendor-dashboard-value">' + pct.toFixed(1) + '%</div><div class="vendor-dashboard-progress"><span style="width:' + pct.toFixed(1) + '%;"></span></div></div>';
+       html += '<div class="vendor-dashboard-card"><div class="vendor-dashboard-title">RANGO ACTUAL</div><div class="vendor-dashboard-value vendor-dashboard-value--compact">' + escapeHtmlText(rangoActual) + '</div><div class="vendor-dashboard-sub">' + (targetObj ? 'PORCENTAJE BASE ACTIVO' : 'SIN RANGO') + '</div></div>';
+       html += '<div class="vendor-dashboard-card"><div class="vendor-dashboard-title">PRÓXIMO RANGO</div><div class="vendor-dashboard-value vendor-dashboard-value--compact">' + escapeHtmlText(proximoRango) + '</div><div class="vendor-dashboard-sub">' + (nextObj ? ('FALTAN ' + formatearMontoComisionesVendedor(faltanteProximo)) : 'YA ESTÁ EN EL MÁXIMO') + '</div></div>';
+       html += '</div>';
+       html += '<div class="vendor-dashboard-secondary-grid">';
+       html += '<div class="vendor-dashboard-card"><div class="vendor-dashboard-title">TICKET PROMEDIO</div><div class="vendor-dashboard-value vendor-dashboard-value--compact">' + formatearMontoComisionesVendedor(ticketPromedio) + '</div><div class="vendor-dashboard-sub">' + (statsMes.cantidadVentas ? 'POR VENTA DEL MES' : 'SIN VENTAS ESTE MES') + '</div></div>';
+       html += '<div class="vendor-dashboard-card"><div class="vendor-dashboard-title">TOP PAÍS</div><div class="vendor-dashboard-value vendor-dashboard-value--compact">' + escapeHtmlText(statsMes.topPaisLabel) + '</div><div class="vendor-dashboard-sub">' + formatearMontoComisionesVendedor(statsMes.topPaisMonto) + '</div></div>';
+       html += '<div class="vendor-dashboard-card"><div class="vendor-dashboard-title">TOP CONCEPTO</div><div class="vendor-dashboard-value vendor-dashboard-value--compact">' + escapeHtmlText(statsMes.topConceptoLabel) + '</div><div class="vendor-dashboard-sub">' + formatearMontoComisionesVendedor(statsMes.topConceptoMonto) + '</div></div>';
+       html += '</div>';
+       html += '<div class="vendor-dashboard-card vendor-dashboard-card--list">';
+       html += '<div class="vendor-dashboard-title">ÚLTIMAS VENTAS</div>';
+       html += '<div class="vendor-dashboard-list">' + listaRecientes + '</div>';
+       html += '</div>';
+       html += '</div>';
+       return html;
+    }
+
     function renderVendedor(datos, nombreVendedor) {
        window.VENTAS_VENDEDOR_OBJETIVOS_NOMBRE = nombreVendedor;
        var baseAnioVobj = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
@@ -527,6 +648,7 @@
           var totalesComboVend = calcTotalesBotasCertsPorMes(filas, anioResVend);
           let resumenBotas = generarMatrizResumenCompleja(filas, 'GRUPO_BOTAS', nombreVendedor, anioResVend, totalesComboVend);
        let resumenCerts = generarMatrizResumenCompleja(filas, 'GRUPO_CERTS', nombreVendedor, anioResVend, totalesComboVend);
+       var dashboardComercialHtml = construirDashboardComercialVendedor(filas, nombreVendedor, anioResVend, resumenBotas, resumenCerts);
  
        let html = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="vendor-grid force-header-style">';
  
@@ -544,13 +666,8 @@
  
        // CONTENIDO PESTAÑAS
  
-         // 1. DASHBOARD (placeholder para nuevo dashboard)
-         html += `<div id="tab-dashboard">
-            <div class="card" style="padding:28px; text-align:center; color:#94a3b8;">
-               <div style="font-weight:700; color:white; margin-bottom:8px;">Nuevo dashboard en construcción</div>
-               <div style="font-size:13px;">Acá vamos a reemplazar las tarjetas actuales por la nueva vista.</div>
-            </div>
-         </div>`;
+        // 1. DASHBOARD COMERCIAL
+        html += `<div id="tab-dashboard">${dashboardComercialHtml}</div>`;
 
          // 2. VENTAS: historial completo + filtros
          html += `<div id="tab-ventas" style="display:none;">
@@ -1273,6 +1390,7 @@
        var lista = Array.isArray(objsTrim) ? objsTrim : [];
        var rangoAlcanzadoNum = null;
        var targetObj = null;
+       var nextObj = null;
        var i;
        for (i = lista.length - 1; i >= 0; i--) {
           var o = lista[i];
@@ -1285,6 +1403,10 @@
        }
        if (targetObj == null && lista.length > 0) {
           targetObj = lista[0];
+          rangoAlcanzadoNum = targetObj.rango;
+       }
+       if (targetObj) {
+          nextObj = lista.find(function (item) { return Number(item.rango) > Number(targetObj.rango); }) || null;
        }
        var metaCombinada = 0;
        if (targetObj) {
@@ -1305,7 +1427,9 @@
           pct: pct,
           rangoLabel: rangoLabel,
           sinObjetivos: sinObjetivos,
-          mesNombre: nombreMes || ''
+          mesNombre: nombreMes || '',
+          targetObj: targetObj,
+          nextObj: nextObj
        };
     }
 
