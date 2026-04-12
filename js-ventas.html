@@ -900,13 +900,15 @@
              totalFacturado: resumen.totalFacturado || 0,
              rango: foco ? foco.rango : null,
              metaActual: foco ? (foco.metaActual || foco.metaCombinada || 0) : 0,
+             totalBotas: lista.reduce(function (acc, mes) { return acc + (Number(mes.totalBotas) || 0); }, 0),
+             totalCerts: lista.reduce(function (acc, mes) { return acc + (Number(mes.totalCerts) || 0); }, 0),
              porcentajeBotas: foco ? foco.porcentajeBotas : 0,
              porcentajeCerts: foco ? foco.porcentajeCerts : 0,
              comisionBotas: lista.reduce(function (acc, mes) { return acc + (Number(mes.comisionBotas) || 0); }, 0),
              comisionCerts: lista.reduce(function (acc, mes) { return acc + (Number(mes.comisionCerts) || 0); }, 0)
           };
        }
-       var porcentajeComision = 'BOTAS: ' + formatearPorcentajeComisionesVendedor(item.porcentajeBotas) + ' | CERTIFICACIONES: ' + formatearPorcentajeComisionesVendedor(item.porcentajeCerts);
+       var facturacionPorLinea = 'BOTAS: ' + formatearMontoComisionesVendedor(item.totalBotas || 0) + ' | CERTIFICACIONES: ' + formatearMontoComisionesVendedor(item.totalCerts || 0);
        var comisionPorLinea = 'BOTAS: ' + formatearMontoComisionesVendedor(item.comisionBotas || 0) + ' | CERTIFICACIONES: ' + formatearMontoComisionesVendedor(item.comisionCerts || 0);
        var comisionTotal = (Number(item.comisionBotas) || 0) + (Number(item.comisionCerts) || 0);
        return '<div class="comisiones-summary-card">' +
@@ -915,7 +917,7 @@
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">FACTURACIÓN</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.totalFacturado) + '</span></div>' +
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">RANGO ALCANZADO</span><span class="comisiones-summary-item-value">' + escapeHtmlText(textoRangoCompletoComisionesVendedor(item.rango)) + '</span></div>' +
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">OBJETIVO DE FACTURACIÓN</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.metaActual || 0) + '</span></div>' +
-          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">% DE COMISIÓN</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + porcentajeComision + '</span></div>' +
+          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">FACTURACIÓN POR LÍNEA</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + facturacionPorLinea + '</span></div>' +
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">COMISIÓN POR LÍNEA</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + comisionPorLinea + '</span></div>' +
           '<div class="comisiones-summary-item comisiones-summary-item--highlight"><span class="comisiones-summary-item-label">COMISIÓN TOTAL</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(comisionTotal) + '</span></div>' +
           '</div>' +
