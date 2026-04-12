@@ -194,13 +194,13 @@
        if (!app) return;
  
        // Países con códigos cortos (igual que en balance de caja)
-       const paisesStock = [
-          { key: 'ARGENTINA', codigo: 'AR', nombre: 'ARGENTINA', colorHeader: '#75AADB', colorBorder: '#6C8EBF' },
-          { key: 'CHILE', codigo: 'CL', nombre: 'CHILE', colorHeader: '#0039A6', colorBorder: '#002E83' },
-          { key: 'MEXICO', codigo: 'MX', nombre: 'MEXICO', colorHeader: '#006847', colorBorder: '#005638' },
-          { key: 'ESPANA', codigo: 'ES', nombre: 'ESPAÑA', colorHeader: '#AA151B', colorBorder: '#8B1116' },
-          { key: 'EEUU', codigo: 'US', nombre: 'EEUU', colorHeader: '#B22234', colorBorder: '#9B1C2C' }
-       ];
+      const paisesStock = [
+         { key: 'ARGENTINA', codigo: 'AR', nombre: 'ARGENTINA' },
+         { key: 'CHILE', codigo: 'CL', nombre: 'CHILE' },
+         { key: 'MEXICO', codigo: 'MX', nombre: 'MEXICO' },
+         { key: 'ESPANA', codigo: 'ES', nombre: 'ESPAÑA' },
+         { key: 'EEUU', codigo: 'US', nombre: 'EEUU' }
+      ].map(pais => Object.assign({}, pais, obtenerTemaPais(pais.key)));
  
        if (!productos || productos.length === 0) {
           // Mostrar selector de países incluso si no hay productos
@@ -209,7 +209,7 @@
  
           paisesStock.forEach(pais => {
              let isActive = PAIS_STOCK_ACTUAL === pais.key ? 'active-view' : '';
-             let estiloActivo = isActive ? ('background: ' + pais.colorHeader + ' !important; border-color: ' + pais.colorBorder + ' !important; color: white !important; font-weight: 800;') : '';
+            let estiloActivo = isActive ? ('background: ' + pais.colorHeader + ' !important; border-color: ' + pais.colorBorder + ' !important; color: ' + pais.colorTexto + ' !important; font-weight: 800;') : '';
              htmlSinProductos += '<div class="view-option ' + isActive + '" onclick="switchPaisStock(\'' + pais.key + '\')" style="' + estiloActivo + '" data-pais="' + pais.key + '">' + pais.nombre + '</div>';
           });
  
@@ -258,7 +258,7 @@
        // Selector de países con colores (igual estilo que balance de caja)
        paisesStock.forEach(pais => {
           let isActive = PAIS_STOCK_ACTUAL === pais.key ? 'active-view' : '';
-          let estiloActivo = isActive ? ('background: ' + pais.colorHeader + ' !important; border-color: ' + pais.colorBorder + ' !important; color: white !important; font-weight: 800;') : '';
+         let estiloActivo = isActive ? ('background: ' + pais.colorHeader + ' !important; border-color: ' + pais.colorBorder + ' !important; color: ' + pais.colorTexto + ' !important; font-weight: 800;') : '';
           html += '<div class="view-option ' + isActive + '" onclick="switchPaisStock(\'' + pais.key + '\')" style="' + estiloActivo + '" data-pais="' + pais.key + '">' + pais.nombre + '</div>';
        });
  
@@ -368,13 +368,13 @@
        if (!app) return;
  
        // Países con códigos cortos (igual que en balance de caja)
-       const paisesStock = [
-          { key: 'ARGENTINA', codigo: 'AR', nombre: 'ARGENTINA', colorHeader: '#75AADB', colorBorder: '#6C8EBF' },
-          { key: 'CHILE', codigo: 'CL', nombre: 'CHILE', colorHeader: '#0039A6', colorBorder: '#002E83' },
-          { key: 'MEXICO', codigo: 'MX', nombre: 'MEXICO', colorHeader: '#006847', colorBorder: '#005638' },
-          { key: 'ESPANA', codigo: 'ES', nombre: 'ESPAÑA', colorHeader: '#AA151B', colorBorder: '#8B1116' },
-          { key: 'EEUU', codigo: 'US', nombre: 'EEUU', colorHeader: '#B22234', colorBorder: '#9B1C2C' }
-       ];
+      const paisesStock = [
+         { key: 'ARGENTINA', codigo: 'AR', nombre: 'ARGENTINA' },
+         { key: 'CHILE', codigo: 'CL', nombre: 'CHILE' },
+         { key: 'MEXICO', codigo: 'MX', nombre: 'MEXICO' },
+         { key: 'ESPANA', codigo: 'ES', nombre: 'ESPAÑA' },
+         { key: 'EEUU', codigo: 'US', nombre: 'EEUU' }
+      ].map(pais => Object.assign({}, pais, obtenerTemaPais(pais.key)));
  
       let html = '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
          '<div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">' +
@@ -382,7 +382,7 @@
        // Selector de países con colores (igual estilo que balance de caja)
        paisesStock.forEach(pais => {
           let isActive = PAIS_STOCK_ACTUAL === pais.key ? 'active-view' : '';
-          let estiloActivo = isActive ? ('background: ' + pais.colorHeader + ' !important; border-color: ' + pais.colorBorder + ' !important; color: white !important; font-weight: 800;') : '';
+         let estiloActivo = isActive ? ('background: ' + pais.colorHeader + ' !important; border-color: ' + pais.colorBorder + ' !important; color: ' + pais.colorTexto + ' !important; font-weight: 800;') : '';
           html += '<div class="view-option ' + isActive + '" onclick="switchPaisStock(\'' + pais.key + '\')" style="' + estiloActivo + '" data-pais="' + pais.key + '">' + pais.nombre + '</div>';
        });
  
@@ -1072,13 +1072,13 @@
        if (typeof APP_STATE !== 'undefined') APP_STATE.set('paisStock', pais); else PAIS_STOCK_ACTUAL = pais;
  
        // Definir colores de países (igual que en balance de caja)
-       const paisesStock = [
-          { key: 'ARGENTINA', colorHeader: '#75AADB', colorBorder: '#6C8EBF' },
-          { key: 'CHILE', colorHeader: '#0039A6', colorBorder: '#002E83' },
-          { key: 'MEXICO', colorHeader: '#006847', colorBorder: '#005638' },
-          { key: 'ESPANA', colorHeader: '#AA151B', colorBorder: '#8B1116' },
-          { key: 'EEUU', colorHeader: '#B22234', colorBorder: '#9B1C2C' }
-       ];
+      const paisesStock = [
+         { key: 'ARGENTINA' },
+         { key: 'CHILE' },
+         { key: 'MEXICO' },
+         { key: 'ESPANA' },
+         { key: 'EEUU' }
+      ].map(paisData => Object.assign({}, paisData, obtenerTemaPais(paisData.key)));
  
        // Actualizar visualmente las pestañas (igual que en balance de caja)
        document.querySelectorAll('[data-pais]').forEach(el => {
@@ -1089,7 +1089,7 @@
              if (paisData) {
                 el.style.background = paisData.colorHeader;
                 el.style.borderColor = paisData.colorBorder;
-                el.style.color = 'white';
+               el.style.color = paisData.colorTexto;
              }
           } else {
              // Resetear estilos para pestañas no activas

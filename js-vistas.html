@@ -1324,20 +1324,20 @@
        // Renderizar tarjetas por país (formato horizontal, ancho completo, uno arriba del otro)
  
        // Países a mostrar
-       const paises = [
-          { key: 'ARGENTINA', nombre: '🇦🇷 ARGENTINA', tieneSubdivisiones: true, colorHeader: '#75AADB', colorBorder: '#6C8EBF' },
-          { key: 'CHILE', nombre: '🇨🇱 CHILE', tieneSubdivisiones: false, colorHeader: '#0039A6', colorBorder: '#002E83' },
-          { key: 'MEXICO', nombre: '🇲🇽 MEXICO', tieneSubdivisiones: false, colorHeader: '#006847', colorBorder: '#005638' },
-          { key: 'ESPANA', nombre: '🇪🇸 ESPAÑA', tieneSubdivisiones: false, colorHeader: '#AA151B', colorBorder: '#8B1116' },
-          { key: 'EEUU', nombre: '🇺🇸 EEUU', tieneSubdivisiones: false, colorHeader: '#B22234', colorBorder: '#9B1C2C' },
-          { key: 'URUGUAY', nombre: '🇺🇾 URUGUAY', tieneSubdivisiones: false, colorHeader: '#0038A8', colorBorder: '#002D87' },
-          { key: 'BRASIL', nombre: '🇧🇷 BRASIL', tieneSubdivisiones: false, colorHeader: '#009739', colorBorder: '#00782D' },
-          { key: 'RDM', nombre: '🇩🇴 RDM', tieneSubdivisiones: false, colorHeader: '#CE1126', colorBorder: '#B00E20' }
-       ];
+      const paises = [
+         { key: 'ARGENTINA', nombre: '🇦🇷 ARGENTINA', tieneSubdivisiones: true },
+         { key: 'CHILE', nombre: '🇨🇱 CHILE', tieneSubdivisiones: false },
+         { key: 'MEXICO', nombre: '🇲🇽 MEXICO', tieneSubdivisiones: false },
+         { key: 'ESPANA', nombre: '🇪🇸 ESPAÑA', tieneSubdivisiones: false },
+         { key: 'EEUU', nombre: '🇺🇸 EEUU', tieneSubdivisiones: false },
+         { key: 'URUGUAY', nombre: '🇺🇾 URUGUAY', tieneSubdivisiones: false },
+         { key: 'BRASIL', nombre: '🇧🇷 BRASIL', tieneSubdivisiones: false },
+         { key: 'RDM', nombre: '🌍 RDM', tieneSubdivisiones: false }
+      ].map(pais => Object.assign({}, pais, obtenerTemaPais(pais.key)));
  
        paises.forEach(pais => {
           html += `<div class="conso-card" style="background: var(--sidebar); border-radius: 12px; overflow: hidden; border: 2px solid ${pais.colorBorder}; margin-bottom: 20px; width: 100%;">
-                <div class="conso-header" style="background: ${pais.colorHeader}; padding: 15px; border-bottom: 1px solid ${pais.colorBorder}; font-weight: 800; text-transform: uppercase; color: white; letter-spacing: 1px; text-align: center;">
+               <div class="conso-header" style="background: ${pais.colorHeader}; padding: 15px; border-bottom: 1px solid ${pais.colorBorder}; font-weight: 800; text-transform: uppercase; color: ${pais.colorTexto}; letter-spacing: 1px; text-align: center;">
                    ${pais.nombre}
                 </div>
                 <div class="conso-body" style="padding: 20px;">`;

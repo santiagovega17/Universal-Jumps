@@ -45,6 +45,33 @@
        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
 
+   function normalizarClavePaisTema(pais) {
+      return String(pais || '')
+         .toUpperCase()
+         .replace(/[ÁÀÄ]/g, 'A')
+         .replace(/[ÉÈË]/g, 'E')
+         .replace(/[ÍÌÏ]/g, 'I')
+         .replace(/[ÓÒÖ]/g, 'O')
+         .replace(/[ÚÙÜ]/g, 'U')
+         .replace(/Ñ/g, 'N')
+         .trim();
+   }
+
+   function obtenerTemaPais(pais) {
+      var key = normalizarClavePaisTema(pais);
+      var temas = {
+         ARGENTINA: { colorHeader: '#7DD3FC', colorBorder: '#38BDF8', colorTexto: '#082F49' },
+         CHILE: { colorHeader: '#DC2626', colorBorder: '#B91C1C', colorTexto: '#FFFFFF' },
+         BRASIL: { colorHeader: '#86EFAC', colorBorder: '#4ADE80', colorTexto: '#14532D' },
+         MEXICO: { colorHeader: '#166534', colorBorder: '#14532D', colorTexto: '#FFFFFF' },
+         EEUU: { colorHeader: '#2563EB', colorBorder: '#1D4ED8', colorTexto: '#FFFFFF' },
+         ESPANA: { colorHeader: '#FACC15', colorBorder: '#EAB308', colorTexto: '#1F2937' },
+         URUGUAY: { colorHeader: '#FFFFFF', colorBorder: '#CBD5E1', colorTexto: '#111827' },
+         RDM: { colorHeader: '#111111', colorBorder: '#000000', colorTexto: '#FFFFFF' }
+      };
+      return temas[key] || { colorHeader: '#111827', colorBorder: '#374151', colorTexto: '#FFFFFF' };
+   }
+
     /** Objeto de estado mínimo: lectura/escritura centralizada (get/set) y sincronización con variables globales. */
     var APP_STATE = {
        _data: {
