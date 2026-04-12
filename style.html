@@ -2320,6 +2320,63 @@
     .filter-select:focus {
        border-color: var(--accent);
     }
+
+    .comisiones-period-scroller-wrap {
+       margin-bottom: 18px;
+       overflow: hidden;
+    }
+
+    .comisiones-period-scroller {
+       display: flex;
+       gap: 10px;
+       overflow-x: auto;
+       overflow-y: hidden;
+       padding: 4px 2px 10px;
+       scrollbar-width: thin;
+       scrollbar-color: rgba(93, 177, 223, 0.45) transparent;
+    }
+
+    .comisiones-period-scroller::-webkit-scrollbar {
+       height: 8px;
+    }
+
+    .comisiones-period-scroller::-webkit-scrollbar-track {
+       background: transparent;
+    }
+
+    .comisiones-period-scroller::-webkit-scrollbar-thumb {
+       background: rgba(93, 177, 223, 0.35);
+       border-radius: 999px;
+    }
+
+    .comisiones-period-chip {
+       flex: 0 0 auto;
+       min-width: 64px;
+       padding: 10px 16px;
+       border-radius: 999px;
+       border: 1px solid var(--border-color);
+       background: var(--sidebar);
+       color: #94a3b8;
+       font-size: 12px;
+       font-weight: 700;
+       letter-spacing: 0.3px;
+       cursor: pointer;
+       white-space: nowrap;
+       transition: all 0.2s ease;
+    }
+
+    .comisiones-period-chip:hover {
+       border-color: rgba(93, 177, 223, 0.7);
+       color: #e2e8f0;
+       transform: translateY(-1px);
+    }
+
+    .comisiones-period-chip.active {
+       background: var(--accent);
+       color: var(--bg);
+       border-color: var(--accent);
+       box-shadow: 0 6px 18px rgba(93, 177, 223, 0.25);
+    }
  
     .btn-reset {
        background: var(--danger);
