@@ -839,6 +839,35 @@
           : ('M' + (new Date().getMonth() + 1));
     }
 
+    function obtenerChartEndIndexComisiones(historico, focoMonthIndex) {
+       var meses = Array.isArray(historico) ? historico : [];
+       var maxIdx = meses.length ? meses.length - 1 : 0;
+       var stored = COMISIONES_VENDEDOR_ESTADO && Number.isFinite(Number(COMISIONES_VENDEDOR_ESTADO.chartEndIndex))
+          ? Number(COMISIONES_VENDEDOR_ESTADO.chartEndIndex)
+          : NaN;
+       if (Number.isFinite(stored)) {
+          if (stored < 0) stored = 0;
+          if (stored > maxIdx) stored = maxIdx;
+          return stored;
+       }
+       var base = Number.isFinite(Number(focoMonthIndex)) ? Number(focoMonthIndex) : maxIdx;
+       if (base < 0) base = 0;
+       if (base > maxIdx) base = maxIdx;
+       return base;
+    }
+
+    function cambiarVentanaGraficoComisiones(delta) {
+       if (!COMISIONES_VENDEDOR_ESTADO || !COMISIONES_VENDEDOR_ESTADO.dataActual) return;
+       var historico = (((COMISIONES_VENDEDOR_ESTADO.dataActual || {}).resumen || {}).historicoMeses) || [];
+       var maxIdx = historico.length ? historico.length - 1 : 0;
+       var current = obtenerChartEndIndexComisiones(historico, maxIdx);
+       var next = current + delta;
+       if (next < 0) next = 0;
+       if (next > maxIdx) next = maxIdx;
+       COMISIONES_VENDEDOR_ESTADO.chartEndIndex = next;
+       renderComisionesVendedor(COMISIONES_VENDEDOR_ESTADO.dataActual);
+    }
+
     function construirSelectorResumenComisiones(mesesDetalle) {
        var periodo = obtenerPeriodoResumenComisiones();
        var html = '<div class="comisiones-summary-selector-wrap">';
@@ -875,6 +904,7 @@
           };
        }
        var porcentajeComision = 'Botas: ' + formatearPorcentajeComisionesVendedor(item.porcentajeBotas) + ' | Certificaciones: ' + formatearPorcentajeComisionesVendedor(item.porcentajeCerts);
+       var comisionPorLinea = 'Botas: ' + formatearMontoComisionesVendedor(item.comisionBotas || 0) + ' | Certificaciones: ' + formatearMontoComisionesVendedor(item.comisionCerts || 0);
        var comisionTotal = (Number(item.comisionBotas) || 0) + (Number(item.comisionCerts) || 0);
        return '<div class="comisiones-summary-card">' +
           '<div class="comisiones-summary-card-title">' + escapeHtmlText(titulo) + '</div>' +
@@ -883,11 +913,79 @@
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Rango alcanzado</span><span class="comisiones-summary-item-value">' + escapeHtmlText(textoRangoCompletoComisionesVendedor(item.rango)) + '</span></div>' +
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Objetivo de facturación</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.metaActual || 0) + '</span></div>' +
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">% de comisión</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + porcentajeComision + '</span></div>' +
-          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Comisión botas</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.comisionBotas || 0) + '</span></div>' +
-          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Comisión certificaciones</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.comisionCerts || 0) + '</span></div>' +
+          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Comisión por línea</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + comisionPorLinea + '</span></div>' +
           '<div class="comisiones-summary-item comisiones-summary-item--highlight"><span class="comisiones-summary-item-label">Comisión total</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(comisionTotal) + '</span></div>' +
           '</div>' +
           '</div>';
+    }
+
+    function construirGraficoLineaComisiones(historico, focoMonthIndex, chartKey, titulo, chartType) {
+       var meses = Array.isArray(historico) ? historico : [];
+       if (!meses.length) {
+          return '<div class="dash-chart-card comisiones-split-chart-card"><div class="comisiones-split-chart-head"><div class="comisiones-chart-title">' + escapeHtmlText(titulo) + '</div></div><div class="comisiones-chart-empty">No hay meses para graficar.</div></div>';
+       }
+       var endIndex = obtenerChartEndIndexComisiones(historico, focoMonthIndex);
+       var startIndex = Math.max(0, endIndex - 3);
+       var visibles = meses.slice(startIndex, endIndex + 1);
+       var width = 560;
+       var height = 250;
+       var padLeft = 28;
+       var padRight = 18;
+       var padTop = 18;
+       var padBottom = 42;
+       var plotWidth = width - padLeft - padRight;
+       var plotHeight = height - padTop - padBottom;
+       var maxValor = 0;
+       visibles.forEach(function (mes) {
+          maxValor = Math.max(maxValor, Number(mes[chartKey]) || 0);
+       });
+       if (maxValor <= 0) maxValor = 1;
+
+       function xForIndex(index) {
+          if (visibles.length === 1) return padLeft + plotWidth / 2;
+          return padLeft + (plotWidth / (visibles.length - 1)) * index;
+       }
+       function yForValue(valor) {
+          return padTop + plotHeight - ((Number(valor) || 0) / maxValor) * plotHeight;
+       }
+
+       var points = [];
+       var pointsHtml = '';
+       var labelsHtml = '';
+       var gridHtml = '';
+
+       for (var g = 0; g <= 4; g++) {
+          var gy = padTop + (plotHeight / 4) * g;
+          gridHtml += '<line x1="' + padLeft + '" y1="' + gy + '" x2="' + (width - padRight) + '" y2="' + gy + '" class="comisiones-chart-gridline"></line>';
+       }
+
+       visibles.forEach(function (mes, idx) {
+          var val = Number(mes[chartKey]) || 0;
+          var x = xForIndex(idx);
+          var y = yForValue(val);
+          points.push(x + ',' + y);
+          labelsHtml += '<div class="comisiones-chart-xlabel' + (mes.monthIndex === focoMonthIndex ? ' comisiones-chart-label--active' : '') + '" style="left:' + (((x - padLeft) / plotWidth) * 100) + '%;">' + escapeHtmlText((mes.nombreMes || '').substring(0, 3)) + '</div>';
+          pointsHtml += '<circle cx="' + x + '" cy="' + y + '" r="' + (mes.monthIndex === focoMonthIndex ? 5 : 4) + '" class="comisiones-chart-point comisiones-chart-point--' + chartType + '"><title>' + escapeHtmlText((mes.nombreMes || '-') + ' | ' + titulo + ': ' + formatearMontoComisionesVendedor(val)) + '</title></circle>';
+       });
+
+       var prevDisabled = startIndex <= 0 ? ' disabled' : '';
+       var nextDisabled = endIndex >= meses.length - 1 ? ' disabled' : '';
+       var html = '<div class="dash-chart-card comisiones-split-chart-card">';
+       html += '<div class="comisiones-split-chart-head">';
+       html += '<div class="comisiones-chart-title">' + escapeHtmlText(titulo) + '</div>';
+       html += '<div class="comisiones-chart-nav">';
+       html += '<button type="button" class="comisiones-chart-nav-btn"' + prevDisabled + ' onclick="cambiarVentanaGraficoComisiones(-1)">&#8249;</button>';
+       html += '<button type="button" class="comisiones-chart-nav-btn"' + nextDisabled + ' onclick="cambiarVentanaGraficoComisiones(1)">&#8250;</button>';
+       html += '</div></div>';
+       html += '<div class="comisiones-line-chart-wrap comisiones-line-chart-wrap--split">';
+       html += '<svg class="comisiones-line-chart" viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none">';
+       html += gridHtml;
+       html += '<polyline class="comisiones-line-chart-path comisiones-line-chart-path--' + chartType + '" points="' + points.join(' ') + '"></polyline>';
+       html += pointsHtml;
+       html += '</svg>';
+       html += '<div class="comisiones-chart-xlabels">' + labelsHtml + '</div>';
+       html += '</div></div>';
+       return html;
     }
 
     function onResumenComisionesPeriodoChange(value) {
@@ -957,26 +1055,25 @@
        resumenHtml += '<div class="comisiones-overview-card">' +
           '<div class="comisiones-overview-title">Comisión</div>' +
           '<div class="comisiones-overview-value">' + formatearMontoComisionesVendedor(foco.totalComision) + '</div>' +
-          '<div class="comisiones-overview-sub comisiones-overview-sub--stack comisiones-overview-sub--principal"><span>Botas: ' + formatearMontoComisionesVendedor(foco.comisionBotas || 0) + '</span><br><span>Certificaciones: ' + formatearMontoComisionesVendedor(foco.comisionCerts || 0) + '</span></div>' +
           '<div class="comisiones-overview-sub ' + claseDeltaComisiones(extraerDeltaNumerica(textoDeltaCom)) + '">' + escapeHtmlText(textoDeltaCom) + '</div>' +
           '</div>';
        resumenHtml += '<div class="comisiones-overview-card">' +
           '<div class="comisiones-overview-title">Próximo rango</div>' +
           '<div class="comisiones-overview-value comisiones-overview-value--range">' + (foco.estaEnRangoMaximo ? 'RANGO MÁXIMO' : escapeHtmlText(('PRÓXIMO ' + textoRangoCompletoComisionesVendedor(foco.siguienteRango)).toUpperCase())) + '</div>' +
-          '<div class="comisiones-overview-sub comisiones-overview-sub--strong">' + (foco.estaEnRangoMaximo ? 'Ya alcanzó el último rango' : 'Faltan ' + formatearMontoComisionesVendedor(foco.faltanteProximoRango)) + '</div>' +
+          '<div class="comisiones-overview-sub comisiones-overview-sub--stack"><span>' + (foco.estaEnRangoMaximo ? 'Rango máximo' : escapeHtmlText(textoRangoCompletoComisionesVendedor(foco.siguienteRango))) + '</span><br><span>' + (foco.estaEnRangoMaximo ? 'Ya alcanzado' : 'Faltan ' + formatearMontoComisionesVendedor(foco.faltanteProximoRango)) + '</span></div>' +
           '</div>';
        resumenHtml += '<div class="comisiones-overview-card">' +
           '<div class="comisiones-overview-title">Rango actual</div>' +
           '<div class="comisiones-overview-value comisiones-overview-value--range">' + escapeHtmlText(('RANGO ACTUAL ' + (foco.rango == null ? '-' : Number(foco.rango))).toUpperCase()) + '</div>' +
-          '<div class="comisiones-overview-sub comisiones-overview-sub--stack comisiones-overview-sub--principal"><span>Botas: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeBotas) + '</span><br><span>Certificaciones: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeCerts) + '</span></div>' +
+          '<div class="comisiones-overview-sub comisiones-overview-sub--stack"><span>' + escapeHtmlText(textoRangoCompletoComisionesVendedor(foco.rango)) + '</span><br><span>Botas: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeBotas) + ' | Certificaciones: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeCerts) + '</span></div>' +
           '</div>';
        resumenHtml += '</div>';
 
        resumenHtml += '<div class="comisiones-chart-card">';
-       resumenHtml += '<div class="comisiones-chart-title-wrap">';
-       resumenHtml += '<div class="comisiones-chart-title">GRÁFICO MENSUAL</div>';
+       resumenHtml += '<div class="dash-charts-grid dash-charts-compare">';
+       resumenHtml += construirGraficoLineaComisiones(historico, foco.monthIndex, 'totalFacturado', 'FACTURACIÓN', 'fact');
+       resumenHtml += construirGraficoLineaComisiones(historico, foco.monthIndex, 'totalComision', 'COMISIÓN', 'comision');
        resumenHtml += '</div>';
-       resumenHtml += construirGraficoComisionesMensual(historico, foco.monthIndex);
        resumenHtml += construirSelectorResumenComisiones(mesesDetalle);
        resumenHtml += construirTarjetaResumenPeriodo(resumen, foco, mesesDetalle);
        resumenHtml += '</div>';
