@@ -18,6 +18,7 @@
     var SIMPLE_ICONS_SVG_CDN = 'https://cdn.jsdelivr.net/npm/simple-icons@13.16.0/icons/';
     var COMISIONES_VENDEDOR_CACHE = {};
     var COMISIONES_VENDEDOR_ESTADO = { vendedor: '', requestKey: '' };
+    var COMISIONES_SCROLLER_DRAG = { active: false, moved: false, startX: 0, scrollLeft: 0 };
 
     /**
      * logoSlug: SVG en jsDelivr (Simple Icons). logoUrl: imagen propia/CDN.
@@ -505,10 +506,6 @@
        for (var vcm = 1; vcm <= 12; vcm++) {
           chipsComPeriodo += '<button type="button" class="comisiones-period-chip" data-periodo="M' + vcm + '" onclick="seleccionarPeriodoComisionesVendedor(this)">' + nombresMesVobj[vcm - 1].substring(0, 3) + '</button>';
        }
-       chipsComPeriodo += '<button type="button" class="comisiones-period-chip" data-periodo="T1" onclick="seleccionarPeriodoComisionesVendedor(this)">T1</button>';
-       chipsComPeriodo += '<button type="button" class="comisiones-period-chip" data-periodo="T2" onclick="seleccionarPeriodoComisionesVendedor(this)">T2</button>';
-       chipsComPeriodo += '<button type="button" class="comisiones-period-chip" data-periodo="T3" onclick="seleccionarPeriodoComisionesVendedor(this)">T3</button>';
-       chipsComPeriodo += '<button type="button" class="comisiones-period-chip" data-periodo="T4" onclick="seleccionarPeriodoComisionesVendedor(this)">T4</button>';
        var puedeEditarObjVentas = puedeEditarObjetivosVentas(nombreVendedor);
        var btnObjetivosHtml = puedeEditarObjVentas
           ? '<button type="button" id="btnVobjEdit" class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditModeObjetivosVendedor()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar objetivos</button>'
@@ -783,6 +780,47 @@
        }
     }
 
+    function iniciarDragScrollerComisiones(ev) {
+       var scroller = document.getElementById('comisionesPeriodScroller');
+       if (!scroller) return;
+       COMISIONES_SCROLLER_DRAG.active = true;
+       COMISIONES_SCROLLER_DRAG.moved = false;
+       COMISIONES_SCROLLER_DRAG.startX = ev.clientX;
+       COMISIONES_SCROLLER_DRAG.scrollLeft = scroller.scrollLeft;
+       scroller.classList.add('dragging');
+    }
+
+    function moverDragScrollerComisiones(ev) {
+       var scroller = document.getElementById('comisionesPeriodScroller');
+       if (!scroller || !COMISIONES_SCROLLER_DRAG.active) return;
+       var delta = ev.clientX - COMISIONES_SCROLLER_DRAG.startX;
+       if (Math.abs(delta) > 4) COMISIONES_SCROLLER_DRAG.moved = true;
+       scroller.scrollLeft = COMISIONES_SCROLLER_DRAG.scrollLeft - delta;
+    }
+
+    function terminarDragScrollerComisiones() {
+       var scroller = document.getElementById('comisionesPeriodScroller');
+       COMISIONES_SCROLLER_DRAG.active = false;
+       if (scroller) scroller.classList.remove('dragging');
+       setTimeout(function () { COMISIONES_SCROLLER_DRAG.moved = false; }, 0);
+    }
+
+    function inicializarScrollerComisionesVendedor() {
+       var scroller = document.getElementById('comisionesPeriodScroller');
+       if (!scroller || scroller.dataset.dragReady === '1') return;
+       scroller.dataset.dragReady = '1';
+       scroller.addEventListener('pointerdown', function (ev) {
+          if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+          iniciarDragScrollerComisiones(ev);
+       });
+       scroller.addEventListener('pointermove', function (ev) {
+          moverDragScrollerComisiones(ev);
+       });
+       scroller.addEventListener('pointerup', terminarDragScrollerComisiones);
+       scroller.addEventListener('pointerleave', terminarDragScrollerComisiones);
+       scroller.addEventListener('pointercancel', terminarDragScrollerComisiones);
+     }
+
     function setPeriodoComisionesVendedor(periodo, opts) {
        opts = opts || {};
        var chips = document.querySelectorAll('#comisionesPeriodScroller .comisiones-period-chip');
@@ -804,6 +842,7 @@
 
     function seleccionarPeriodoComisionesVendedor(el) {
        if (!el) return;
+       if (COMISIONES_SCROLLER_DRAG.moved) return;
        var periodo = el.getAttribute('data-periodo') || 'ALL';
        setPeriodoComisionesVendedor(periodo);
        refrescarPanelComisionesVendedor(true);
@@ -932,6 +971,7 @@
        };
        var selAnio = document.getElementById('selComVendAnio');
        if (selAnio && !selAnio.value) selAnio.value = String(COMISIONES_VENDEDOR_ESTADO.anioBase);
+       inicializarScrollerComisionesVendedor();
        setPeriodoComisionesVendedor('M' + (new Date().getMonth() + 1), { scrollIntoView: true });
        refrescarPanelComisionesVendedor(true);
     }

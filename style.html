@@ -2334,6 +2334,9 @@
        padding: 4px 2px 10px;
        scrollbar-width: thin;
        scrollbar-color: rgba(93, 177, 223, 0.45) transparent;
+       cursor: grab;
+       user-select: none;
+       touch-action: pan-x;
     }
 
     .comisiones-period-scroller::-webkit-scrollbar {
@@ -2369,6 +2372,15 @@
        border-color: rgba(93, 177, 223, 0.7);
        color: #e2e8f0;
        transform: translateY(-1px);
+    }
+
+    .comisiones-period-scroller.dragging {
+       cursor: grabbing;
+       scroll-behavior: auto;
+    }
+
+    .comisiones-period-scroller.dragging .comisiones-period-chip {
+       pointer-events: none;
     }
 
     .comisiones-period-chip.active {
