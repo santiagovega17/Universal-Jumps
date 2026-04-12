@@ -23,12 +23,10 @@
              if (typeof getHtmlErrorRedConReintentar === 'function') {
                 window._reintentarCarga = function () { cargarStock(); };
                 document.getElementById('app').innerHTML =
-                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                    '<div class="dash-section-title">STOCK</div>' +
                    getHtmlErrorRedConReintentar(msg);
              } else {
                 document.getElementById('app').innerHTML =
-                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                    '<div class="dash-section-title">STOCK</div>' +
                    '<div style="padding:40px; text-align:center; color:#ef4444;">' +
                       '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
@@ -45,7 +43,6 @@
              } catch (e) {
                 console.error('Error al renderizar stock:', e);
                 document.getElementById('app').innerHTML =
-                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                    '<div class="dash-section-title">STOCK</div>' +
                    '<div style="padding:40px; text-align:center; color:#ef4444;">' +
                       '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
@@ -61,12 +58,10 @@
           if (typeof getHtmlErrorRedConReintentar === 'function') {
              window._reintentarCarga = function () { cargarStock(); };
              document.getElementById('app').innerHTML =
-                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                 '<div class="dash-section-title">STOCK</div>' +
                 getHtmlErrorRedConReintentar(errMsg);
           } else {
              document.getElementById('app').innerHTML =
-                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                 '<div class="dash-section-title">STOCK</div>' +
                 '<div style="padding:40px; text-align:center; color:#ef4444;">' +
                    '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
@@ -88,7 +83,6 @@
           if (!res || typeof res !== 'object') {
              console.error('Respuesta inválida:', res);
              document.getElementById('app').innerHTML =
-                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                 '<div class="dash-section-title">MOVIMIENTOS</div>' +
                 '<div style="padding:40px; text-align:center; color:#ef4444;">' +
                    '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
@@ -103,12 +97,10 @@
              if (typeof getHtmlErrorRedConReintentar === 'function') {
                 window._reintentarCarga = function () { cargarMovimientosStock(); };
                 document.getElementById('app').innerHTML =
-                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                    '<div class="dash-section-title">MOVIMIENTOS</div>' +
                    getHtmlErrorRedConReintentar(resMsg);
              } else {
                 document.getElementById('app').innerHTML =
-                   '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                    '<div class="dash-section-title">MOVIMIENTOS</div>' +
                    '<div style="padding:40px; text-align:center; color:#ef4444;">' +
                       '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
@@ -128,12 +120,10 @@
           if (typeof getHtmlErrorRedConReintentar === 'function') {
              window._reintentarCarga = function () { cargarMovimientosStock(); };
              document.getElementById('app').innerHTML =
-                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                 '<div class="dash-section-title">MOVIMIENTOS</div>' +
                 getHtmlErrorRedConReintentar(errMsgMov + '. Verifica que la hoja STOCK_MOVIMIENTOS exista y tenga la columna H con el país.');
           } else {
              document.getElementById('app').innerHTML =
-                '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
                 '<div class="dash-section-title">MOVIMIENTOS</div>' +
                 '<div style="padding:40px; text-align:center; color:#ef4444;">' +
                    '<span class="material-symbols-outlined" style="font-size:64px; margin-bottom:20px; opacity:0.5;">error</span>' +
@@ -214,8 +204,7 @@
  
        if (!productos || productos.length === 0) {
           // Mostrar selector de países incluso si no hay productos
-          let htmlSinProductos = '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
-             '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
+         let htmlSinProductos = '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
              '<div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">';
  
           paisesStock.forEach(pais => {
@@ -263,9 +252,8 @@
        // Ordenar marcas alfabéticamente (case-insensitive)
        const marcasOrdenadas = Object.keys(agrupados).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
  
-       let html = '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
-          '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
-          '<div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">';
+      let html = '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
+         '<div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">' +
  
        // Selector de países con colores (igual estilo que balance de caja)
        paisesStock.forEach(pais => {
@@ -388,9 +376,8 @@
           { key: 'EEUU', codigo: 'US', nombre: 'EEUU', colorHeader: '#B22234', colorBorder: '#9B1C2C' }
        ];
  
-       let html = '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>' +
-          '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
-          '<div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">';
+      let html = '<div class="view-toggle-container" style="margin-top: 10px; margin-bottom: 20px;">' +
+         '<div class="type-toggle" style="width: 100%; max-width: 900px; margin: 0 auto;">' +
  
        // Selector de países con colores (igual estilo que balance de caja)
        paisesStock.forEach(pais => {

@@ -454,13 +454,9 @@
           document.getElementById('titulo').innerText = 'DASHBOARD';
           renderMainMenu(); 
        }
-       else if (hoja === 'MENU_ADMIN') { 
-          document.getElementById('titulo').innerText = 'ADMINISTRACIÓN';
-          renderAdminMenu(); 
-       }
-       else if (hoja === 'MENU_VENTAS') { 
-          document.getElementById('titulo').innerText = 'VENTAS';
-          renderVentasMenu(); 
+      else if (hoja === 'MENU_ADMIN' || hoja === 'MENU_VENTAS') { 
+         document.getElementById('titulo').innerText = 'DASHBOARD';
+         renderMainMenu(); 
        }
        else if (hoja === 'MENU_STOCK') { 
           var rolEff = getRolEfectivo();
@@ -485,7 +481,7 @@
           }
           document.getElementById('titulo').innerText = 'STOCK';
           if (selStock) selStock.style.display = 'flex';
-          mostrarEstadoCarga('STOCK', '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'STOCK');
+         mostrarEstadoCarga('STOCK', '', 'STOCK');
           cargarStock();
        }
        else if (hoja === 'CAMBIAR_TRIMESTRE') {
@@ -493,12 +489,12 @@
           let currentTitle = document.getElementById('titulo').innerText;
           if (currentTitle === 'COMISIONES') {
              document.getElementById('titulo').innerText = 'COMISIONES';
-             mostrarEstadoCarga('COMISIONES', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'COMISIONES');
+            mostrarEstadoCarga('COMISIONES', '', 'COMISIONES');
              google.script.run.withSuccessHandler(res => {
                 NAVEGANDO = false;
                 if (HOJA_ACTUAL !== 'CAMBIAR_TRIMESTRE' || (document.getElementById('titulo') && document.getElementById('titulo').innerText !== 'COMISIONES')) return;
                 if (res.error) {
-                   document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">COMISIONES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
+                  document.getElementById('app').innerHTML = `<div class="dash-section-title">COMISIONES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
                 } else {
                    renderComisiones(res.data);
                 }
@@ -510,12 +506,12 @@
        }
        else if (hoja === 'GESTION_USUARIOS') {
           document.getElementById('titulo').innerText = 'GESTIONAR USUARIOS';
-          mostrarEstadoCarga('GESTIONAR USUARIOS', '<div class="back-nav" onclick="navegar(null, \'MENU_ADMIN\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'USUARIOS');
+         mostrarEstadoCarga('GESTIONAR USUARIOS', '', 'USUARIOS');
           google.script.run.withSuccessHandler(res => {
              NAVEGANDO = false;
              if (HOJA_ACTUAL !== 'GESTION_USUARIOS') return;
              if (res.error) {
-                document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_ADMIN')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">GESTIONAR USUARIOS</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
+               document.getElementById('app').innerHTML = `<div class="dash-section-title">GESTIONAR USUARIOS</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
              } else {
                 renderGestionUsuarios();
              }
@@ -524,7 +520,7 @@
        else if (hoja === 'CAJA') {
           selBalance.style.display = 'flex';
           document.getElementById('titulo').innerText = 'BALANCE DE CAJA';
-          mostrarEstadoCarga('BALANCE DE CAJA', '<div class="back-nav" onclick="navegar(null, \'MENU_ADMIN\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CAJA');
+         mostrarEstadoCarga('BALANCE DE CAJA', '', 'CAJA');
           renderBalanceCaja();
        }
        else if (hoja === 'CAJA_CONSOLIDADO') {
@@ -544,7 +540,7 @@
              return;
           }
           document.getElementById('titulo').innerText = 'CONFIGURACIÓN - VENTAS';
-          mostrarEstadoCarga('CONFIGURACIÓN', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CONFIGURACION_VENTAS');
+         mostrarEstadoCarga('CONFIGURACIÓN', '', 'CONFIGURACION_VENTAS');
           if (typeof renderConfiguracionVentas === 'function') {
              renderConfiguracionVentas();
           } else {
@@ -553,12 +549,12 @@
        }
        else if (hoja === 'CLIENTES') {
           document.getElementById('titulo').innerText = 'CLIENTES';
-          mostrarEstadoCarga('CLIENTES', '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'CLIENTES');
+         mostrarEstadoCarga('CLIENTES', '', 'CLIENTES');
           google.script.run.withSuccessHandler(res => {
              NAVEGANDO = false;
              if (HOJA_ACTUAL !== 'CLIENTES') return;
              if (res.error) {
-                document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">CLIENTES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
+               document.getElementById('app').innerHTML = `<div class="dash-section-title">CLIENTES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${res.mensaje}</div>`;
              } else {
                 renderClientes();
              }
@@ -575,7 +571,7 @@
           let tituloConsolidado = hoja === '%' ? 'COMISIONES' : 'CONSOLIDADO';
           document.getElementById('titulo').innerText = tituloConsolidado;
           if (hoja === '%' && selVentas) selVentas.style.display = 'block';
-          mostrarEstadoCarga(tituloConsolidado, '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', hoja === '%' ? 'COMISIONES' : 'CONSOLIDADO');
+         mostrarEstadoCarga(tituloConsolidado, '', hoja === '%' ? 'COMISIONES' : 'CONSOLIDADO');
           cargar(hoja);
        }
        else {
@@ -583,7 +579,7 @@
           if (fabVenta) fabVenta.style.display = 'none';
           let tituloVendedor = 'VENTAS: ' + hoja.toUpperCase();
           document.getElementById('titulo').innerText = tituloVendedor;
-          mostrarEstadoCarga(tituloVendedor, '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'VENTAS');
+         mostrarEstadoCarga(tituloVendedor, '', 'VENTAS');
           cargar(hoja);
        }
  
@@ -1023,41 +1019,19 @@
     }
  
     function renderAdminMenu() {
-       let html = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
-          <div class="dash-section-title">ADMINISTRACIÓN</div>
-          <div class="home-grid">
-             <div class="home-card" onclick="navegar(null, 'CAJA')"><div class="home-icon"><span class="material-symbols-outlined">account_balance_wallet</span></div><div class="home-title">Balance de Caja</div><div class="home-desc">Ingresos y Egresos</div></div>
-             <div class="home-card" onclick="navegar(null, 'GESTION_USUARIOS')"><div class="home-icon"><span class="material-symbols-outlined">groups</span></div><div class="home-title">Gestionar Usuarios</div><div class="home-desc">Usuarios y Permisos</div></div>
-          </div>`;
-       document.getElementById('app').innerHTML = html;
+      renderMainMenu();
     }
  
     function renderVentasMenu() {
-       let user = USUARIO_ACTUAL;
-       let rolEff = getRolEfectivo();
-       let hojaEff = getHojaEfectiva();
-       let html = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">VENTAS</div><div class="home-grid">`;
-       if (rolEff === 'ADMIN' || rolEff === 'ROOT') {
-          html += `<div class="home-card" onclick="navegar(null, 'CONSOLIDADO')"><div class="home-icon"><span class="material-symbols-outlined">leaderboard</span></div><div class="home-title">Consolidado</div></div>
-                      <div class="home-card" onclick="navegar(null, '%')"><div class="home-icon"><span class="material-symbols-outlined">trending_up</span></div><div class="home-title">Comisiones</div></div>
-                      <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>
-                      <div class="home-card" onclick="navegar(null, 'CONFIGURACION_VENTAS')"><div class="home-icon"><span class="material-symbols-outlined">tune</span></div><div class="home-title">Configuración</div><div class="home-desc">Medios de pago y más</div></div>`;
-       } else if (rolEff === 'VENDEDORGRAL') {
-          html += `<div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
-       } else {
-         html += `<div class="home-card" onclick="navegar(null, '${hojaEff || user.hoja}')"><div class="home-icon"><span class="material-symbols-outlined">edit_note</span></div><div class="home-title">Mis Ventas</div></div>
-                      <div class="home-card" onclick="navegar(null, 'CLIENTES')"><div class="home-icon"><span class="material-symbols-outlined">contacts</span></div><div class="home-title">Clientes</div></div>`;
-       }
-       html += `</div>`;
-       document.getElementById('app').innerHTML = html;
+      renderMainMenu();
     }
  
     function renderStockMenu() {
-       mostrarEstadoCarga('Inventario de Botas', '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>', 'STOCK');
+      mostrarEstadoCarga('Inventario de Botas', '', 'STOCK');
        if (typeof cargarStock === 'function') {
           cargarStock();
        } else {
-          document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'HOME\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">Inventario de Botas</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: no se cargó el script de stock. Comprueba la consola (errores de sintaxis).</div>';
+         document.getElementById('app').innerHTML = '<div class="dash-section-title">Inventario de Botas</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: no se cargó el script de stock. Comprueba la consola (errores de sintaxis).</div>';
        }
     }
 </script>

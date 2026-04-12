@@ -14,9 +14,9 @@
              if (res.error) {
                 if (typeof getHtmlErrorRedConReintentar === 'function') {
                    window._reintentarCarga = function () { cargar('CONSOLIDADO'); };
-                   document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">CONSOLIDADO</div>' + getHtmlErrorRedConReintentar(res.mensaje || 'Error al cargar');
+                  document.getElementById('app').innerHTML = '<div class="dash-section-title">CONSOLIDADO</div>' + getHtmlErrorRedConReintentar(res.mensaje || 'Error al cargar');
                 } else {
-                   document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">CONSOLIDADO</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (res.mensaje || '') + '</div>';
+                  document.getElementById('app').innerHTML = '<div class="dash-section-title">CONSOLIDADO</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (res.mensaje || '') + '</div>';
                 }
              } else {
                 renderConsolidado(res.data);
@@ -26,9 +26,9 @@
              if (HOJA_ACTUAL !== 'CONSOLIDADO') return;
              if (typeof getHtmlErrorRedConReintentar === 'function') {
                 window._reintentarCarga = function () { cargar('CONSOLIDADO'); };
-                document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">CONSOLIDADO</div>' + getHtmlErrorRedConReintentar(err && err.message ? err.message : 'Error de conexión');
+                document.getElementById('app').innerHTML = '<div class="dash-section-title">CONSOLIDADO</div>' + getHtmlErrorRedConReintentar(err && err.message ? err.message : 'Error de conexión');
              } else {
-                document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">CONSOLIDADO</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (err && err.message ? err.message : '') + '</div>';
+                document.getElementById('app').innerHTML = '<div class="dash-section-title">CONSOLIDADO</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (err && err.message ? err.message : '') + '</div>';
              }
           }).obtenerReporteConsolidado(anioConsolidadoVentas);
           return;
@@ -41,9 +41,9 @@
              if (res.error) {
                 if (typeof getHtmlErrorRedConReintentar === 'function') {
                    window._reintentarCarga = function () { cargar('%'); };
-                   document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">COMISIONES</div>' + getHtmlErrorRedConReintentar(res.mensaje || 'Error al cargar');
+                  document.getElementById('app').innerHTML = '<div class="dash-section-title">COMISIONES</div>' + getHtmlErrorRedConReintentar(res.mensaje || 'Error al cargar');
                 } else {
-                   document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">COMISIONES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (res.mensaje || '') + '</div>';
+                  document.getElementById('app').innerHTML = '<div class="dash-section-title">COMISIONES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (res.mensaje || '') + '</div>';
                 }
              } else {
                 renderComisiones(res.data);
@@ -53,9 +53,9 @@
              if (HOJA_ACTUAL !== '%') return;
              if (typeof getHtmlErrorRedConReintentar === 'function') {
                 window._reintentarCarga = function () { cargar('%'); };
-                document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">COMISIONES</div>' + getHtmlErrorRedConReintentar(err && err.message ? err.message : 'Error de conexión');
+                document.getElementById('app').innerHTML = '<div class="dash-section-title">COMISIONES</div>' + getHtmlErrorRedConReintentar(err && err.message ? err.message : 'Error de conexión');
              } else {
-                document.getElementById('app').innerHTML = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">COMISIONES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (err && err.message ? err.message : '') + '</div>';
+                document.getElementById('app').innerHTML = '<div class="dash-section-title">COMISIONES</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ' + (err && err.message ? err.message : '') + '</div>';
              }
           }).obtenerTodasLasComisiones();
           return;
@@ -90,12 +90,12 @@
                 if (HOJA_ACTUAL !== hoja) return;
                 if (!data) {
                    let titulo = 'VENTAS: ' + hoja.toUpperCase();
-                   document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: No se recibieron datos</div>`;
+                  document.getElementById('app').innerHTML = `<div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: No se recibieron datos</div>`;
                    return;
                 }
                 if (data.error) {
                    let titulo = 'VENTAS: ' + hoja.toUpperCase();
-                   document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${data.mensaje || 'Error desconocido'}</div>`;
+                  document.getElementById('app').innerHTML = `<div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${data.mensaje || 'Error desconocido'}</div>`;
                    return;
                 }
                 if (hoja === 'CONSOLIDADO') {
@@ -119,7 +119,7 @@
                 console.error('Error al renderizar:', renderError);
                 if (HOJA_ACTUAL !== hoja) return;
                 let titulo = 'VENTAS: ' + hoja.toUpperCase();
-                document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error al renderizar: ${renderError.message}</div>`;
+                document.getElementById('app').innerHTML = `<div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error al renderizar: ${renderError.message}</div>`;
              }
           }).withFailureHandler(err => {
              NAVEGANDO = false;
@@ -127,19 +127,18 @@
              if (HOJA_ACTUAL !== hoja) return;
              let titulo = 'VENTAS: ' + hoja.toUpperCase();
              let errorMsg = err && err.message ? err.message : (err && err.toString ? err.toString() : 'Error desconocido');
-             document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${errorMsg}</div>`;
+             document.getElementById('app').innerHTML = `<div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error: ${errorMsg}</div>`;
           }).obtenerDatosDeHoja(hoja);
        } catch (e) {
           NAVEGANDO = false;
           console.error('Error al iniciar carga:', e);
           let titulo = 'VENTAS: ' + hoja.toUpperCase();
-          document.getElementById('app').innerHTML = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error al iniciar carga: ${e.message}</div>`;
+          document.getElementById('app').innerHTML = `<div class="dash-section-title">${titulo}</div><div style="padding:40px; text-align:center; color:#ef4444;">Error al iniciar carga: ${e.message}</div>`;
        }
     }
  
     function renderMantenimiento() {
-       let html = `<div class="back-nav" onclick="navegar(null, 'HOME')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
-           <div class="home-grid"><div class="home-card disabled"><div class="home-icon"><span class="material-symbols-outlined">construction</span></div><div class="home-title">Próximamente</div></div></div>`;
+      let html = `<div class="home-grid"><div class="home-card disabled"><div class="home-icon"><span class="material-symbols-outlined">construction</span></div><div class="home-title">Próximamente</div></div></div>`;
        document.getElementById('app').innerHTML = html;
     }
  
@@ -153,8 +152,7 @@
     }
 
     function renderComisiones(dataComisiones) {
-       let html = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
-          <div class="dash-section-title">COMISIONES</div>`;
+      let html = `<div class="dash-section-title">COMISIONES</div>`;
  
        const trimestres = ['T1', 'T2', 'T3', 'T4'];
  
@@ -242,7 +240,7 @@
  
     // NUEVA FUNCIÓN: Renderizar gestión de usuarios
     function renderGestionUsuarios() {
-       var backNav = '<div class="back-nav" onclick="navegar(null, \'MENU_ADMIN\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">GESTIÓN DE USUARIOS</div>';
+      var backNav = '<div class="dash-section-title">GESTIÓN DE USUARIOS</div>';
        google.script.run.withSuccessHandler(res => {
           if (res.error) {
              if (typeof getHtmlErrorRedConReintentar === 'function') {
@@ -254,8 +252,7 @@
              return;
           }
  
-          let html = `<div class="back-nav" onclick="navegar(null, 'MENU_ADMIN')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
-             <div class="dash-section-title">GESTIÓN DE USUARIOS</div>
+         let html = `<div class="dash-section-title">GESTIÓN DE USUARIOS</div>
              <div class="usuarios-gestion-toolbar">
                 <button class="btn-submit" type="button" onclick="abrirModalVendedor('crear')">
                    <span class="material-symbols-outlined">add</span>
@@ -374,8 +371,7 @@
     // NUEVA FUNCIÓN: Renderizar clientes
     function renderClientes() {
        // Todos ven la misma vista (sin filtro de vendedor)
-       let html = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
-             <div class="dash-section-title">CLIENTES</div>
+      let html = `<div class="dash-section-title">CLIENTES</div>
              <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 200px;">
                    <label class="form-label">País</label>
@@ -482,7 +478,7 @@
        // Permitir a todos los vendedores, admins y root crear clientes
        let puedeAgregar = esVendedor || rolUsuario === 'ADMIN' || rolUsuario === 'ROOT';
  
-          var backNavClientes = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="dash-section-title">CLIENTES</div>';
+         var backNavClientes = '<div class="dash-section-title">CLIENTES</div>';
        google.script.run.withSuccessHandler(res => {
           if (res.error) {
              if (typeof getHtmlErrorRedConReintentar === 'function') {
@@ -527,8 +523,7 @@
  
           let container = document.getElementById('clientes-container');
           if (!container) {
-             let headerHtml = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
-                <div class="dash-section-title">CLIENTES</div>`;
+            let headerHtml = `<div class="dash-section-title">CLIENTES</div>`;
              document.getElementById('app').innerHTML = headerHtml + html;
           } else {
              container.innerHTML = html;
@@ -1298,8 +1293,7 @@
  
     // --- NUEVO RENDER CONSOLIDADO (TIPO TARJETAS) ---
     function renderConsolidado(data) {
-       let html = `<div class="back-nav" onclick="navegar(null, 'MENU_VENTAS')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>
-           <div class="dash-section-title">REPORTE CONSOLIDADO</div>`;
+      let html = `<div class="dash-section-title">REPORTE CONSOLIDADO</div>`;
  
        const ordenMeses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
  

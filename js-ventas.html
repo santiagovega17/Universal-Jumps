@@ -223,9 +223,7 @@
        if (!USUARIO_ACTUAL || !nombreVendedor) return false;
        var rol = String((typeof getRolEfectivo === 'function' ? getRolEfectivo() : USUARIO_ACTUAL.rol) || '').toUpperCase();
        if (rol === 'ADMIN' || rol === 'ROOT') return true;
-       if (rol !== 'VENDEDOR') return false;
-       var hoja = (typeof getHojaEfectiva === 'function' ? getHojaEfectiva() : USUARIO_ACTUAL.hoja) || '';
-       return hoja && String(hoja).toUpperCase() === String(nombreVendedor).toUpperCase();
+       return false;
     }
 
     function calcObjMetaObjetivosVendedor(input, targetId) {
@@ -528,7 +526,7 @@
           let resumenBotas = generarMatrizResumenCompleja(filas, 'GRUPO_BOTAS', nombreVendedor, anioResVend, totalesComboVend);
        let resumenCerts = generarMatrizResumenCompleja(filas, 'GRUPO_CERTS', nombreVendedor, anioResVend, totalesComboVend);
  
-       let html = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div><div class="vendor-grid force-header-style">';
+      let html = '<div class="vendor-grid force-header-style">';
  
       // PESTAÑAS (TABS)
       html += `<div class="view-toggle-container">
@@ -1903,9 +1901,8 @@
     }
 
     function renderConfiguracionVentas() {
-       var back = '<div class="back-nav" onclick="navegar(null, \'MENU_VENTAS\')"><span class="material-symbols-outlined">arrow_back</span> Volver</div>';
        var titulo = '<div class="dash-section-title">CONFIGURACIÓN</div>';
-       document.getElementById('app').innerHTML = back + titulo + '<div id="config-formas-pago-body" class="formas-pago-config-body"><div class="formas-pago-config-loading"><span>Cargando...</span></div></div>';
+      document.getElementById('app').innerHTML = titulo + '<div id="config-formas-pago-body" class="formas-pago-config-body"><div class="formas-pago-config-loading"><span>Cargando...</span></div></div>';
 
        google.script.run
           .withSuccessHandler(function (res) {
