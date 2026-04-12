@@ -2429,37 +2429,29 @@
        margin-bottom: 12px;
     }
 
-    .comisiones-chart-nav {
-       display: inline-flex;
-       align-items: center;
-       gap: 8px;
-    }
-
-    .comisiones-chart-nav-btn {
-       width: 32px;
-       height: 32px;
-       border-radius: 999px;
-       border: 1px solid rgba(148, 163, 184, 0.2);
-       background: rgba(15, 23, 42, 0.9);
-       color: #e2e8f0;
-       font-size: 18px;
-       line-height: 1;
-       cursor: pointer;
-       transition: border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
-    }
-
-    .comisiones-chart-nav-btn:hover:not(:disabled) {
-       border-color: rgba(93, 177, 223, 0.5);
-       transform: translateY(-1px);
-    }
-
-    .comisiones-chart-nav-btn:disabled {
-       opacity: 0.35;
-       cursor: not-allowed;
-    }
-
     .comisiones-chart-shell {
        width: 100%;
+    }
+
+    .comisiones-line-chart-scroll {
+       overflow-x: auto;
+       overflow-y: hidden;
+       padding-bottom: 4px;
+       scrollbar-width: thin;
+       scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+    }
+
+    .comisiones-line-chart-scroll::-webkit-scrollbar {
+       height: 8px;
+    }
+
+    .comisiones-line-chart-scroll::-webkit-scrollbar-thumb {
+       background: rgba(148, 163, 184, 0.35);
+       border-radius: 999px;
+    }
+
+    .comisiones-line-chart-scroll::-webkit-scrollbar-track {
+       background: transparent;
     }
 
     .comisiones-line-chart-wrap {
@@ -2480,11 +2472,6 @@
        overflow: visible;
     }
 
-    .comisiones-chart-gridline {
-       stroke: rgba(148, 163, 184, 0.14);
-       stroke-width: 1;
-    }
-
     .comisiones-line-chart-path {
        fill: none;
        stroke-width: 3;
@@ -2498,19 +2485,6 @@
 
     .comisiones-line-chart-path--comision {
        stroke: var(--accent);
-    }
-
-    .comisiones-chart-point {
-       stroke: #0b1220;
-       stroke-width: 2;
-    }
-
-    .comisiones-chart-point--fact {
-       fill: #60a5fa;
-    }
-
-    .comisiones-chart-point--comision {
-       fill: var(--accent);
     }
 
     .comisiones-chart-xlabels {
@@ -2674,11 +2648,6 @@
     @media (max-width: 720px) {
        .comisiones-overview-grid {
           grid-template-columns: 1fr;
-       }
-
-       .comisiones-split-chart-head {
-          align-items: flex-start;
-          flex-direction: column;
        }
 
        .comisiones-summary-card-grid {
