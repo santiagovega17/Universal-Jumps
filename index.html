@@ -250,7 +250,7 @@
                   </select>
                </div>
                <div class="form-group form-group-venta-sm">
-                  <label class="form-label form-label-venta-sm">Moneda</label><select class="form-input form-input-venta-sm" name="moneda" id="monedaInput" required onchange="calcularTotal()">
+                  <label class="form-label form-label-venta-sm">Moneda</label><select class="form-input form-input-venta-sm" name="moneda" id="monedaInput" required onchange="calcularTotal(); actualizarIndicadorTipoCambioVenta();">
                      <option value="ARS">ARS</option>
                   </select>
                </div>
@@ -270,6 +270,10 @@
                      </button>
                   </div>
                </div>
+            </div>
+
+            <div class="form-group form-group-venta-sm venta-tipo-cambio-wrap">
+               <div class="venta-tipo-cambio-box" id="ventaTipoCambioInfo">TIPO DE CAMBIO OFICIAL: SELECCIONÁ PAÍS Y MONEDA</div>
             </div>
 
             <div class="form-row form-row-venta-sm">
