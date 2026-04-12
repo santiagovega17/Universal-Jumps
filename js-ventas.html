@@ -767,32 +767,68 @@
        if (!meses.length) {
           return '<div class="comisiones-chart-empty">No hay meses para graficar.</div>';
        }
+       var width = 900;
+       var height = 280;
+       var padLeft = 28;
+       var padRight = 18;
+       var padTop = 20;
+       var padBottom = 42;
+       var plotWidth = width - padLeft - padRight;
+       var plotHeight = height - padTop - padBottom;
        var maxValor = 0;
        meses.forEach(function (mes) {
           maxValor = Math.max(maxValor, Number(mes.totalFacturado) || 0, Number(mes.totalComision) || 0);
        });
        if (maxValor <= 0) maxValor = 1;
 
+       function xForIndex(index) {
+          if (meses.length === 1) return padLeft + plotWidth / 2;
+          return padLeft + (plotWidth / (meses.length - 1)) * index;
+       }
+       function yForValue(valor) {
+          return padTop + plotHeight - ((Number(valor) || 0) / maxValor) * plotHeight;
+       }
+
+       var factPoints = [];
+       var comPoints = [];
+       var labelsHtml = '';
+       var pointsHtml = '';
+       var gridHtml = '';
+
+       for (var g = 0; g <= 4; g++) {
+          var gy = padTop + (plotHeight / 4) * g;
+          gridHtml += '<line x1="' + padLeft + '" y1="' + gy + '" x2="' + (width - padRight) + '" y2="' + gy + '" class="comisiones-chart-gridline"></line>';
+       }
+
+       meses.forEach(function (mes, idx) {
+          var x = xForIndex(idx);
+          var fact = Number(mes.totalFacturado) || 0;
+          var com = Number(mes.totalComision) || 0;
+          var yFact = yForValue(fact);
+          var yCom = yForValue(com);
+          factPoints.push(x + ',' + yFact);
+          comPoints.push(x + ',' + yCom);
+
+          var activeCls = mes.monthIndex === focoMonthIndex ? ' comisiones-chart-label--active' : '';
+          labelsHtml += '<div class="comisiones-chart-xlabel' + activeCls + '" style="left:' + (((x - padLeft) / plotWidth) * 100) + '%;">' + escapeHtmlText((mes.nombreMes || '').substring(0, 3)) + '</div>';
+
+          pointsHtml += '<circle cx="' + x + '" cy="' + yFact + '" r="' + (mes.monthIndex === focoMonthIndex ? 5 : 4) + '" class="comisiones-chart-point comisiones-chart-point--fact"><title>' + escapeHtmlText((mes.nombreMes || '-') + ' | Facturación: ' + formatearMontoComisionesVendedor(fact)) + '</title></circle>';
+          pointsHtml += '<circle cx="' + x + '" cy="' + yCom + '" r="' + (mes.monthIndex === focoMonthIndex ? 5 : 4) + '" class="comisiones-chart-point comisiones-chart-point--comision"><title>' + escapeHtmlText((mes.nombreMes || '-') + ' | Comisión: ' + formatearMontoComisionesVendedor(com)) + '</title></circle>';
+       });
+
        var html = '<div class="comisiones-chart-shell">';
        html += '<div class="comisiones-chart-legend">';
        html += '<span class="comisiones-chart-legend-item"><span class="comisiones-chart-legend-swatch comisiones-chart-legend-swatch--fact"></span>Facturación</span>';
        html += '<span class="comisiones-chart-legend-item"><span class="comisiones-chart-legend-swatch comisiones-chart-legend-swatch--comision"></span>Comisión</span>';
        html += '</div>';
-       html += '<div class="comisiones-chart-grid">';
-       meses.forEach(function (mes) {
-          var fact = Number(mes.totalFacturado) || 0;
-          var com = Number(mes.totalComision) || 0;
-          var factH = Math.max((fact / maxValor) * 100, fact > 0 ? 8 : 0);
-          var comH = Math.max((com / maxValor) * 100, com > 0 ? 8 : 0);
-          var activeCls = mes.monthIndex === focoMonthIndex ? ' comisiones-chart-month--active' : '';
-          html += '<div class="comisiones-chart-month' + activeCls + '" title="' + escapeHtmlAttr((mes.nombreMes || '-') + ' | Facturación: ' + formatearMontoComisionesVendedor(fact) + ' | Comisión: ' + formatearMontoComisionesVendedor(com)) + '">';
-          html += '<div class="comisiones-chart-bars">';
-          html += '<div class="comisiones-chart-bar-wrap"><div class="comisiones-chart-bar comisiones-chart-bar--fact" title="' + escapeHtmlAttr('Facturación: ' + formatearMontoComisionesVendedor(fact)) + '" style="height:' + factH + '%;"></div></div>';
-          html += '<div class="comisiones-chart-bar-wrap"><div class="comisiones-chart-bar comisiones-chart-bar--comision" title="' + escapeHtmlAttr('Comisión: ' + formatearMontoComisionesVendedor(com)) + '" style="height:' + comH + '%;"></div></div>';
-          html += '</div>';
-          html += '<div class="comisiones-chart-label">' + escapeHtmlText((mes.nombreMes || '').substring(0, 3)) + '</div>';
-          html += '</div>';
-       });
+       html += '<div class="comisiones-line-chart-wrap">';
+       html += '<svg class="comisiones-line-chart" viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none">';
+       html += gridHtml;
+       html += '<polyline class="comisiones-line-chart-path comisiones-line-chart-path--fact" points="' + factPoints.join(' ') + '"></polyline>';
+       html += '<polyline class="comisiones-line-chart-path comisiones-line-chart-path--comision" points="' + comPoints.join(' ') + '"></polyline>';
+       html += pointsHtml;
+       html += '</svg>';
+       html += '<div class="comisiones-chart-xlabels">' + labelsHtml + '</div>';
        html += '</div></div>';
        return html;
     }
@@ -839,6 +875,7 @@
           };
        }
        var porcentajeComision = 'Botas: ' + formatearPorcentajeComisionesVendedor(item.porcentajeBotas) + ' | Certificaciones: ' + formatearPorcentajeComisionesVendedor(item.porcentajeCerts);
+       var comisionTotal = (Number(item.comisionBotas) || 0) + (Number(item.comisionCerts) || 0);
        return '<div class="comisiones-summary-card">' +
           '<div class="comisiones-summary-card-title">' + escapeHtmlText(titulo) + '</div>' +
           '<div class="comisiones-summary-card-grid">' +
@@ -848,6 +885,7 @@
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">% de comisión</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + porcentajeComision + '</span></div>' +
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Comisión botas</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.comisionBotas || 0) + '</span></div>' +
           '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Comisión certificaciones</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.comisionCerts || 0) + '</span></div>' +
+          '<div class="comisiones-summary-item comisiones-summary-item--highlight"><span class="comisiones-summary-item-label">Comisión total</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(comisionTotal) + '</span></div>' +
           '</div>' +
           '</div>';
     }
@@ -919,6 +957,7 @@
        resumenHtml += '<div class="comisiones-overview-card">' +
           '<div class="comisiones-overview-title">Comisión</div>' +
           '<div class="comisiones-overview-value">' + formatearMontoComisionesVendedor(foco.totalComision) + '</div>' +
+          '<div class="comisiones-overview-sub comisiones-overview-sub--stack comisiones-overview-sub--principal"><span>Botas: ' + formatearMontoComisionesVendedor(foco.comisionBotas || 0) + '</span><br><span>Certificaciones: ' + formatearMontoComisionesVendedor(foco.comisionCerts || 0) + '</span></div>' +
           '<div class="comisiones-overview-sub ' + claseDeltaComisiones(extraerDeltaNumerica(textoDeltaCom)) + '">' + escapeHtmlText(textoDeltaCom) + '</div>' +
           '</div>';
        resumenHtml += '<div class="comisiones-overview-card">' +
