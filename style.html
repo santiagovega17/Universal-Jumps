@@ -2321,73 +2321,202 @@
        border-color: var(--accent);
     }
 
-    .comisiones-period-scroller-wrap {
-       margin-bottom: 18px;
-       overflow: hidden;
+    .comisiones-overview-grid {
+       display: grid;
+       grid-template-columns: repeat(4, minmax(0, 1fr));
+       gap: 16px;
+       margin-bottom: 20px;
     }
 
-    .comisiones-period-scroller {
-       display: flex;
-       gap: 10px;
-       overflow-x: auto;
-       overflow-y: hidden;
-       padding: 4px 2px 10px;
-       scrollbar-width: thin;
-       scrollbar-color: rgba(93, 177, 223, 0.45) transparent;
-       cursor: grab;
-       user-select: none;
-       touch-action: pan-x;
-    }
-
-    .comisiones-period-scroller::-webkit-scrollbar {
-       height: 8px;
-    }
-
-    .comisiones-period-scroller::-webkit-scrollbar-track {
-       background: transparent;
-    }
-
-    .comisiones-period-scroller::-webkit-scrollbar-thumb {
-       background: rgba(93, 177, 223, 0.35);
-       border-radius: 999px;
-    }
-
-    .comisiones-period-chip {
-       flex: 0 0 auto;
-       min-width: 64px;
-       padding: 10px 16px;
-       border-radius: 999px;
-       border: 1px solid var(--border-color);
+    .comisiones-overview-card {
        background: var(--sidebar);
+       border: 1px solid var(--border-color);
+       border-radius: 14px;
+       padding: 18px;
+       min-height: 150px;
+       display: flex;
+       flex-direction: column;
+       justify-content: space-between;
+    }
+
+    .comisiones-overview-title {
+       color: #94a3b8;
+       font-size: 12px;
+       text-transform: uppercase;
+       letter-spacing: 0.6px;
+       margin-bottom: 12px;
+    }
+
+    .comisiones-overview-value {
+       color: white;
+       font-size: 28px;
+       line-height: 1.1;
+       font-weight: 800;
+       margin-bottom: 10px;
+    }
+
+    .comisiones-overview-sub {
+       font-size: 12px;
+       color: #94a3b8;
+       line-height: 1.45;
+    }
+
+    .comisiones-overview-sub--stack {
+       line-height: 1.7;
+    }
+
+    .comisiones-delta-up {
+       color: #86efac;
+    }
+
+    .comisiones-delta-down {
+       color: #fda4af;
+    }
+
+    .comisiones-delta-neutral {
+       color: #cbd5e1;
+    }
+
+    .comisiones-chart-card {
+       background: var(--sidebar);
+       border: 1px solid var(--border-color);
+       border-radius: 16px;
+       padding: 22px;
+    }
+
+    .comisiones-chart-title-wrap {
+       margin-bottom: 18px;
+    }
+
+    .comisiones-chart-title {
+       color: white;
+       font-size: 18px;
+       font-weight: 800;
+       margin-bottom: 6px;
+    }
+
+    .comisiones-chart-subtitle {
+       color: #94a3b8;
+       font-size: 12px;
+    }
+
+    .comisiones-chart-shell {
+       width: 100%;
+    }
+
+    .comisiones-chart-legend {
+       display: flex;
+       gap: 18px;
+       flex-wrap: wrap;
+       margin-bottom: 14px;
+    }
+
+    .comisiones-chart-legend-item {
+       display: inline-flex;
+       align-items: center;
+       gap: 8px;
+       color: #cbd5e1;
+       font-size: 12px;
+       font-weight: 600;
+    }
+
+    .comisiones-chart-legend-swatch {
+       width: 10px;
+       height: 10px;
+       border-radius: 999px;
+       display: inline-block;
+    }
+
+    .comisiones-chart-legend-swatch--fact {
+       background: #60a5fa;
+    }
+
+    .comisiones-chart-legend-swatch--comision {
+       background: var(--accent);
+    }
+
+    .comisiones-chart-grid {
+       min-height: 320px;
+       display: grid;
+       grid-template-columns: repeat(12, minmax(0, 1fr));
+       gap: 12px;
+       align-items: end;
+       padding: 18px 8px 4px;
+       border-top: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .comisiones-chart-month {
+       min-width: 0;
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       gap: 10px;
+    }
+
+    .comisiones-chart-month--active .comisiones-chart-label {
+       color: white;
+    }
+
+    .comisiones-chart-bars {
+       height: 240px;
+       width: 100%;
+       display: flex;
+       align-items: end;
+       justify-content: center;
+       gap: 8px;
+       padding: 0 2px;
+    }
+
+    .comisiones-chart-bar-wrap {
+       flex: 1;
+       max-width: 26px;
+       height: 100%;
+       display: flex;
+       align-items: end;
+    }
+
+    .comisiones-chart-bar {
+       width: 100%;
+       min-height: 0;
+       border-radius: 10px 10px 4px 4px;
+       transition: height 0.25s ease;
+    }
+
+    .comisiones-chart-bar--fact {
+       background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+    }
+
+    .comisiones-chart-bar--comision {
+       background: linear-gradient(180deg, #fda4af 0%, var(--accent) 100%);
+    }
+
+    .comisiones-chart-label {
        color: #94a3b8;
        font-size: 12px;
        font-weight: 700;
-       letter-spacing: 0.3px;
-       cursor: pointer;
-       white-space: nowrap;
-       transition: all 0.2s ease;
+       text-transform: lowercase;
     }
 
-    .comisiones-period-chip:hover {
-       border-color: rgba(93, 177, 223, 0.7);
-       color: #e2e8f0;
-       transform: translateY(-1px);
+    .comisiones-chart-empty {
+       color: #94a3b8;
+       padding: 30px 0 10px;
+       text-align: center;
     }
 
-    .comisiones-period-scroller.dragging {
-       cursor: grabbing;
-       scroll-behavior: auto;
+    @media (max-width: 1100px) {
+       .comisiones-overview-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+       }
     }
 
-    .comisiones-period-scroller.dragging .comisiones-period-chip {
-       pointer-events: none;
-    }
+    @media (max-width: 720px) {
+       .comisiones-overview-grid {
+          grid-template-columns: 1fr;
+       }
 
-    .comisiones-period-chip.active {
-       background: var(--accent);
-       color: var(--bg);
-       border-color: var(--accent);
-       box-shadow: 0 6px 18px rgba(93, 177, 223, 0.25);
+       .comisiones-chart-grid {
+          gap: 8px;
+       }
     }
  
     .btn-reset {

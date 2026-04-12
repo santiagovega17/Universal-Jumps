@@ -18,7 +18,6 @@
     var SIMPLE_ICONS_SVG_CDN = 'https://cdn.jsdelivr.net/npm/simple-icons@13.16.0/icons/';
     var COMISIONES_VENDEDOR_CACHE = {};
     var COMISIONES_VENDEDOR_ESTADO = { vendedor: '', requestKey: '' };
-    var COMISIONES_SCROLLER_DRAG = { active: false, moved: false, startX: 0, scrollLeft: 0 };
 
     /**
      * logoSlug: SVG en jsDelivr (Simple Icons). logoUrl: imagen propia/CDN.
@@ -502,10 +501,6 @@
        for (var vca = baseAnioVobj - 2; vca <= baseAnioVobj + 2; vca++) {
           optsComAnio += '<option value="' + vca + '"' + (vca === baseAnioVobj ? ' selected' : '') + '>' + vca + '</option>';
        }
-       var chipsComPeriodo = '<button type="button" class="comisiones-period-chip" data-periodo="ALL" onclick="seleccionarPeriodoComisionesVendedor(this)">Año</button>';
-       for (var vcm = 1; vcm <= 12; vcm++) {
-          chipsComPeriodo += '<button type="button" class="comisiones-period-chip" data-periodo="M' + vcm + '" onclick="seleccionarPeriodoComisionesVendedor(this)">' + nombresMesVobj[vcm - 1].substring(0, 3) + '</button>';
-       }
        var puedeEditarObjVentas = puedeEditarObjetivosVentas(nombreVendedor);
        var btnObjetivosHtml = puedeEditarObjVentas
           ? '<button type="button" id="btnVobjEdit" class="action-btn" style="color:var(--accent); font-weight:600; border:1px solid var(--accent); padding:6px 16px;" onclick="toggleEditModeObjetivosVendedor()"><span class="material-symbols-outlined" style="font-size:16px; margin-right:5px;">edit</span> Editar objetivos</button>'
@@ -617,14 +612,9 @@
                    <select id="selComVendAnio" class="filter-select" onchange="refrescarPanelComisionesVendedor(true)">${optsComAnio}</select>
                 </div>
              </div>
-             <div class="comisiones-period-scroller-wrap">
-                <div class="comisiones-period-scroller" id="comisionesPeriodScroller">
-                   ${chipsComPeriodo}
-                </div>
-             </div>
              <div id="comisionesVendedorFeedback" style="margin-bottom:16px;"></div>
              <div id="comisionesVendedorResumen">
-                <div class="card" style="padding:24px; text-align:center; color:#94a3b8;">Seleccioná un período para cargar las comisiones.</div>
+                <div class="card" style="padding:24px; text-align:center; color:#94a3b8;">Cargando comisiones...</div>
              </div>
              <div id="comisionesVendedorDetalle" style="margin-top:18px;"></div>
          </div>`;
@@ -758,94 +748,57 @@
 
     function obtenerFiltrosComisionesVendedor() {
        var selAnio = document.getElementById('selComVendAnio');
-       var chipActivo = document.querySelector('#comisionesPeriodScroller .comisiones-period-chip.active');
        var anioDefault = typeof ANIO_ACTIVO !== 'undefined' ? ANIO_ACTIVO : new Date().getFullYear();
        var anio = selAnio ? (parseInt(selAnio.value, 10) || anioDefault) : anioDefault;
-       var periodo = chipActivo ? (chipActivo.getAttribute('data-periodo') || 'ALL') : 'ALL';
-       var mes = null;
-       var trimestre = null;
-       if (/^M\d+$/.test(periodo)) mes = parseInt(periodo.slice(1), 10) || null;
-       else if (/^T\d+$/.test(periodo)) trimestre = periodo;
-       return { anio: anio, periodo: periodo, mes: mes, trimestre: trimestre };
+       return { anio: anio, periodo: 'ALL', mes: null, trimestre: null };
     }
 
-    function scrollPeriodoComisionesActivoIntoView() {
-       var activo = document.querySelector('#comisionesPeriodScroller .comisiones-period-chip.active');
-       if (activo && typeof activo.scrollIntoView === 'function') {
-          try {
-             activo.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-          } catch (_) {
-             activo.scrollIntoView();
-          }
+    function claseDeltaComisiones(valor) {
+       var n = Number(valor) || 0;
+       if (n > 0) return 'comisiones-delta-up';
+       if (n < 0) return 'comisiones-delta-down';
+       return 'comisiones-delta-neutral';
+    }
+
+    function extraerDeltaNumerica(textoDelta) {
+       var match = String(textoDelta || '').match(/[-+]?\d+(\.\d+)?/);
+       var n = match ? Number(match[0]) : NaN;
+       return Number.isFinite(n) ? n : 0;
+    }
+
+    function construirGraficoComisionesMensual(historico, focoMonthIndex) {
+       var meses = Array.isArray(historico) ? historico : [];
+       if (!meses.length) {
+          return '<div class="comisiones-chart-empty">No hay meses para graficar.</div>';
        }
-    }
-
-    function iniciarDragScrollerComisiones(ev) {
-       var scroller = document.getElementById('comisionesPeriodScroller');
-       if (!scroller) return;
-       COMISIONES_SCROLLER_DRAG.active = true;
-       COMISIONES_SCROLLER_DRAG.moved = false;
-       COMISIONES_SCROLLER_DRAG.startX = ev.clientX;
-       COMISIONES_SCROLLER_DRAG.scrollLeft = scroller.scrollLeft;
-       scroller.classList.add('dragging');
-    }
-
-    function moverDragScrollerComisiones(ev) {
-       var scroller = document.getElementById('comisionesPeriodScroller');
-       if (!scroller || !COMISIONES_SCROLLER_DRAG.active) return;
-       var delta = ev.clientX - COMISIONES_SCROLLER_DRAG.startX;
-       if (Math.abs(delta) > 4) COMISIONES_SCROLLER_DRAG.moved = true;
-       scroller.scrollLeft = COMISIONES_SCROLLER_DRAG.scrollLeft - delta;
-    }
-
-    function terminarDragScrollerComisiones() {
-       var scroller = document.getElementById('comisionesPeriodScroller');
-       COMISIONES_SCROLLER_DRAG.active = false;
-       if (scroller) scroller.classList.remove('dragging');
-       setTimeout(function () { COMISIONES_SCROLLER_DRAG.moved = false; }, 0);
-    }
-
-    function inicializarScrollerComisionesVendedor() {
-       var scroller = document.getElementById('comisionesPeriodScroller');
-       if (!scroller || scroller.dataset.dragReady === '1') return;
-       scroller.dataset.dragReady = '1';
-       scroller.addEventListener('pointerdown', function (ev) {
-          if (ev.pointerType === 'mouse' && ev.button !== 0) return;
-          iniciarDragScrollerComisiones(ev);
+       var maxValor = 0;
+       meses.forEach(function (mes) {
+          maxValor = Math.max(maxValor, Number(mes.totalFacturado) || 0, Number(mes.totalComision) || 0);
        });
-       scroller.addEventListener('pointermove', function (ev) {
-          moverDragScrollerComisiones(ev);
-       });
-       scroller.addEventListener('pointerup', terminarDragScrollerComisiones);
-       scroller.addEventListener('pointerleave', terminarDragScrollerComisiones);
-       scroller.addEventListener('pointercancel', terminarDragScrollerComisiones);
-     }
+       if (maxValor <= 0) maxValor = 1;
 
-    function setPeriodoComisionesVendedor(periodo, opts) {
-       opts = opts || {};
-       var chips = document.querySelectorAll('#comisionesPeriodScroller .comisiones-period-chip');
-       if (!chips || !chips.length) return;
-       var periodoTarget = periodo || 'ALL';
-       var match = null;
-       chips.forEach(function (chip) {
-          var isMatch = (chip.getAttribute('data-periodo') || '') === periodoTarget;
-          chip.classList.toggle('active', isMatch);
-          if (isMatch) match = chip;
+       var html = '<div class="comisiones-chart-shell">';
+       html += '<div class="comisiones-chart-legend">';
+       html += '<span class="comisiones-chart-legend-item"><span class="comisiones-chart-legend-swatch comisiones-chart-legend-swatch--fact"></span>Facturación</span>';
+       html += '<span class="comisiones-chart-legend-item"><span class="comisiones-chart-legend-swatch comisiones-chart-legend-swatch--comision"></span>Comisión</span>';
+       html += '</div>';
+       html += '<div class="comisiones-chart-grid">';
+       meses.forEach(function (mes) {
+          var fact = Number(mes.totalFacturado) || 0;
+          var com = Number(mes.totalComision) || 0;
+          var factH = Math.max((fact / maxValor) * 100, fact > 0 ? 8 : 0);
+          var comH = Math.max((com / maxValor) * 100, com > 0 ? 8 : 0);
+          var activeCls = mes.monthIndex === focoMonthIndex ? ' comisiones-chart-month--active' : '';
+          html += '<div class="comisiones-chart-month' + activeCls + '">';
+          html += '<div class="comisiones-chart-bars">';
+          html += '<div class="comisiones-chart-bar-wrap"><div class="comisiones-chart-bar comisiones-chart-bar--fact" style="height:' + factH + '%;"></div></div>';
+          html += '<div class="comisiones-chart-bar-wrap"><div class="comisiones-chart-bar comisiones-chart-bar--comision" style="height:' + comH + '%;"></div></div>';
+          html += '</div>';
+          html += '<div class="comisiones-chart-label">' + escapeHtmlText((mes.nombreMes || '').substring(0, 3)) + '</div>';
+          html += '</div>';
        });
-       if (!match) {
-          chips[0].classList.add('active');
-       }
-       if (opts.scrollIntoView !== false) {
-          setTimeout(scrollPeriodoComisionesActivoIntoView, 0);
-       }
-    }
-
-    function seleccionarPeriodoComisionesVendedor(el) {
-       if (!el) return;
-       if (COMISIONES_SCROLLER_DRAG.moved) return;
-       var periodo = el.getAttribute('data-periodo') || 'ALL';
-       setPeriodoComisionesVendedor(periodo);
-       refrescarPanelComisionesVendedor(true);
+       html += '</div></div>';
+       return html;
     }
 
     function setHtmlComisionesVendedor(feedbackHtml, resumenHtml, detalleHtml) {
@@ -876,20 +829,16 @@
 
     function renderComisionesVendedor(data) {
        var resumen = data && data.resumen ? data.resumen : {};
-       var meses = Array.isArray(resumen.meses) ? resumen.meses : [];
        var historico = Array.isArray(resumen.historicoMeses) ? resumen.historicoMeses : [];
-       var foco = resumen.mesPrioritario || (meses.length ? meses[meses.length - 1] : null);
+       var foco = resumen.mesPrioritario || (historico.length ? historico[historico.length - 1] : null);
        var mesAnterior = resumen.mesAnterior || null;
-       var mejorMes = resumen.mejorMes || null;
        var resumenHtml = '';
        var detalleHtml = '';
-       var colorDeltaFact = mesAnterior && Number(foco && foco.totalFacturado) >= Number(mesAnterior.totalFacturado) ? 'var(--accent)' : '#fda4af';
-       var colorDeltaCom = mesAnterior && Number(foco && foco.totalComision) >= Number(mesAnterior.totalComision) ? 'var(--accent)' : '#fda4af';
-       var textoDeltaFact = mesAnterior ? formatearDeltaComisionesVendedor(foco.totalFacturado, mesAnterior.totalFacturado) + ' vs ' + mesAnterior.nombreMes : 'Sin mes previo';
-       var textoDeltaCom = mesAnterior ? formatearDeltaComisionesVendedor(foco.totalComision, mesAnterior.totalComision) + ' vs ' + mesAnterior.nombreMes : 'Sin mes previo';
+       var textoDeltaFact = mesAnterior ? formatearDeltaComisionesVendedor(foco.totalFacturado, mesAnterior.totalFacturado) + ' (' + mesAnterior.nombreMes + ')' : 'Sin mes anterior';
+       var textoDeltaCom = mesAnterior ? formatearDeltaComisionesVendedor(foco.totalComision, mesAnterior.totalComision) + ' (' + mesAnterior.nombreMes + ')' : 'Sin mes anterior';
        var feedbackHtml = '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; color:#94a3b8; font-size:12px;">' +
-          '<span>Período visible: <strong style="color:#e2e8f0;">' + escapeHtmlText(resumen.periodoLabel || 'Sin período') + '</strong></span>' +
-          '<span>Foco principal: <strong style="color:#e2e8f0;">' + escapeHtmlText(foco && foco.nombreMes ? foco.nombreMes : 'Sin datos') + '</strong></span>' +
+          '<span>Año visible: <strong style="color:#e2e8f0;">' + escapeHtmlText(String(data && data.anio ? data.anio : '')) + '</strong></span>' +
+          '<span>Mes principal: <strong style="color:#e2e8f0;">' + escapeHtmlText(foco && foco.nombreMes ? foco.nombreMes : 'Sin datos') + '</strong></span>' +
           '</div>';
 
        if (!foco) {
@@ -901,62 +850,35 @@
           return;
        }
 
-       resumenHtml += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; margin-bottom:18px;">';
-       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Facturado</div><div style="color:white; font-size:24px; font-weight:800;">' + formatearMontoComisionesVendedor(foco.totalFacturado) + '</div><div style="font-size:12px; margin-top:8px; color:' + colorDeltaFact + ';">' + escapeHtmlText(textoDeltaFact) + '</div></div>';
-       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Comisión</div><div style="color:var(--accent); font-size:24px; font-weight:800;">' + formatearMontoComisionesVendedor(foco.totalComision) + '</div><div style="font-size:12px; margin-top:8px; color:' + colorDeltaCom + ';">' + escapeHtmlText(textoDeltaCom) + '</div></div>';
-       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Rango actual</div><div style="color:white; font-size:24px; font-weight:800;">' + escapeHtmlText(textoRangoComisionesVendedor(foco.rango)) + '</div><div style="font-size:12px; margin-top:8px; color:#94a3b8;">Cumplimiento ' + formatearPorcentajeComisionesVendedor(foco.porcentajeCumplimiento) + '</div></div>';
-       resumenHtml += '<div class="card" style="padding:18px;"><div style="color:#94a3b8; font-size:12px; text-transform:uppercase; margin-bottom:8px;">Próximo rango</div><div style="color:white; font-size:24px; font-weight:800;">' + (foco.estaEnRangoMaximo ? 'Máximo' : escapeHtmlText(textoRangoComisionesVendedor(foco.siguienteRango))) + '</div><div style="font-size:12px; margin-top:8px; color:#94a3b8;">' + (foco.estaEnRangoMaximo ? 'Ya alcanzó el último rango configurado' : 'Faltan ' + formatearMontoComisionesVendedor(foco.faltanteProximoRango)) + '</div></div>';
-       resumenHtml += '</div>';
-
-       resumenHtml += '<div style="display:grid; grid-template-columns:minmax(320px, 1.25fr) minmax(280px, 0.95fr); gap:16px; margin-bottom:18px;">';
-       resumenHtml += '<div class="card" style="padding:22px;">' +
-          '<div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:18px; flex-wrap:wrap;">' +
-          '<div><div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.4px;">Mes priorizado</div><div style="font-size:24px; font-weight:800; color:white; margin-top:6px;">' + escapeHtmlText(foco.nombreMes || '-') + '</div></div>' +
-          '<div style="font-size:12px; color:#94a3b8;">Meta actual: <strong style="color:#e2e8f0;">' + formatearMontoComisionesVendedor(foco.metaActual || foco.metaCombinada) + '</strong></div>' +
-          '</div>' +
-          '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">' +
-          '<div style="background:rgba(15,23,42,0.35); border:1px solid var(--border-color); border-radius:12px; padding:14px;"><div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">Objetivo actual</div><div style="font-size:20px; font-weight:800; color:white;">' + formatearMontoComisionesVendedor(foco.metaActual || foco.metaCombinada) + '</div><div style="font-size:12px; color:#94a3b8; margin-top:8px;">Faltan ' + formatearMontoComisionesVendedor(foco.faltanteMetaActual) + '</div></div>' +
-          '<div style="background:rgba(15,23,42,0.35); border:1px solid var(--border-color); border-radius:12px; padding:14px;"><div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">Próximo rango</div><div style="font-size:20px; font-weight:800; color:white;">' + (foco.estaEnRangoMaximo ? 'Máximo' : formatearMontoComisionesVendedor(foco.metaProximoRango)) + '</div><div style="font-size:12px; color:#94a3b8; margin-top:8px;">' + (foco.estaEnRangoMaximo ? 'No hay un rango superior' : 'Faltan ' + formatearMontoComisionesVendedor(foco.faltanteProximoRango)) + '</div></div>' +
-          '<div style="background:rgba(15,23,42,0.35); border:1px solid var(--border-color); border-radius:12px; padding:14px;"><div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">% actual</div><div style="font-size:20px; font-weight:800; color:white;">' + formatearPorcentajeComisionesVendedor(foco.porcentajeBotas) + ' / ' + formatearPorcentajeComisionesVendedor(foco.porcentajeCerts) + '</div><div style="font-size:12px; color:#94a3b8; margin-top:8px;">Botas / Certs</div></div>' +
-          '<div style="background:rgba(15,23,42,0.35); border:1px solid var(--border-color); border-radius:12px; padding:14px;"><div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">% próximo rango</div><div style="font-size:20px; font-weight:800; color:white;">' + (foco.estaEnRangoMaximo ? '-' : formatearPorcentajeComisionesVendedor(foco.pctBotasProximo) + ' / ' + formatearPorcentajeComisionesVendedor(foco.pctCertsProximo)) + '</div><div style="font-size:12px; color:#94a3b8; margin-top:8px;">Botas / Certs</div></div>' +
-          '</div>' +
+       resumenHtml += '<div class="comisiones-overview-grid">';
+       resumenHtml += '<div class="comisiones-overview-card">' +
+          '<div class="comisiones-overview-title">Facturado</div>' +
+          '<div class="comisiones-overview-value">' + formatearMontoComisionesVendedor(foco.totalFacturado) + '</div>' +
+          '<div class="comisiones-overview-sub ' + claseDeltaComisiones(extraerDeltaNumerica(textoDeltaFact)) + '">' + escapeHtmlText(textoDeltaFact) + '</div>' +
           '</div>';
-
-       resumenHtml += '<div class="card" style="padding:22px;">' +
-          '<div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:14px;">Comparativas</div>' +
-          '<div style="display:grid; gap:12px;">' +
-          '<div style="display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid rgba(148,163,184,0.12);"><span style="color:#94a3b8;">Mes anterior</span><span style="text-align:right; color:white; font-weight:700;">' + (mesAnterior ? escapeHtmlText(mesAnterior.nombreMes) + ' · ' + formatearMontoComisionesVendedor(mesAnterior.totalFacturado) : '-') + '</span></div>' +
-          '<div style="display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid rgba(148,163,184,0.12);"><span style="color:#94a3b8;">Promedio mensual</span><span style="text-align:right; color:white; font-weight:700;">' + formatearMontoComisionesVendedor(resumen.promedioMensualFacturado) + '</span></div>' +
-          '<div style="display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid rgba(148,163,184,0.12);"><span style="color:#94a3b8;">Mejor mes</span><span style="text-align:right; color:white; font-weight:700;">' + (mejorMes ? escapeHtmlText(mejorMes.nombreMes) + ' · ' + formatearMontoComisionesVendedor(mejorMes.totalFacturado) : '-') + '</span></div>' +
-          '<div style="display:flex; justify-content:space-between; gap:16px; padding:12px 0;"><span style="color:#94a3b8;">Período visible</span><span style="text-align:right; color:white; font-weight:700;">' + formatearMontoComisionesVendedor(resumen.totalFacturado) + ' / ' + formatearMontoComisionesVendedor(resumen.totalComision) + '</span></div>' +
-          '</div>' +
+       resumenHtml += '<div class="comisiones-overview-card">' +
+          '<div class="comisiones-overview-title">Comisión</div>' +
+          '<div class="comisiones-overview-value">' + formatearMontoComisionesVendedor(foco.totalComision) + '</div>' +
+          '<div class="comisiones-overview-sub ' + claseDeltaComisiones(extraerDeltaNumerica(textoDeltaCom)) + '">' + escapeHtmlText(textoDeltaCom) + '</div>' +
+          '</div>';
+       resumenHtml += '<div class="comisiones-overview-card">' +
+          '<div class="comisiones-overview-title">Próximo rango</div>' +
+          '<div class="comisiones-overview-value">' + (foco.estaEnRangoMaximo ? 'Máximo' : escapeHtmlText(String(foco.siguienteRango || '-'))) + '</div>' +
+          '<div class="comisiones-overview-sub comisiones-delta-neutral">' + (foco.estaEnRangoMaximo ? 'Ya alcanzó el último rango' : 'Faltan ' + formatearMontoComisionesVendedor(foco.faltanteProximoRango)) + '</div>' +
+          '</div>';
+       resumenHtml += '<div class="comisiones-overview-card">' +
+          '<div class="comisiones-overview-title">Rango actual</div>' +
+          '<div class="comisiones-overview-value">' + escapeHtmlText(textoRangoComisionesVendedor(foco.rango)) + '</div>' +
+          '<div class="comisiones-overview-sub comisiones-overview-sub--stack">Botas: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeBotas) + '<br>Certificaciones: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeCerts) + '</div>' +
           '</div>';
        resumenHtml += '</div>';
 
-       resumenHtml += '<div class="card" style="padding:20px;">' +
-          '<div style="display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">' +
-          '<div style="font-size:13px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Histórico mensual</div>' +
-          '<div style="font-size:12px; color:#94a3b8;">Mes actual primero, meses anteriores para comparar evolución</div>' +
-          '</div>';
-       if (!historico.length) {
-          resumenHtml += '<div style="padding:18px; text-align:center; color:#94a3b8;">No hay meses para comparar.</div>';
-       } else {
-          resumenHtml += '<div class="month-grid">';
-          historico.slice().reverse().forEach(function (mes) {
-             var borde = foco && mes.monthIndex === foco.monthIndex ? '2px solid var(--accent)' : '1px solid var(--border-color)';
-             resumenHtml += '<div style="background:var(--sidebar); border:' + borde + '; border-radius:14px; padding:16px;">' +
-                '<div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-bottom:10px;">' +
-                '<div style="font-weight:700; color:white;">' + escapeHtmlText(mes.nombreMes || '-') + '</div>' +
-                '<div style="font-size:11px; color:#94a3b8;">' + escapeHtmlText(textoRangoComisionesVendedor(mes.rango)) + '</div>' +
-                '</div>' +
-                '<div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Facturado</span><span style="color:white; font-weight:700;">' + formatearMontoComisionesVendedor(mes.totalFacturado) + '</span></div>' +
-                '<div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Comisión</span><span style="color:var(--accent); font-weight:800;">' + formatearMontoComisionesVendedor(mes.totalComision) + '</span></div>' +
-                '<div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:8px;"><span style="font-size:12px; color:#94a3b8;">Objetivo</span><span style="color:white; font-weight:700;">' + formatearMontoComisionesVendedor(mes.metaCombinada) + '</span></div>' +
-                '<div style="display:flex; justify-content:space-between; gap:12px;"><span style="font-size:12px; color:#94a3b8;">Próximo rango</span><span style="color:white; font-weight:700;">' + (mes.estaEnRangoMaximo ? 'Máximo' : formatearMontoComisionesVendedor(mes.faltanteProximoRango)) + '</span></div>' +
-                '</div>';
-          });
-          resumenHtml += '</div>';
-       }
+       resumenHtml += '<div class="comisiones-chart-card">';
+       resumenHtml += '<div class="comisiones-chart-title-wrap">';
+       resumenHtml += '<div class="comisiones-chart-title">Gráfico mensual</div>';
+       resumenHtml += '<div class="comisiones-chart-subtitle">Barra 1: facturación. Barra 2: comisión.</div>';
+       resumenHtml += '</div>';
+       resumenHtml += construirGraficoComisionesMensual(historico, foco.monthIndex);
        resumenHtml += '</div>';
 
        detalleHtml = '';
@@ -971,8 +893,6 @@
        };
        var selAnio = document.getElementById('selComVendAnio');
        if (selAnio && !selAnio.value) selAnio.value = String(COMISIONES_VENDEDOR_ESTADO.anioBase);
-       inicializarScrollerComisionesVendedor();
-       setPeriodoComisionesVendedor('M' + (new Date().getMonth() + 1), { scrollIntoView: true });
        refrescarPanelComisionesVendedor(true);
     }
 
