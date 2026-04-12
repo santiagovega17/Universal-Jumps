@@ -718,9 +718,9 @@
     }
 
     function textoRangoCompletoComisionesVendedor(rango) {
-       if (rango === 0 || rango === '0') return 'Rango mínimo';
+       if (rango === 0 || rango === '0') return 'RANGO MÍNIMO';
        if (rango == null || rango === '' || !Number.isFinite(Number(rango))) return '-';
-       return 'Rango ' + Number(rango);
+       return 'RANGO ' + Number(rango);
     }
 
     function formatearFechaComisionesVendedor(valor) {
@@ -885,12 +885,11 @@
     function construirSelectorResumenComisiones(mesesDetalle) {
        var periodo = obtenerPeriodoResumenComisiones();
        var html = '<div class="comisiones-summary-selector-wrap">';
-       html += '<label class="comisiones-summary-selector-label" for="selComResumenPeriodo">Resumen por período</label>';
        html += '<select id="selComResumenPeriodo" class="comisiones-summary-selector" onchange="onResumenComisionesPeriodoChange(this.value)">';
-       html += '<option value="ANUAL"' + (periodo === 'ANUAL' ? ' selected' : '') + '>Anual</option>';
+       html += '<option value="ANUAL"' + (periodo === 'ANUAL' ? ' selected' : '') + '>ANUAL</option>';
        (mesesDetalle || []).forEach(function (mes) {
           var value = 'M' + mes.monthNumber;
-          html += '<option value="' + value + '"' + (periodo === value ? ' selected' : '') + '>' + escapeHtmlText(mes.nombreMes || '') + '</option>';
+          html += '<option value="' + value + '"' + (periodo === value ? ' selected' : '') + '>' + escapeHtmlText((mes.nombreMes || '').toUpperCase()) + '</option>';
        });
        html += '</select></div>';
        return html;
@@ -917,18 +916,18 @@
              comisionCerts: lista.reduce(function (acc, mes) { return acc + (Number(mes.comisionCerts) || 0); }, 0)
           };
        }
-       var porcentajeComision = 'Botas: ' + formatearPorcentajeComisionesVendedor(item.porcentajeBotas) + ' | Certificaciones: ' + formatearPorcentajeComisionesVendedor(item.porcentajeCerts);
-       var comisionPorLinea = 'Botas: ' + formatearMontoComisionesVendedor(item.comisionBotas || 0) + ' | Certificaciones: ' + formatearMontoComisionesVendedor(item.comisionCerts || 0);
+       var porcentajeComision = 'BOTAS: ' + formatearPorcentajeComisionesVendedor(item.porcentajeBotas) + ' | CERTIFICACIONES: ' + formatearPorcentajeComisionesVendedor(item.porcentajeCerts);
+       var comisionPorLinea = 'BOTAS: ' + formatearMontoComisionesVendedor(item.comisionBotas || 0) + ' | CERTIFICACIONES: ' + formatearMontoComisionesVendedor(item.comisionCerts || 0);
        var comisionTotal = (Number(item.comisionBotas) || 0) + (Number(item.comisionCerts) || 0);
        return '<div class="comisiones-summary-card">' +
           '<div class="comisiones-summary-card-title">' + escapeHtmlText(titulo) + '</div>' +
           '<div class="comisiones-summary-card-grid">' +
-          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Facturación</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.totalFacturado) + '</span></div>' +
-          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Rango alcanzado</span><span class="comisiones-summary-item-value">' + escapeHtmlText(textoRangoCompletoComisionesVendedor(item.rango)) + '</span></div>' +
-          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Objetivo de facturación</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.metaActual || 0) + '</span></div>' +
-          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">% de comisión</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + porcentajeComision + '</span></div>' +
-          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">Comisión por línea</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + comisionPorLinea + '</span></div>' +
-          '<div class="comisiones-summary-item comisiones-summary-item--highlight"><span class="comisiones-summary-item-label">Comisión total</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(comisionTotal) + '</span></div>' +
+          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">FACTURACIÓN</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.totalFacturado) + '</span></div>' +
+          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">RANGO ALCANZADO</span><span class="comisiones-summary-item-value">' + escapeHtmlText(textoRangoCompletoComisionesVendedor(item.rango)) + '</span></div>' +
+          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">OBJETIVO DE FACTURACIÓN</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(item.metaActual || 0) + '</span></div>' +
+          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">% DE COMISIÓN</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + porcentajeComision + '</span></div>' +
+          '<div class="comisiones-summary-item"><span class="comisiones-summary-item-label">COMISIÓN POR LÍNEA</span><span class="comisiones-summary-item-value comisiones-summary-item-value--multiline">' + comisionPorLinea + '</span></div>' +
+          '<div class="comisiones-summary-item comisiones-summary-item--highlight"><span class="comisiones-summary-item-label">COMISIÓN TOTAL</span><span class="comisiones-summary-item-value">' + formatearMontoComisionesVendedor(comisionTotal) + '</span></div>' +
           '</div>' +
           '</div>';
     }
@@ -1056,13 +1055,13 @@
           '</div>';
        resumenHtml += '<div class="comisiones-overview-card">' +
           '<div class="comisiones-overview-title">Próximo rango</div>' +
-          '<div class="comisiones-overview-value comisiones-overview-value--range">' + (foco.estaEnRangoMaximo ? 'RANGO MÁXIMO' : escapeHtmlText(textoRangoCompletoComisionesVendedor(foco.siguienteRango).toUpperCase())) + '</div>' +
-          '<div class="comisiones-overview-sub comisiones-overview-sub--stack"><span>' + (foco.estaEnRangoMaximo ? 'Ya alcanzado' : 'Faltan ' + formatearMontoComisionesVendedor(foco.faltanteProximoRango)) + '</span></div>' +
+          '<div class="comisiones-overview-value comisiones-overview-value--range">' + (foco.estaEnRangoMaximo ? 'RANGO MÁXIMO' : escapeHtmlText(textoRangoCompletoComisionesVendedor(foco.siguienteRango))) + '</div>' +
+          '<div class="comisiones-overview-sub comisiones-overview-sub--stack"><span>' + (foco.estaEnRangoMaximo ? 'YA ALCANZADO' : 'FALTAN ' + formatearMontoComisionesVendedor(foco.faltanteProximoRango)) + '</span></div>' +
           '</div>';
        resumenHtml += '<div class="comisiones-overview-card">' +
           '<div class="comisiones-overview-title">Rango actual</div>' +
-          '<div class="comisiones-overview-value comisiones-overview-value--range">' + escapeHtmlText(textoRangoCompletoComisionesVendedor(foco.rango).toUpperCase()) + '</div>' +
-          '<div class="comisiones-overview-sub comisiones-overview-sub--stack"><span>Botas: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeBotas) + ' | Certificaciones: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeCerts) + '</span></div>' +
+          '<div class="comisiones-overview-value comisiones-overview-value--range">' + escapeHtmlText(textoRangoCompletoComisionesVendedor(foco.rango)) + '</div>' +
+          '<div class="comisiones-overview-sub comisiones-overview-sub--stack"><span>BOTAS: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeBotas) + ' | CERTIFICACIONES: ' + formatearPorcentajeComisionesVendedor(foco.porcentajeCerts) + '</span></div>' +
           '</div>';
        resumenHtml += '</div>';
 
