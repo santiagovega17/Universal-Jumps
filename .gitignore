@@ -24,3 +24,6 @@ Thumbs.db
 docs/gen-lang-client-0693765207-43f19f5056d2.json
 docs/*credentials*.json
 docs/gen-lang-client*.json
+
+# Notas locales (no subir)
+NOTAS_LOCAL.md
