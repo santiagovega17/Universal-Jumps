@@ -1907,20 +1907,39 @@
           cotizacionMoneda: cotizacionActual
        };
  
-       // Determinar si es edición o creación
+      // Determinar si es edición o creación
        let esEdicion = datos.filaIndex && datos.filaIndex !== '';
-       let funcionBackend = esEdicion ? 'editarVenta' : 'guardarVenta';
+      let funcionBackend = esEdicion ? 'editarVenta' : 'guardarVenta';
+
+      // Nuevo flujo transaccional de stock:
+      // Si el concepto viene como UUID de producto y es alta nueva,
+      // enviamos payload con items al endpoint confirmar-con-stock.
+      let conceptoLimpio = String(conceptoInput.value || '').trim();
+      let uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      let conceptoEsProductoId = uuidRegex.test(conceptoLimpio);
+      if (!esEdicion && conceptoEsProductoId) {
+         funcionBackend = 'confirmarVentaConStock';
+         datos.items = [{
+            producto_id: conceptoLimpio,
+            talle: 'UNICO',
+            cantidad: Number(cantInput.value || 0),
+            precio_unitario: Number(precioLimpio || 0),
+            porcentaje_descuento: 0,
+            descuento_monto: 0,
+            alicuota_iva: 21
+         }];
+      }
  
        // Enviar al backend
        google.script.run
           .withSuccessHandler(function (res) {
              btn.disabled = false;
-             btn.innerText = esEdicion ? "ACTUALIZAR" : "Guardar Venta";
+            btn.innerText = esEdicion ? "ACTUALIZAR" : "Guardar Venta";
  
              if (res && res.error) {
                 alert('Error: ' + (res.mensaje || 'Error desconocido'));
              } else {
-                if (typeof mostrarToast === 'function') mostrarToast(res && res.mensaje ? res.mensaje : (esEdicion ? 'Venta actualizada correctamente' : 'Venta guardada correctamente'));
+               if (typeof mostrarToast === 'function') mostrarToast(res && res.mensaje ? res.mensaje : (esEdicion ? 'Venta actualizada correctamente' : 'Venta guardada correctamente'));
                 cerrarModals();
                 // Solo resetear formulario si es una creación (no edición)
                 if (!esEdicion) {
@@ -1939,7 +1958,7 @@
              }
           })
           .withFailureHandler(function (error) {
-             console.error('Error en guardar venta:', error);
+            console.error('Error en guardar venta:', error);
              btn.disabled = false;
              btn.innerText = esEdicion ? "ACTUALIZAR" : "Guardar Venta";
              alert('Error al guardar: ' + error.toString());

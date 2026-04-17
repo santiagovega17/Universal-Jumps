@@ -5,6 +5,7 @@ const {
   editarVentaService,
   actualizarCheckService,
   borrarVentaService,
+  confirmarVentaConStockService,
 } = require('../lib/ventasService');
 
 function getBody(req) {
@@ -46,6 +47,10 @@ module.exports = async (req, res) => {
 
       if (action === 'guardar') {
         const result = await guardarVentaService(body);
+        return res.status(200).json(result);
+      }
+      if (action === 'confirmar-con-stock') {
+        const result = await confirmarVentaConStockService(body);
         return res.status(200).json(result);
       }
       if (action === 'editar') {

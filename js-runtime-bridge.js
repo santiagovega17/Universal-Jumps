@@ -125,6 +125,12 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload || {}),
         }),
+      confirmarVentaConStock: (payload) =>
+        requestJson('/api/ventas?action=confirmar-con-stock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+        }),
       editarVenta: (payload) =>
         requestJson('/api/ventas?action=editar', {
           method: 'POST',
