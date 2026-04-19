@@ -1320,14 +1320,14 @@
  
        // Países a mostrar
       const paises = [
-         { key: 'ARGENTINA', nombre: '🇦🇷 ARGENTINA', tieneSubdivisiones: true },
-         { key: 'CHILE', nombre: '🇨🇱 CHILE', tieneSubdivisiones: false },
-         { key: 'MEXICO', nombre: '🇲🇽 MEXICO', tieneSubdivisiones: false },
-         { key: 'ESPANA', nombre: '🇪🇸 ESPAÑA', tieneSubdivisiones: false },
-         { key: 'EEUU', nombre: '🇺🇸 EEUU', tieneSubdivisiones: false },
-         { key: 'URUGUAY', nombre: '🇺🇾 URUGUAY', tieneSubdivisiones: false },
-         { key: 'BRASIL', nombre: '🇧🇷 BRASIL', tieneSubdivisiones: false },
-         { key: 'RDM', nombre: '🌍 RDM', tieneSubdivisiones: false }
+         { key: 'ARGENTINA', nombre: 'ARGENTINA', tieneSubdivisiones: true },
+         { key: 'CHILE', nombre: 'CHILE', tieneSubdivisiones: false },
+         { key: 'MEXICO', nombre: 'MEXICO', tieneSubdivisiones: false },
+         { key: 'ESPANA', nombre: 'ESPAÑA', tieneSubdivisiones: false },
+         { key: 'EEUU', nombre: 'EEUU', tieneSubdivisiones: false },
+         { key: 'URUGUAY', nombre: 'URUGUAY', tieneSubdivisiones: false },
+         { key: 'BRASIL', nombre: 'BRASIL', tieneSubdivisiones: false },
+         { key: 'RDM', nombre: 'RDM', tieneSubdivisiones: false }
       ].map(pais => Object.assign({}, pais, obtenerTemaPais(pais.key)));
  
        paises.forEach(pais => {

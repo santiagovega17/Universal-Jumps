@@ -12,11 +12,11 @@
  
        // Países con sus colores típicos (solo los 5 solicitados)
       const paisesCaja = [
-         { key: 'ARGENTINA', nombre: '🇦🇷 ARGENTINA' },
-         { key: 'CHILE', nombre: '🇨🇱 CHILE' },
-         { key: 'MEXICO', nombre: '🇲🇽 MEXICO' },
-         { key: 'ESPANA', nombre: '🇪🇸 ESPAÑA' },
-         { key: 'EEUU', nombre: '🇺🇸 EEUU' }
+         { key: 'ARGENTINA', nombre: 'ARGENTINA' },
+         { key: 'CHILE', nombre: 'CHILE' },
+         { key: 'MEXICO', nombre: 'MEXICO' },
+         { key: 'ESPANA', nombre: 'ESPAÑA' },
+         { key: 'EEUU', nombre: 'EEUU' }
       ].map(pais => Object.assign({}, pais, obtenerTemaPais(pais.key)));
  
        let html = `
@@ -425,8 +425,7 @@
              
              <!-- SECCIÓN 2: CONSOLIDADO POR MEDIOS DE PAGO -->
              <div style="margin-top: 40px;">
-                <div style="font-weight: 700; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                   <span class="material-symbols-outlined" style="font-size: 18px;">payment</span>
+                <div style="font-weight: 700; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
                    CONSOLIDADO POR MEDIOS DE PAGO
                 </div>
                 <div id="medios-pago-content" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
