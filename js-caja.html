@@ -349,57 +349,37 @@
        }).obtenerBalanceCaja(PAIS_CAJA_ACTUAL, mes, anio);
     }
  
-    /** Misma cotización que usa caja al convertir egresos locales → ARS (configCotizacion por país). */
-    function obtenerCotizacionCajaBalancePais(pais, balanceData) {
-       if (balanceData && balanceData.cotizacionReferencia != null) {
-          var cr = Number(balanceData.cotizacionReferencia);
-          if (Number.isFinite(cr) && cr > 0) return cr;
-       }
-       var p = typeof normalizarPaisUi === 'function' ? normalizarPaisUi(pais) : String(pais || '').toUpperCase();
-       if (p === 'ARGENTINA') return 1;
-       var c = (typeof COTIZACIONES !== 'undefined' && COTIZACIONES[p]) ? Number(COTIZACIONES[p]) : 0;
-       return Number.isFinite(c) && c > 0 ? c : 1;
-    }
-
     function monedaReferenciaCajaPais(pais, balanceData) {
        if (balanceData && balanceData.monedaReferencia) return String(balanceData.monedaReferencia);
        return typeof obtenerMonedaDefaultPorPaisUi === 'function' ? obtenerMonedaDefaultPorPaisUi(pais) : 'USD';
     }
 
-    /** Convierte un total ya expresado en ARS a la moneda de referencia del país (1 unidad moneda ≈ cot ARS). */
-    function cajaArsAMonedaReferencia(arsMonto, campoPreferido, balanceData, pais) {
-       if (balanceData && campoPreferido && balanceData[campoPreferido] != null) {
-          var pre = Number(balanceData[campoPreferido]);
-          if (Number.isFinite(pre)) return pre;
-       }
-       var cot = obtenerCotizacionCajaBalancePais(pais, balanceData);
-       var m = Number(arsMonto) || 0;
-       return cot > 0 ? m / cot : m;
-    }
-
-    function cajaHtmlMontoTarjetaBalance(arsMonto, campoMonedaRef, pais, balanceData, colorCss) {
+    /**
+     * montoLocal = suma en moneda del país (ventas / caja según API). montoArs = equivalente en ARS.
+     */
+    function cajaHtmlMontoTarjetaDual(montoLocal, montoArs, pais, balanceData, colorCss) {
        var p = typeof normalizarPaisUi === 'function' ? normalizarPaisUi(pais) : String(pais || '').toUpperCase();
        var baseStyle = 'font-size: 22px; font-weight: 800; text-align: center; overflow: hidden; text-overflow: ellipsis;';
        if (p === 'ARGENTINA') {
-          return '<div style="' + baseStyle + ' color: ' + colorCss + ';">' + formatNumberAr(arsMonto || 0) + '</div>';
+          return '<div style="' + baseStyle + ' color: ' + colorCss + ';">' + formatNumberAr(montoArs || 0) + '</div>';
        }
        var mon = monedaReferenciaCajaPais(pais, balanceData);
-       var loc = cajaArsAMonedaReferencia(arsMonto, campoMonedaRef, balanceData, pais);
+       var loc = Number(montoLocal) || 0;
        var principal = typeof formatCurrency === 'function' ? formatCurrency(loc, mon) : String(loc);
        return '<div style="' + baseStyle + ' color: ' + colorCss + ';">' + principal + '</div>' +
-          '<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(Equivalente ARS: ' + formatNumberAr(arsMonto || 0) + ')</div>';
+          '<div style="font-size: 12px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: 4px;">(Equivalente ARS: ' + formatNumberAr(montoArs || 0) + ')</div>';
     }
 
-    function cajaHtmlMontoLineaMedio(arsMonto, balanceData, colorCss) {
+    function cajaHtmlMontoLineaMedioDual(montoLocal, montoArs, balanceData, colorCss) {
        var p = typeof normalizarPaisUi === 'function' ? normalizarPaisUi(PAIS_CAJA_ACTUAL) : 'ARGENTINA';
        if (p === 'ARGENTINA') {
-          return '<span style="color: ' + colorCss + '; font-weight: 700; font-size: 14px;">' + formatNumberAr(arsMonto || 0) + '</span>';
+          return '<span style="color: ' + colorCss + '; font-weight: 700; font-size: 14px;">' + formatNumberAr(montoArs || 0) + '</span>';
        }
        var mon = monedaReferenciaCajaPais(PAIS_CAJA_ACTUAL, balanceData);
-       var loc = (Number(arsMonto) || 0) / obtenerCotizacionCajaBalancePais(PAIS_CAJA_ACTUAL, balanceData);
+       var loc = Number(montoLocal) || 0;
        var cur = typeof formatCurrency === 'function' ? formatCurrency(loc, mon) : String(loc);
        return '<div style="text-align: right;"><div style="color: ' + colorCss + '; font-weight: 700; font-size: 14px;">' + cur + '</div>' +
-          '<div style="color: #94a3b8; font-size: 11px; font-weight: 600; margin-top: 2px;">(Equivalente ARS: ' + formatNumberAr(arsMonto || 0) + ')</div></div>';
+          '<div style="color: #94a3b8; font-size: 11px; font-weight: 600; margin-top: 2px;">(Equivalente ARS: ' + formatNumberAr(montoArs || 0) + ')</div></div>';
     }
  
     function renderBalanceData(data, mediosData, historialData) {
@@ -421,7 +401,7 @@
                       INGRESOS
                    </div>
                    <div class="card" style="background: var(--sidebar); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 10px;">
-                      ${cajaHtmlMontoTarjetaBalance(data.ingresos || 0, 'ingresosMonedaReferencia', PAIS_CAJA_ACTUAL, data, '#10b981')}
+                      ${cajaHtmlMontoTarjetaDual(data.ingresosOriginal, data.ingresos || 0, PAIS_CAJA_ACTUAL, data, '#10b981')}
                    </div>
                 </div>
                 
@@ -432,7 +412,7 @@
                       EGRESOS
                    </div>
                    <div class="card" style="background: var(--sidebar); border: 1px solid rgba(239, 68, 68, 0.2); padding: 12px; border-radius: 10px;">
-                      ${cajaHtmlMontoTarjetaBalance(data.egresos || 0, 'egresosMonedaReferencia', PAIS_CAJA_ACTUAL, data, '#ef4444')}
+                      ${cajaHtmlMontoTarjetaDual(data.egresosOriginal, data.egresos || 0, PAIS_CAJA_ACTUAL, data, '#ef4444')}
                    </div>
                 </div>
                 
@@ -443,7 +423,7 @@
                       PENDIENTE
                    </div>
                    <div class="card" style="background: var(--sidebar); border: 1px solid rgba(245, 158, 11, 0.2); padding: 12px; border-radius: 10px;">
-                      ${cajaHtmlMontoTarjetaBalance(data.pendientes || 0, 'pendientesMonedaReferencia', PAIS_CAJA_ACTUAL, data, '#f59e0b')}
+                      ${cajaHtmlMontoTarjetaDual(data.pendientesOriginal, data.pendientes || 0, PAIS_CAJA_ACTUAL, data, '#f59e0b')}
                    </div>
                 </div>
                 
@@ -454,7 +434,15 @@
                       SALDO
                    </div>
                    <div class="card" style="background: var(--sidebar); border: 1px solid rgba(59, 130, 246, 0.2); padding: 12px; border-radius: 10px;">
-                      ${cajaHtmlMontoTarjetaBalance(data.saldo || 0, 'saldoMonedaReferencia', PAIS_CAJA_ACTUAL, data, '#3b82f6')}
+                      ${cajaHtmlMontoTarjetaDual(
+                         (data.saldoMonedaLocal != null && Number.isFinite(Number(data.saldoMonedaLocal)))
+                            ? Number(data.saldoMonedaLocal)
+                            : ((Number(data.ingresosOriginal) || 0) - (Number(data.egresosOriginal) || 0)),
+                         data.saldo || 0,
+                         PAIS_CAJA_ACTUAL,
+                         data,
+                         '#3b82f6'
+                      )}
                    </div>
                 </div>
              </div>
@@ -946,15 +934,22 @@
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border-color); gap: 8px;">
                       <span style="color: #94a3b8; font-size: 13px; font-weight: 500;">Ingresos:</span>
-                      ${cajaHtmlMontoLineaMedio(info.ingresos || 0, balanceData, '#10b981')}
+                      ${cajaHtmlMontoLineaMedioDual(info.ingresosOriginal || 0, info.ingresos || 0, balanceData, '#10b981')}
                    </div>
                    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border-color); gap: 8px;">
                       <span style="color: #94a3b8; font-size: 13px; font-weight: 500;">Egresos:</span>
-                      ${cajaHtmlMontoLineaMedio(info.egresos || 0, balanceData, '#ef4444')}
+                      ${cajaHtmlMontoLineaMedioDual(info.egresosOriginal || 0, info.egresos || 0, balanceData, '#ef4444')}
                    </div>
                    <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; gap: 8px;">
                       <span style="color: #94a3b8; font-size: 13px; font-weight: 500;">Saldo:</span>
-                      ${cajaHtmlMontoLineaMedio(info.saldo || 0, balanceData, saldoColor)}
+                      ${cajaHtmlMontoLineaMedioDual(
+                         (info.saldoMonedaLocal != null && Number.isFinite(Number(info.saldoMonedaLocal)))
+                            ? Number(info.saldoMonedaLocal)
+                            : ((Number(info.ingresosOriginal) || 0) - (Number(info.egresosOriginal) || 0)),
+                         info.saldo || 0,
+                         balanceData,
+                         saldoColor
+                      )}
                    </div>
                 </div>
              </div>`;
